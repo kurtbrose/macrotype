@@ -1,4 +1,4 @@
-from typing import Callable, Literal, NewType, overload
+from typing import Callable, Generic, Literal, NewType, overload
 from re import Pattern
 
 UserId = NewType('UserId', int)
@@ -31,6 +31,10 @@ class SampleDict(TypedDict):
 class PartialDict(TypedDict, total=False):
     id: int
     hint: str
+
+class GenericClass(Generic[T]):
+    value: T
+    def get[T]() -> T: ...
 
 class Slotted:
     x: int

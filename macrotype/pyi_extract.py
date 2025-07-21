@@ -238,11 +238,22 @@ class PyiClass(PyiElement):
     @classmethod
     def from_class(cls, klass: type) -> "PyiClass":
         is_typeddict = isinstance(klass, typing._TypedDictMeta)
-        bases = ["TypedDict"] if is_typeddict else [b.__name__ for b in klass.__bases__ if b is not object]
         members: list[PyiElement] = []
         typeddict_total = klass.__dict__.get("__total__", True) if is_typeddict else None
         decorators: list[str] = []
         used_types: set[type] = set()
+
+        if is_typeddict:
+            bases = ["TypedDict"]
+        else:
+            raw_bases = getattr(klass, "__orig_bases__", None) or klass.__bases__
+            bases = []
+            for b in raw_bases:
+                if b is object:
+                    continue
+                fmt = format_type(b)
+                bases.append(fmt.text)
+                used_types.update(fmt.used)
 
         if dataclasses.is_dataclass(klass):
             params = getattr(klass, "__dataclass_params__", None)
