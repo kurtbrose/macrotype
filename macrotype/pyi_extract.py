@@ -4,6 +4,7 @@ import dataclasses
 from types import ModuleType
 import types
 from typing import Any, Callable, get_type_hints, _GenericAlias, get_origin, get_args
+import functools
 import inspect
 import typing
 import builtins
@@ -152,7 +153,7 @@ class PyiAlias(PyiElement):
 @dataclass
 class PyiFunction(PyiElement):
     name: str
-    args: list[tuple[str, str]]
+    args: list[tuple[str, str | None]]
     return_type: str = ""
     decorators: list[str] = field(default_factory=list)
     type_params: list[str] = field(default_factory=list)
@@ -161,7 +162,13 @@ class PyiFunction(PyiElement):
     def render(self, indent: int = 0) -> list[str]:
         space = "    " * indent
         lines = [f"{space}@{d}" for d in self.decorators]
-        args_str = ", ".join(f"{n}: {t}" for n, t in self.args)
+        parts = []
+        for n, t in self.args:
+            if t is None:
+                parts.append(n)
+            else:
+                parts.append(f"{n}: {t}")
+        args_str = ", ".join(parts)
         tp_str = f"[{', '.join(self.type_params)}]" if self.type_params else ""
         if self.return_type:
             lines.append(f"{space}def {self.name}{tp_str}({args_str}) -> {self.return_type}: ...")
@@ -180,7 +187,12 @@ class PyiFunction(PyiElement):
         args = []
         used_types = set()
         for name, param in sig.parameters.items():
-            if name == 'self':
+            if param.annotation is inspect._empty:
+                if name in {'self', 'cls'}:
+                    args.append((name, None))
+                else:
+                    args.append((name, 'Any'))
+                    used_types.add(Any)
                 continue
             hint = hints.get(name, 'Any')
             fmt = format_type(hint)
@@ -326,6 +338,15 @@ class PyiClass(PyiElement):
                         for ov in ovs:
                             members.append(PyiFunction.from_function(ov, decorators=["overload"]))
                     members.append(PyiFunction.from_function(attr))
+                elif isinstance(attr, classmethod):
+                    members.append(PyiFunction.from_function(attr.__func__, decorators=["classmethod"]))
+                elif isinstance(attr, staticmethod):
+                    members.append(PyiFunction.from_function(attr.__func__, decorators=["staticmethod"]))
+                elif isinstance(attr, property):
+                    members.append(PyiFunction.from_function(attr.fget, decorators=["property"]))
+                elif isinstance(attr, functools.cached_property):
+                    members.append(PyiFunction.from_function(attr.func, decorators=["cached_property"]))
+                    used_types.add(functools.cached_property)
                 elif inspect.isclass(attr):
                     if attr.__qualname__.startswith(klass.__qualname__ + "."):
                         members.append(PyiClass.from_class(attr))
