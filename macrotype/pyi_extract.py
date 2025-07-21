@@ -300,6 +300,8 @@ class PyiClass(PyiElement):
                     "weakref_slot": False,
                 }
                 for name, default in defaults.items():
+                    if name == "match_args" and not hasattr(params, "match_args"):
+                        continue
                     if hasattr(params, name):
                         val = getattr(params, name)
                     else:
@@ -307,8 +309,6 @@ class PyiClass(PyiElement):
                             val = not hasattr(klass, "__dict__")
                         elif name == "weakref_slot":
                             val = "__weakref__" in getattr(klass, "__slots__", ())
-                        elif name == "match_args":
-                            val = hasattr(klass, "__match_args__")
                         else:
                             val = default
                     if val != default:
