@@ -166,7 +166,7 @@ class PyiFunction(PyiElement):
         return lines
 
     @classmethod
-    def from_function(cls, fn: Callable) -> PyiFunction:
+    def from_function(cls, fn: Callable, decorators: list[str] | None = None) -> PyiFunction:
         try:
             hints = get_type_hints(fn)
         except Exception:
@@ -191,12 +191,17 @@ class PyiFunction(PyiElement):
         type_params = sorted(find_typevars(tp) for tp in all_types)
         flat_params = sorted(set().union(*type_params))
 
+        decorators = decorators or []
+        if "overload" in decorators:
+            used_types.add(typing.overload)
+
         return cls(
             name=fn.__name__,
             args=args,
             return_type=return_fmt.text,
+            decorators=decorators,
             type_params=flat_params,
-            used_types=used_types
+            used_types=used_types,
         )
 
 
@@ -250,6 +255,10 @@ class PyiClass(PyiElement):
         if not is_typeddict:
             for attr_name, attr in klass.__dict__.items():
                 if inspect.isfunction(attr):
+                    ovs = typing.get_overloads(attr)
+                    if ovs:
+                        for ov in ovs:
+                            members.append(PyiFunction.from_function(ov, decorators=["overload"]))
                     members.append(PyiFunction.from_function(attr))
                 elif inspect.isclass(attr):
                     if attr.__qualname__.startswith(klass.__qualname__ + "."):
@@ -290,6 +299,12 @@ class PyiModule:
             seen[id(obj)] = name
 
             if inspect.isfunction(obj):
+                ovs = typing.get_overloads(obj)
+                if ovs:
+                    for ov in ovs:
+                        ofunc = PyiFunction.from_function(ov, decorators=["overload"])
+                        used_types.update(ofunc.used_types)
+                        body.append(ofunc)
                 func = PyiFunction.from_function(obj)
                 used_types.update(func.used_types)
                 body.append(func)
