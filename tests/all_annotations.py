@@ -48,6 +48,11 @@ class PartialDict(TypedDict, total=False):
     hint: str
 
 
+class GenericClass(Generic[T]):
+    value: T
+    def get(self) -> T: ...
+
+
 class Slotted:
     __slots__ = ("x", "y")
     x: int
