@@ -100,7 +100,7 @@ def format_type(tp: Any) -> TypeRenderInfo:
     if hasattr(tp, '_name') and tp._name:
         return TypeRenderInfo(tp._name, used)
 
-    return TypeRenderInfo(str(tp), used)
+    return TypeRenderInfo(repr(tp), used)
 
 
 def find_typevars(tp: Any) -> set[str]:

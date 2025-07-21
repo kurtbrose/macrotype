@@ -27,8 +27,10 @@ class AllAnnotations:
     g: Annotated[int, "meta"]
     h: re.Pattern[str]
     uid: UserId
+    lit_attr: Literal["a", "b"]
     def copy(self, param: T) -> T: ...
     def curry(self, f: Callable[P, int]) -> Callable[P, int]: ...
+    def literal_method(self, flag: Literal["on", "off"]) -> Literal[1, 0]: ...
 
     class Nested:
         x: float
