@@ -348,6 +348,7 @@ class PyiClass(PyiElement):
                 "_dataclass_getstate",
                 "_dataclass_setstate",
                 "__getattribute__",
+                "__replace__",
             } if is_dataclass_obj else set()
 
             for attr_name, attr in klass.__dict__.items():
