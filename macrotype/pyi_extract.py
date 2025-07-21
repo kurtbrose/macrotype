@@ -7,6 +7,15 @@ from typing import Any, Callable, get_type_hints, _GenericAlias, get_origin, get
 import functools
 import inspect
 import typing
+
+try:
+    from typing import get_overloads as _get_overloads
+except ImportError:  # pragma: no cover - Python < 3.11
+    try:
+        from typing_extensions import get_overloads as _get_overloads
+    except Exception:  # pragma: no cover - very old typing
+        def _get_overloads(func):
+            return []
 import builtins
 import collections.abc
 
@@ -291,7 +300,17 @@ class PyiClass(PyiElement):
                     "weakref_slot": False,
                 }
                 for name, default in defaults.items():
-                    val = getattr(params, name, default)
+                    if name == "match_args" and not hasattr(params, "match_args"):
+                        continue
+                    if hasattr(params, name):
+                        val = getattr(params, name)
+                    else:
+                        if name == "slots":
+                            val = not hasattr(klass, "__dict__")
+                        elif name == "weakref_slot":
+                            val = "__weakref__" in getattr(klass, "__slots__", ())
+                        else:
+                            val = default
                     if val != default:
                         args.append(f"{name}={val}")
             deco = "dataclass" + (f"({', '.join(args)})" if args else "")
@@ -329,13 +348,14 @@ class PyiClass(PyiElement):
                 "_dataclass_getstate",
                 "_dataclass_setstate",
                 "__getattribute__",
+                "__replace__",
             } if is_dataclass_obj else set()
 
             for attr_name, attr in klass.__dict__.items():
                 if attr_name in auto_methods:
                     continue
                 if inspect.isfunction(attr):
-                    ovs = typing.get_overloads(attr)
+                    ovs = _get_overloads(attr)
                     if ovs:
                         for ov in ovs:
                             members.append(PyiFunction.from_function(ov, decorators=["overload"]))
@@ -395,7 +415,7 @@ class PyiModule:
             seen[id(obj)] = name
 
             if inspect.isfunction(obj):
-                ovs = typing.get_overloads(obj)
+                ovs = _get_overloads(obj)
                 if ovs:
                     for ov in ovs:
                         ofunc = PyiFunction.from_function(ov, decorators=["overload"])
