@@ -1,4 +1,4 @@
-from typing import Callable, NewType, overload
+from typing import Callable, Literal, NewType, overload
 from re import Pattern
 
 UserId = NewType('UserId', int)
@@ -13,8 +13,10 @@ class AllAnnotations:
     g: int
     h: Pattern[str]
     uid: UserId
+    lit_attr: Literal['a', 'b']
     def copy[T](param: T) -> T: ...
     def curry[P](f: Callable[P, int]) -> Callable[P, int]: ...
+    def literal_method(flag: Literal['on', 'off']) -> Literal[1, 0]: ...
     class Nested:
         x: float
         y: str
