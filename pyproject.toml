@@ -7,7 +7,7 @@ name = "macrotype"
 version = "0.1.0"
 description = "Generate .pyi stub files from existing modules"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 license = {file = "LICENSE"}
 authors = [
     {name = "Kurt Rose", email = "kurt@kurtrose.com"}
