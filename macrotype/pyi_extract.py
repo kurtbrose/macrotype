@@ -310,40 +310,4 @@ def _demo():
         print(line)
 
 
-# === Testbed for Type Extraction ===
 
-import re
-from typing import Optional, Union, Callable, TypeVar, Generic, Literal, Annotated, TypedDict, ParamSpec
-
-T = TypeVar("T")
-P = ParamSpec("P")
-
-class AllAnnotations:
-    a: list[str]
-    b: dict[str, int]
-    c: Optional[int]
-    d: Union[int, str]
-    e: int | str
-    f: Callable[[int, str], bool]
-    g: Annotated[int, "meta"]
-    h: re.Pattern[str]
-    def copy(self, param: T) -> T: ...
-    def curry(self, f: Callable[P, int]) -> Callable[P, int]: ...
-
-    class Nested:
-        x: float
-        y: str
-
-class ChildClass(AllAnnotations):
-    ...
-
-class SampleDict(TypedDict):
-    name: str
-    age: int
-
-class PartialDict(TypedDict, total=False):
-    id: int
-    hint: str
-
-if __name__ == "__main__":
-    _demo()
