@@ -1,5 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
+import dataclasses
 from types import ModuleType
 import types
 from typing import Any, Callable, get_type_hints, _GenericAlias, get_origin, get_args
@@ -213,6 +214,8 @@ class PyiClass(PyiElement):
     bases: list[str] = field(default_factory=list)
     body: list[PyiElement] = field(default_factory=list)
     typeddict_total: bool | None = None
+    decorators: list[str] = field(default_factory=list)
+    used_types: set[type] = field(default_factory=set)
 
     def render(self, indent: int = 0) -> list[str]:
         space = "    " * indent
@@ -223,7 +226,8 @@ class PyiClass(PyiElement):
             base_decl = "(TypedDict)"
         elif self.bases:
             base_decl = f"({', '.join(self.bases)})"
-        lines = [f"{space}class {self.name}{base_decl}:"]
+        lines = [f"{space}@{d}" for d in self.decorators]
+        lines.append(f"{space}class {self.name}{base_decl}:")
         if self.body:
             for item in self.body:
                 lines.extend(item.render(indent + 1))
@@ -237,6 +241,32 @@ class PyiClass(PyiElement):
         bases = ["TypedDict"] if is_typeddict else [b.__name__ for b in klass.__bases__ if b is not object]
         members: list[PyiElement] = []
         typeddict_total = klass.__dict__.get("__total__", True) if is_typeddict else None
+        decorators: list[str] = []
+        used_types: set[type] = set()
+
+        if dataclasses.is_dataclass(klass):
+            params = getattr(klass, "__dataclass_params__", None)
+            args: list[str] = []
+            if params is not None:
+                defaults = {
+                    "init": True,
+                    "repr": True,
+                    "eq": True,
+                    "order": False,
+                    "unsafe_hash": False,
+                    "frozen": False,
+                    "match_args": True,
+                    "kw_only": False,
+                    "slots": False,
+                    "weakref_slot": False,
+                }
+                for name, default in defaults.items():
+                    val = getattr(params, name, default)
+                    if val != default:
+                        args.append(f"{name}={val}")
+            deco = "dataclass" + (f"({', '.join(args)})" if args else "")
+            decorators.append(deco)
+            used_types.add(dataclasses.dataclass)
 
         raw_ann = klass.__dict__.get("__annotations__", {})
         try:
@@ -253,7 +283,26 @@ class PyiClass(PyiElement):
             members.append(PyiVariable(name, fmt.text, fmt.used))
 
         if not is_typeddict:
+            auto_methods = {
+                "__init__",
+                "__repr__",
+                "__eq__",
+                "__lt__",
+                "__le__",
+                "__gt__",
+                "__ge__",
+                "__hash__",
+                "__setattr__",
+                "__delattr__",
+                "__getstate__",
+                "__setstate__",
+                "_dataclass_getstate",
+                "_dataclass_setstate",
+            } if dataclasses.is_dataclass(klass) else set()
+
             for attr_name, attr in klass.__dict__.items():
+                if attr_name in auto_methods:
+                    continue
                 if inspect.isfunction(attr):
                     ovs = typing.get_overloads(attr)
                     if ovs:
@@ -264,7 +313,14 @@ class PyiClass(PyiElement):
                     if attr.__qualname__.startswith(klass.__qualname__ + "."):
                         members.append(PyiClass.from_class(attr))
 
-        return cls(name=klass.__name__, bases=bases, body=members, typeddict_total=typeddict_total)
+        return cls(
+            name=klass.__name__,
+            bases=bases,
+            body=members,
+            typeddict_total=typeddict_total,
+            decorators=decorators,
+            used_types=used_types,
+        )
 
 
 # === Module ===
@@ -310,6 +366,7 @@ class PyiModule:
                 body.append(func)
             elif inspect.isclass(obj):
                 cls_obj = PyiClass.from_class(obj)
+                used_types.update(cls_obj.used_types)
                 for item in cls_obj.body:
                     if isinstance(item, (PyiFunction, PyiVariable)):
                         used_types.update(getattr(item, 'used_types', set()))
@@ -330,11 +387,13 @@ class PyiModule:
 
         external_imports = {}
         for t in used_types:
-            if isinstance(t, type) and hasattr(t, '__module__') and hasattr(t, '__name__'):
-                modname = t.__module__
-                name = t.__name__
-                if modname not in ("builtins", "typing"):
-                    external_imports.setdefault(modname, set()).add(name)
+            modname = getattr(t, '__module__', None)
+            name = getattr(t, '__name__', None)
+            if not modname or not name:
+                continue
+            if modname in ("builtins", "typing", mod_name):
+                continue
+            external_imports.setdefault(modname, set()).add(name)
 
         import_lines = []
         if typing_names:

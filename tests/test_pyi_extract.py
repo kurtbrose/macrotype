@@ -18,3 +18,15 @@ def test_stub_generation_matches_expected():
     expected = expected_path.read_text().splitlines()
 
     assert generated == expected
+
+
+def test_dataclass_decorators():
+    src = Path(__file__).with_name("dataclass_sample.py")
+    loaded = load_module_from_path(src)
+    module = PyiModule.from_module(loaded)
+    generated = module.render()
+
+    expected_path = Path(__file__).with_name("dataclass_sample.pyi")
+    expected = expected_path.read_text().splitlines()
+
+    assert generated == expected
