@@ -40,6 +40,14 @@ class Slotted:
     x: int
     y: str
 
+def make_wrapped(t: type): ...
+
+class Wrapper:
+    value: int
+
+class Wrapper:
+    value: Pattern[str]
+
 @overload
 def over(x: int) -> int: ...
 

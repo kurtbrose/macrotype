@@ -59,6 +59,16 @@ class Slotted:
     y: str
 
 
+def make_wrapped(t: type):
+    class Wrapper:
+        value: t
+    return Wrapper
+
+
+GeneratedInt = make_wrapped(int)
+GeneratedPattern = make_wrapped(re.Pattern[str])
+
+
 @overload
 def over(x: int) -> int: ...
 
