@@ -1,5 +1,7 @@
-from typing import Callable
+from typing import Callable, NewType
 from re import Pattern
+
+UserId = NewType('UserId', int)
 
 class AllAnnotations:
     a: list[str]
@@ -10,6 +12,7 @@ class AllAnnotations:
     f: Callable[[int, str], bool]
     g: int
     h: Pattern[str]
+    uid: UserId
     def copy[T](param: T) -> T: ...
     def curry[P](f: Callable[P, int]) -> Callable[P, int]: ...
     class Nested:

@@ -30,6 +30,9 @@ def format_type(tp: Any) -> TypeRenderInfo:
         used.add(tp)
         return TypeRenderInfo(tp.__name__, used)
 
+    if hasattr(tp, '__supertype__'):
+        return TypeRenderInfo(tp.__qualname__, used)
+
     if tp is type(None):
         return TypeRenderInfo("None", used)
     if tp is Any:
@@ -128,6 +131,19 @@ class PyiVariable(PyiElement):
     @classmethod
     def from_assignment(cls, name: str, value: Any) -> PyiVariable:
         return cls(name=name, type_str=type(value).__name__)
+
+
+# === Alias ===
+
+@dataclass
+class PyiAlias(PyiElement):
+    name: str
+    value: str
+    used_types: set[type] = field(default_factory=set)
+
+    def render(self, indent: int = 0) -> list[str]:
+        space = "    " * indent
+        return [f"{space}{self.name} = {self.value}"]
 
 
 # === Function ===
@@ -283,6 +299,11 @@ class PyiModule:
                     if isinstance(item, (PyiFunction, PyiVariable)):
                         used_types.update(getattr(item, 'used_types', set()))
                 body.append(cls_obj)
+            elif callable(obj) and hasattr(obj, '__supertype__'):
+                base_fmt = format_type(obj.__supertype__)
+                alias_used = {typing.NewType, *base_fmt.used}
+                used_types.update(alias_used)
+                body.append(PyiAlias(name=name, value=f"NewType('{name}', {base_fmt.text})", used_types=alias_used))
             elif isinstance(obj, (int, str, float, bool)):
                 body.append(PyiVariable.from_assignment(name, obj))
 
