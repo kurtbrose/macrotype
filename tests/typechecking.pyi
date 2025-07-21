@@ -1,0 +1,3 @@
+from tests.all_annotations import AllAnnotations
+
+def takes(x: AllAnnotations) -> None: ...
