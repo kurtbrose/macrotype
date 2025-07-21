@@ -1,6 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 from types import ModuleType
+import types
 from typing import Any, Callable, get_type_hints, _GenericAlias, get_origin, get_args
 import inspect
 import typing
@@ -58,6 +59,12 @@ def format_type(tp: Any) -> TypeRenderInfo:
             arg_str = ", ".join(a.text for a in arg_strs)
             return TypeRenderInfo(f"Callable[[{arg_str}], {ret_fmt.text}]", used)
         return TypeRenderInfo("Callable", used)
+
+    if origin is types.UnionType or origin is typing.Union:
+        arg_strs = [format_type(a) for a in args]
+        used.update(*(a.used for a in arg_strs))
+        text = " | ".join(a.text for a in arg_strs)
+        return TypeRenderInfo(text, used)
 
     if origin is typing.Annotated:
         used.add(typing.Annotated)

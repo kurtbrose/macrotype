@@ -1,13 +1,12 @@
-from typing import Callable, Union
+from typing import Callable
 from re import Pattern
-from types import UnionType
 
 class AllAnnotations:
     a: list[str]
     b: dict[str, int]
-    c: Union[int, None]
-    d: Union[int, str]
-    e: UnionType[int, str]
+    c: int | None
+    d: int | str
+    e: int | str
     f: Callable[[int, str], bool]
     g: int
     h: Pattern[str]
