@@ -153,7 +153,7 @@ class PyiAlias(PyiElement):
 class PyiFunction(PyiElement):
     name: str
     args: list[tuple[str, str]]
-    return_type: str = "None"
+    return_type: str = ""
     decorators: list[str] = field(default_factory=list)
     type_params: list[str] = field(default_factory=list)
     used_types: set[type] = field(default_factory=set)
@@ -163,7 +163,10 @@ class PyiFunction(PyiElement):
         lines = [f"{space}@{d}" for d in self.decorators]
         args_str = ", ".join(f"{n}: {t}" for n, t in self.args)
         tp_str = f"[{', '.join(self.type_params)}]" if self.type_params else ""
-        lines.append(f"{space}def {self.name}{tp_str}({args_str}) -> {self.return_type}: ...")
+        if self.return_type:
+            lines.append(f"{space}def {self.name}{tp_str}({args_str}) -> {self.return_type}: ...")
+        else:
+            lines.append(f"{space}def {self.name}{tp_str}({args_str}): ...")
         return lines
 
     @classmethod
@@ -184,9 +187,12 @@ class PyiFunction(PyiElement):
             used_types.update(fmt.used)
             args.append((name, fmt.text))
 
-        return_type = hints.get('return', 'None')
-        return_fmt = format_type(return_type)
-        used_types.update(return_fmt.used)
+        if 'return' in hints:
+            return_fmt = format_type(hints['return'])
+            used_types.update(return_fmt.used)
+            ret_text = return_fmt.text
+        else:
+            ret_text = ""
 
         all_types = list(hints.values())
         type_params = sorted(find_typevars(tp) for tp in all_types)
@@ -199,7 +205,7 @@ class PyiFunction(PyiElement):
         return cls(
             name=fn.__name__,
             args=args,
-            return_type=return_fmt.text,
+            return_type=ret_text,
             decorators=decorators,
             type_params=flat_params,
             used_types=used_types,
