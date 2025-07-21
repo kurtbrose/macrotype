@@ -273,7 +273,8 @@ class PyiClass(PyiElement):
                 bases.append(fmt.text)
                 used_types.update(fmt.used)
 
-        if dataclasses.is_dataclass(klass):
+        is_dataclass_obj = dataclasses.is_dataclass(klass) or hasattr(klass, "__dataclass_fields__")
+        if is_dataclass_obj:
             params = getattr(klass, "__dataclass_params__", None)
             args: list[str] = []
             if params is not None:
@@ -327,7 +328,8 @@ class PyiClass(PyiElement):
                 "__setstate__",
                 "_dataclass_getstate",
                 "_dataclass_setstate",
-            } if dataclasses.is_dataclass(klass) else set()
+                "__getattribute__",
+            } if is_dataclass_obj else set()
 
             for attr_name, attr in klass.__dict__.items():
                 if attr_name in auto_methods:
