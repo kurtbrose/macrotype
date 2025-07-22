@@ -54,3 +54,27 @@ def test_variadic_typevar_tuple():
     expected = expected_path.read_text().splitlines()
 
     assert generated == expected
+
+
+def test_new_style_generic_class():
+    src = Path(__file__).with_name("new_generic.py")
+    loaded = load_module_from_path(src)
+    module = PyiModule.from_module(loaded)
+    generated = module.render()
+
+    expected_path = Path(__file__).with_name("new_generic.pyi")
+    expected = expected_path.read_text().splitlines()
+
+    assert generated == expected
+
+
+def test_old_style_generic_class():
+    src = Path(__file__).with_name("old_generic.py")
+    loaded = load_module_from_path(src)
+    module = PyiModule.from_module(loaded)
+    generated = module.render()
+
+    expected_path = Path(__file__).with_name("old_generic.pyi")
+    expected = expected_path.read_text().splitlines()
+
+    assert generated == expected
