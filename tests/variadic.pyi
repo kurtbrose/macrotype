@@ -1,10 +1,10 @@
-from typing import Any, Generic, TypeVarTuple, TypedDict, Unpack
+from typing import Any, TypeVarTuple, TypedDict, Unpack
 
 Ts = TypeVarTuple('Ts')
 
 def as_tuple[*Ts](*args: Unpack[Ts]) -> tuple[Unpack[Ts]]: ...
 
-class Variadic(Generic[Unpack[Ts]]):
+class Variadic[Unpack[Ts]]:
     def __init__(self, *args: Unpack[Ts]) -> None: ...
     def to_tuple(self) -> tuple[Unpack[Ts]]: ...
 

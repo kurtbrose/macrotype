@@ -1,4 +1,4 @@
-from typing import Callable, Generic, Literal, NewType, ParamSpec, TypeVar, TypedDict, overload
+from typing import Callable, Literal, NewType, ParamSpec, TypeVar, TypedDict, overload
 from functools import cached_property
 from re import Pattern
 
@@ -45,7 +45,7 @@ class PartialDict(TypedDict, total=False):
     id: int
     hint: str
 
-class GenericClass(Generic[T]):
+class GenericClass[T]:
     value: T
     def get(self) -> T: ...
 

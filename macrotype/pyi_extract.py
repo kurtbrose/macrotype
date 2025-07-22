@@ -264,6 +264,7 @@ class PyiFunction(PyiElement):
 class PyiClass(PyiElement):
     name: str
     bases: list[str] = field(default_factory=list)
+    type_params: list[str] = field(default_factory=list)
     body: list[PyiElement] = field(default_factory=list)
     typeddict_total: bool | None = None
     decorators: list[str] = field(default_factory=list)
@@ -278,8 +279,11 @@ class PyiClass(PyiElement):
             base_decl = "(TypedDict)"
         elif self.bases:
             base_decl = f"({', '.join(self.bases)})"
+
+        tp_str = f"[{', '.join(self.type_params)}]" if self.type_params else ""
+
         lines = [f"{space}@{d}" for d in self.decorators]
-        lines.append(f"{space}class {self.name}{base_decl}:")
+        lines.append(f"{space}class {self.name}{tp_str}{base_decl}:")
         if self.body:
             for item in self.body:
                 lines.extend(item.render(indent + 1))
@@ -296,6 +300,7 @@ class PyiClass(PyiElement):
         used_types: set[type] = set()
         class_params: set[str] = {t.__name__ for t in getattr(klass, '__parameters__', ())}
 
+        type_params: list[str] = []
         if is_typeddict:
             bases = ["TypedDict"]
             used_types.add(typing.TypedDict)
@@ -304,6 +309,12 @@ class PyiClass(PyiElement):
             bases = []
             for b in raw_bases:
                 if b is object:
+                    continue
+                if get_origin(b) is typing.Generic:
+                    for param in get_args(b):
+                        fmt = format_type(param)
+                        type_params.append(fmt.text)
+                        used_types.update(fmt.used)
                     continue
                 fmt = format_type(b)
                 bases.append(fmt.text)
@@ -421,6 +432,7 @@ class PyiClass(PyiElement):
         return cls(
             name=klass.__name__,
             bases=bases,
+            type_params=type_params,
             body=members,
             typeddict_total=typeddict_total,
             decorators=decorators,
@@ -527,7 +539,7 @@ class PyiModule:
             t.__name__
             for t in used_types
             if getattr(t, '__module__', '') == 'typing'
-            and not isinstance(t, typing.TypeVarTuple)
+            and not isinstance(t, (typing.TypeVar, typing.ParamSpec, typing.TypeVarTuple))
         )
 
         external_imports = {}
