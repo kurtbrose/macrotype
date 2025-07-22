@@ -19,6 +19,7 @@ from typing import (
     NewType,
     TypedDict,
     Literal,
+    LiteralString,
     Self,
     TypeVarTuple,
     Unpack,
@@ -248,5 +249,12 @@ def always_raises() -> NoReturn:
 
 def never_returns() -> Never:
     raise RuntimeError()
+
+
+# Edge case: LiteralString handling
+LITERAL_STR_VAR: LiteralString
+
+def echo_literal(value: LiteralString) -> LiteralString:
+    return value
 
 
