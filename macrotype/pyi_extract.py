@@ -390,6 +390,7 @@ class PyiClass(PyiNamedElement):
 
         is_typeddict = isinstance(klass, typing._TypedDictMeta)
         is_enum = isinstance(klass, enum.EnumMeta)
+        is_namedtuple = issubclass(klass, tuple) and hasattr(klass, "_fields")
         members: list[PyiElement] = []
         typeddict_total = klass.__dict__.get("__total__", True) if is_typeddict else None
         decorators: list[str] = []
@@ -397,6 +398,31 @@ class PyiClass(PyiNamedElement):
         class_params: set[str] = {t.__name__ for t in getattr(klass, '__parameters__', ())}
 
         type_params: list[str] = []
+        if is_namedtuple:
+            bases = ["NamedTuple"]
+            used_types.add(typing.NamedTuple)
+            raw_bases = getattr(klass, "__orig_bases__", ())
+            for b in raw_bases:
+                if get_origin(b) is typing.Generic:
+                    for param in get_args(b):
+                        fmt = format_type(param)
+                        type_params.append(fmt.text)
+                        used_types.update(fmt.used)
+            raw_ann = klass.__dict__.get("__annotations__", {})
+            for name, tp in raw_ann.items():
+                fmt = format_type(tp)
+                members.append(
+                    PyiVariable(name=name, type_str=fmt.text, used_types=fmt.used)
+                )
+            return cls(
+                name=klass.__name__,
+                bases=bases,
+                type_params=type_params,
+                body=members,
+                typeddict_total=None,
+                decorators=decorators,
+                used_types=used_types,
+            )
         if is_typeddict:
             bases = ["TypedDict"]
             used_types.add(typing.TypedDict)
