@@ -65,3 +65,13 @@ def test_process_directory(tmp_path, src: str, expected: str) -> None:
     generated = (tmp_path / expected).read_text().splitlines()
     expected_lines = Path(__file__).with_name(expected).read_text().splitlines()
     assert generated == expected_lines
+
+
+def test_mixed_typeddict_support() -> None:
+    src_path = Path(__file__).with_name("annotations.py")
+    loaded = load_module_from_path(src_path)
+    module = PyiModule.from_module(loaded)
+    lines = module.render()
+    assert "class MixedDict(TypedDict):" in lines
+    assert "    optional_field: NotRequired[str]" in lines
+    assert "    required_override: Required[int]" in lines
