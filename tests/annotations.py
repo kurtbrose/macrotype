@@ -20,12 +20,29 @@ from typing import (
     Unpack,
     Tuple,
     Any,
+    TypeAlias,
 )
 
 T = TypeVar("T")
 P = ParamSpec("P")
 Ts = TypeVarTuple("Ts")
 UserId = NewType("UserId", int)
+
+MyList: TypeAlias = list[int]
+type StrList = list[str]
+
+# Chain of generic type aliases for regression testing
+type Alias0[T] = list[T]
+type Alias1[T] = Alias0[T]
+
+# Additional alias shapes
+type AliasNewType = UserId
+type AliasTypeVar[T] = T
+type AliasUnion = int | str
+type ListOrSet[T] = list[T] | set[T]
+type IntFunc[**P] = Callable[P, int]
+type LabeledTuple[*Ts] = tuple[str, *Ts]
+type RecursiveList[T] = T | list[RecursiveList[T]]
 
 
 class Basic:
