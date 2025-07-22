@@ -1,4 +1,4 @@
-from typing import Any, Callable, ClassVar, Literal, NamedTuple, Never, NewType, NoReturn, NotRequired, ParamSpec, Required, Self, TypeVar, TypeVarTuple, TypedDict, Unpack, overload
+from typing import Any, Callable, ClassVar, Final, Literal, NamedTuple, Never, NewType, NoReturn, NotRequired, ParamSpec, Required, Self, TypeVar, TypeVarTuple, TypedDict, Unpack, overload
 from dataclasses import dataclass
 from enum import Enum, IntEnum
 from functools import cached_property
@@ -165,3 +165,7 @@ def dict_echo(**kwargs: dict[str, Any]) -> dict[str, Any]: ...
 def always_raises() -> NoReturn: ...
 
 def never_returns() -> Never: ...
+
+GLOBAL: int
+
+CONST: Final[str]

@@ -7,6 +7,7 @@ from typing import (
     Annotated,
     Callable,
     ClassVar,
+    Final,
     NoReturn,
     Never,
     NamedTuple,
@@ -48,6 +49,9 @@ type ListOrSet[T] = list[T] | set[T]
 type IntFunc[**P] = Callable[P, int]
 type LabeledTuple[*Ts] = tuple[str, *Ts]
 type RecursiveList[T] = T | list[RecursiveList[T]]
+
+GLOBAL: int
+CONST: Final[str]
 
 
 class Basic:

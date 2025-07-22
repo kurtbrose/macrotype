@@ -662,6 +662,7 @@ class PyiModule:
         except Exception:
             resolved_ann = raw_ann
 
+        handled_names: set[str] = set()
         for name, obj in globals_dict.items():
             if resolved_ann.get(name) is typing.TypeAlias:
                 fmt = format_type(obj)
@@ -702,6 +703,7 @@ class PyiModule:
             if id(obj) in seen:
                 continue
             seen[id(obj)] = name
+            handled_names.add(name)
 
             if inspect.isfunction(obj):
                 ovs = _get_overloads(obj)
@@ -752,6 +754,20 @@ class PyiModule:
 
                 if not handled and isinstance(obj, (int, str, float, bool)):
                     body.append(PyiVariable.from_assignment(name, obj))
+
+        for name, annotation in resolved_ann.items():
+            if name not in handled_names and name not in globals_dict:
+                if annotation is typing.TypeAlias:
+                    continue
+                fmt = format_type(annotation)
+                used_types.update(fmt.used)
+                body.append(
+                    PyiVariable(
+                        name=name,
+                        type_str=fmt.text,
+                        used_types=fmt.used,
+                    )
+                )
 
         typing_names = sorted(
             t.__name__
