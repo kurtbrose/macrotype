@@ -37,7 +37,7 @@ class TypeRenderInfo:
 def format_type(tp: Any) -> TypeRenderInfo:
     used: set[type] = set()
 
-    if isinstance(tp, (typing.TypeVar, typing.ParamSpec)):
+    if isinstance(tp, (typing.TypeVar, typing.ParamSpec, typing.TypeVarTuple)):
         used.add(tp)
         return TypeRenderInfo(tp.__name__, used)
 
@@ -80,6 +80,14 @@ def format_type(tp: Any) -> TypeRenderInfo:
         text = " | ".join(a.text for a in arg_strs)
         return TypeRenderInfo(text, used)
 
+    if origin is typing.Unpack:
+        used.add(typing.Unpack)
+        if args:
+            arg_fmt = format_type(args[0])
+            used.update(arg_fmt.used)
+            return TypeRenderInfo(f"Unpack[{arg_fmt.text}]", used)
+        return TypeRenderInfo("Unpack", used)
+
     if origin is typing.Annotated:
         used.add(typing.Annotated)
         base, *metadata = args
@@ -116,7 +124,7 @@ def format_type(tp: Any) -> TypeRenderInfo:
 
 def find_typevars(tp: Any) -> set[str]:
     found = set()
-    if isinstance(tp, (typing.TypeVar, typing.ParamSpec)):
+    if isinstance(tp, (typing.TypeVar, typing.ParamSpec, typing.TypeVarTuple)):
         found.add(tp.__name__)
     elif hasattr(tp, '__parameters__'):
         for p in tp.__parameters__:
@@ -196,17 +204,23 @@ class PyiFunction(PyiElement):
         args = []
         used_types = set()
         for name, param in sig.parameters.items():
+            display_name = name
+            if param.kind is inspect.Parameter.VAR_POSITIONAL:
+                display_name = f"*{name}"
+            elif param.kind is inspect.Parameter.VAR_KEYWORD:
+                display_name = f"**{name}"
+
             if param.annotation is inspect._empty:
                 if name in {'self', 'cls'}:
-                    args.append((name, None))
+                    args.append((display_name, None))
                 else:
-                    args.append((name, 'Any'))
+                    args.append((display_name, 'Any'))
                     used_types.add(Any)
                 continue
             hint = hints.get(name, 'Any')
             fmt = format_type(hint)
             used_types.update(fmt.used)
-            args.append((name, fmt.text))
+            args.append((display_name, fmt.text))
 
         if 'return' in hints:
             return_fmt = format_type(hints['return'])
@@ -272,6 +286,7 @@ class PyiClass(PyiElement):
 
         if is_typeddict:
             bases = ["TypedDict"]
+            used_types.add(typing.TypedDict)
         else:
             raw_bases = getattr(klass, "__orig_bases__", None) or klass.__bases__
             bases = []
@@ -435,12 +450,29 @@ class PyiModule:
                 base_fmt = format_type(obj.__supertype__)
                 alias_used = {typing.NewType, *base_fmt.used}
                 used_types.update(alias_used)
-                body.append(PyiAlias(name=name, value=f"NewType('{name}', {base_fmt.text})", used_types=alias_used))
+                body.append(
+                    PyiAlias(
+                        name=name,
+                        value=f"NewType('{name}', {base_fmt.text})",
+                        used_types=alias_used,
+                    )
+                )
+            elif isinstance(obj, typing.TypeVarTuple):
+                alias_used = {typing.TypeVarTuple}
+                used_types.update(alias_used)
+                body.append(
+                    PyiAlias(
+                        name=name,
+                        value=f"TypeVarTuple('{obj.__name__}')",
+                        used_types=alias_used,
+                    )
+                )
             elif isinstance(obj, (int, str, float, bool)):
                 body.append(PyiVariable.from_assignment(name, obj))
 
         typing_names = sorted(
-            t.__name__ for t in used_types
+            t.__name__
+            for t in used_types
             if getattr(t, '__module__', '') == 'typing'
             and not isinstance(t, (typing.TypeVar, typing.ParamSpec))
         )
