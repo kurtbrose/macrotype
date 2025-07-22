@@ -66,6 +66,9 @@ def format_type(tp: Any) -> TypeRenderInfo:
 
     if tp is type(None):
         return TypeRenderInfo("None", used)
+    if tp is typing.Self:
+        used.add(typing.Self)
+        return TypeRenderInfo("Self", used)
     if tp is Any:
         used.add(Any)
         return TypeRenderInfo("Any", used)

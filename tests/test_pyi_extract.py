@@ -90,3 +90,14 @@ def test_tuple_ellipsis():
     expected = expected_path.read_text().splitlines()
 
     assert generated == expected
+
+def test_self_annotation():
+    src = Path(__file__).with_name("self_annotation.py")
+    loaded = load_module_from_path(src)
+    module = PyiModule.from_module(loaded)
+    generated = module.render()
+
+    expected_path = Path(__file__).with_name("self_annotation.pyi")
+    expected = expected_path.read_text().splitlines()
+
+    assert generated == expected
