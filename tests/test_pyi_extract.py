@@ -101,3 +101,12 @@ def test_self_annotation():
     expected = expected_path.read_text().splitlines()
 
     assert generated == expected
+
+def test_enum_values():
+    src = Path(__file__).with_name("enums.py")
+    loaded = load_module_from_path(src)
+    module = PyiModule.from_module(loaded)
+    generated = module.render()
+
+    expected = Path(__file__).with_name("enums.pyi").read_text().splitlines()
+    assert generated == expected
