@@ -1,4 +1,6 @@
-from typing import Any, Generic, TypedDict, Unpack
+from typing import Any, Generic, TypeVarTuple, TypedDict, Unpack
+
+Ts = TypeVarTuple('Ts')
 
 def as_tuple[Ts](*args: Unpack[Ts]) -> tuple[Unpack[Ts]]: ...
 

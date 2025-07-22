@@ -450,7 +450,23 @@ class PyiModule:
                 base_fmt = format_type(obj.__supertype__)
                 alias_used = {typing.NewType, *base_fmt.used}
                 used_types.update(alias_used)
-                body.append(PyiAlias(name=name, value=f"NewType('{name}', {base_fmt.text})", used_types=alias_used))
+                body.append(
+                    PyiAlias(
+                        name=name,
+                        value=f"NewType('{name}', {base_fmt.text})",
+                        used_types=alias_used,
+                    )
+                )
+            elif isinstance(obj, typing.TypeVarTuple):
+                alias_used = {typing.TypeVarTuple}
+                used_types.update(alias_used)
+                body.append(
+                    PyiAlias(
+                        name=name,
+                        value=f"TypeVarTuple('{obj.__name__}')",
+                        used_types=alias_used,
+                    )
+                )
             elif isinstance(obj, (int, str, float, bool)):
                 body.append(PyiVariable.from_assignment(name, obj))
 
@@ -458,7 +474,7 @@ class PyiModule:
             t.__name__
             for t in used_types
             if getattr(t, '__module__', '') == 'typing'
-            and not isinstance(t, (typing.TypeVar, typing.ParamSpec, typing.TypeVarTuple))
+            and not isinstance(t, (typing.TypeVar, typing.ParamSpec))
         )
 
         external_imports = {}
