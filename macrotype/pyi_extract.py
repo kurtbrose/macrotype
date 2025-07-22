@@ -116,6 +116,12 @@ def format_type(tp: Any) -> TypeRenderInfo:
         metadata_str = ", ".join(repr(m) for m in metadata)
         return TypeRenderInfo(f"Annotated[{base_fmt.text}, {metadata_str}]", used)
 
+    if origin is tuple and len(args) == 2 and args[1] is Ellipsis:
+        used.add(tuple)
+        arg_fmt = format_type(args[0])
+        used.update(arg_fmt.used)
+        return TypeRenderInfo(f"tuple[{arg_fmt.text}, ...]", used)
+
     if origin:
         origin_name = getattr(origin, '__qualname__', str(origin))
         used.add(origin)
