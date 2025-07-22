@@ -156,6 +156,48 @@ def format_type(type_obj: Any) -> TypeRenderInfo:
     return TypeRenderInfo(repr(type_obj), used)
 
 
+def format_type_param(tp: Any) -> TypeRenderInfo:
+    """Return formatted text for a type parameter object."""
+
+    prefix = ""
+    if isinstance(tp, typing.TypeVarTuple):
+        prefix = "*"
+    elif isinstance(tp, typing.ParamSpec):
+        prefix = "**"
+
+    text = prefix + tp.__name__
+    used: set[type] = {tp}
+
+    bound = getattr(tp, "__bound__", None)
+    if bound is type(None):
+        bound = None
+    constraints = getattr(tp, "__constraints__", ()) or ()
+
+    if bound is not None:
+        fmt = format_type(bound)
+        used.update(fmt.used)
+        text += f": {fmt.text}"
+    elif constraints:
+        parts = [format_type(c) for c in constraints]
+        used.update(*(p.used for p in parts))
+        text += f": ({', '.join(p.text for p in parts)})"
+
+    if hasattr(tp, "__default__"):
+        default = getattr(tp, "__default__")
+        if default is not None and default is not typing.NoDefault:
+            if isinstance(default, tuple) and all(isinstance(d, type) for d in default):
+                parts = [format_type(d) for d in default]
+                used.update(*(p.used for p in parts))
+                default_str = f"({', '.join(p.text for p in parts)})"
+            else:
+                fmt = format_type(default)
+                used.update(fmt.used)
+                default_str = fmt.text
+            text += f" = {default_str}"
+
+    return TypeRenderInfo(text, used)
+
+
 def find_typevars(type_obj: Any) -> set[str]:
     """Return a set of type variable names referenced by ``type_obj``."""
 
@@ -363,11 +405,23 @@ class PyiFunction(PyiNamedElement):
         else:
             ret_text = ""
 
-        all_types = list(hints.values())
-        type_params = sorted(find_typevars(t) for t in all_types)
-        flat_params = sorted(set().union(*type_params)) if type_params else []
-        if exclude_params:
-            flat_params = [p for p in flat_params if p.lstrip('*') not in exclude_params]
+        tp_strings: list[str] = []
+        type_param_objs = getattr(fn, "__type_params__", None)
+        if type_param_objs:
+            for tp in type_param_objs:
+                name = tp.__name__
+                if exclude_params and name in exclude_params:
+                    continue
+                fmt = format_type_param(tp)
+                tp_strings.append(fmt.text)
+                used_types.update(fmt.used)
+        else:
+            all_types = list(hints.values())
+            type_params = sorted(find_typevars(t) for t in all_types)
+            flat_params = sorted(set().union(*type_params)) if type_params else []
+            if exclude_params:
+                flat_params = [p for p in flat_params if p.lstrip('*') not in exclude_params]
+            tp_strings = flat_params
 
         decorators = decorators or []
         if "overload" in decorators:
@@ -378,7 +432,7 @@ class PyiFunction(PyiNamedElement):
             args=args,
             return_type=ret_text,
             decorators=decorators,
-            type_params=flat_params,
+            type_params=tp_strings,
             used_types=used_types,
         )
 
@@ -428,16 +482,23 @@ class PyiClass(PyiNamedElement):
         class_params: set[str] = {t.__name__ for t in getattr(klass, '__parameters__', ())}
 
         type_params: list[str] = []
-        if is_namedtuple:
+        if hasattr(klass, "__type_params__") and klass.__type_params__:
+            for tp in klass.__type_params__:
+                fmt = format_type_param(tp)
+                type_params.append(fmt.text)
+                used_types.update(fmt.used)
+        elif is_namedtuple:
             bases = ["NamedTuple"]
             used_types.add(typing.NamedTuple)
             raw_bases = getattr(klass, "__orig_bases__", ())
             for b in raw_bases:
                 if get_origin(b) is typing.Generic:
-                    for param in get_args(b):
-                        fmt = format_type(param)
-                        type_params.append(fmt.text)
-                        used_types.update(fmt.used)
+                    if not type_params:
+                        for param in get_args(b):
+                            fmt = format_type(param)
+                            type_params.append(fmt.text)
+                            used_types.update(fmt.used)
+                    continue
             raw_ann = klass.__dict__.get("__annotations__", {})
             for name, annotation in raw_ann.items():
                 fmt = format_type(annotation)
@@ -463,10 +524,11 @@ class PyiClass(PyiNamedElement):
                 if b is object:
                     continue
                 if get_origin(b) is typing.Generic:
-                    for param in get_args(b):
-                        fmt = format_type(param)
-                        type_params.append(fmt.text)
-                        used_types.update(fmt.used)
+                    if not type_params:
+                        for param in get_args(b):
+                            fmt = format_type(param)
+                            type_params.append(fmt.text)
+                            used_types.update(fmt.used)
                     continue
                 fmt = format_type(b)
                 bases.append(fmt.text)
