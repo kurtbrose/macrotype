@@ -1,6 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 import dataclasses
+import enum
 from types import ModuleType
 import types
 from typing import Any, Callable, get_type_hints, get_origin, get_args
@@ -388,6 +389,7 @@ class PyiClass(PyiNamedElement):
         """Create a :class:`PyiClass` representation of ``klass``."""
 
         is_typeddict = isinstance(klass, typing._TypedDictMeta)
+        is_enum = isinstance(klass, enum.EnumMeta)
         members: list[PyiElement] = []
         typeddict_total = klass.__dict__.get("__total__", True) if is_typeddict else None
         decorators: list[str] = []
@@ -437,8 +439,19 @@ class PyiClass(PyiNamedElement):
                 PyiVariable(name=name, type_str=fmt.text, used_types=fmt.used)
             )
 
+        if is_enum:
+            for member_name, member in klass.__members__.items():
+                members.append(
+                    PyiAlias(
+                        name=member_name,
+                        value=repr(member.value),
+                    )
+                )
+
         if not is_typeddict:
             auto_methods = _AUTO_DATACLASS_METHODS if is_dataclass_obj else set()
+            if is_enum:
+                auto_methods.update({"_generate_next_value_", "__new__"})
 
             for attr_name, attr in klass.__dict__.items():
                 if attr_name in auto_methods:
