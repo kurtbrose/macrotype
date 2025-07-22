@@ -353,6 +353,7 @@ class PyiFunction(PyiNamedElement):
     return_type: str = ""
     decorators: list[str] = field(default_factory=list)
     type_params: list[str] = field(default_factory=list)
+    is_async: bool = False
 
     def render(self, indent: int = 0) -> list[str]:
         space = self._space(indent)
@@ -365,12 +366,13 @@ class PyiFunction(PyiNamedElement):
                 parts.append(f"{n}: {t}")
         args_str = ", ".join(parts)
         param_str = f"[{', '.join(self.type_params)}]" if self.type_params else ""
+        prefix = "async " if self.is_async else ""
         if self.return_type:
             signature = (
-                f"{space}def {self.name}{param_str}({args_str}) -> {self.return_type}: ..."
+                f"{space}{prefix}def {self.name}{param_str}({args_str}) -> {self.return_type}: ..."
             )
         else:
-            signature = f"{space}def {self.name}{param_str}({args_str}): ..."
+            signature = f"{space}{prefix}def {self.name}{param_str}({args_str}): ..."
         lines.append(signature)
         return lines
 
@@ -439,6 +441,8 @@ class PyiFunction(PyiNamedElement):
         if "overload" in decorators:
             used_types.add(typing.overload)
 
+        is_async = inspect.iscoroutinefunction(fn) or inspect.isasyncgenfunction(fn)
+
         return cls(
             name=fn.__name__,
             args=args,
@@ -446,6 +450,7 @@ class PyiFunction(PyiNamedElement):
             decorators=decorators,
             type_params=tp_strings,
             used_types=used_types,
+            is_async=is_async,
         )
 
 
