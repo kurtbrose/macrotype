@@ -22,6 +22,8 @@ from typing import (
     Tuple,
     Any,
     TypeAlias,
+    NotRequired,
+    Required,
 )
 
 T = TypeVar("T")
@@ -93,6 +95,12 @@ class SampleDict(TypedDict):
 class PartialDict(TypedDict, total=False):
     id: int
     hint: str
+
+
+class MixedDict(TypedDict):
+    required_field: int
+    optional_field: NotRequired[str]
+    required_override: Required[int]
 
 
 class GenericClass(Generic[T]):

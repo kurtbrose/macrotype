@@ -1,4 +1,4 @@
-from typing import Any, Callable, ClassVar, Literal, NamedTuple, NewType, ParamSpec, Self, TypeVar, TypeVarTuple, TypedDict, Unpack, overload
+from typing import Any, Callable, ClassVar, Literal, NamedTuple, NewType, NotRequired, ParamSpec, Required, Self, TypeVar, TypeVarTuple, TypedDict, Unpack, overload
 from dataclasses import dataclass
 from enum import Enum, IntEnum
 from functools import cached_property
@@ -70,6 +70,11 @@ class SampleDict(TypedDict):
 class PartialDict(TypedDict, total=False):
     id: int
     hint: str
+
+class MixedDict(TypedDict):
+    required_field: int
+    optional_field: NotRequired[str]
+    required_override: Required[int]
 
 class GenericClass[T]:
     value: T

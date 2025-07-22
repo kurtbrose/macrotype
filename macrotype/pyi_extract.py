@@ -542,14 +542,17 @@ class PyiClass(PyiNamedElement):
             used_types.update(used)
 
         raw_ann = klass.__dict__.get("__annotations__", {})
-        try:
-            globalns = vars(inspect.getmodule(klass))
-            resolved = {
-                name: get_type_hints(klass, globalns=globalns, localns=klass.__dict__).get(name, annotation)
-                for name, annotation in raw_ann.items()
-            }
-        except Exception:
+        if is_typeddict:
             resolved = raw_ann
+        else:
+            try:
+                globalns = vars(inspect.getmodule(klass))
+                resolved = {
+                    name: get_type_hints(klass, globalns=globalns, localns=klass.__dict__).get(name, annotation)
+                    for name, annotation in raw_ann.items()
+                }
+            except Exception:
+                resolved = raw_ann
 
         for name, annotation in resolved.items():
             fmt = format_type(annotation)
