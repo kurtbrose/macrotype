@@ -22,13 +22,17 @@ type Alias1[T] = Alias0[T]
 
 type AliasNewType = UserId
 
-type AliasTypeVar = T
-
-type AliasTypeVarTuple = Ts
-
-type AliasParamSpec = P
+type AliasTypeVar[T] = T
 
 type AliasUnion = int | str
+
+type ListOrSet[T] = list[T] | set[T]
+
+type IntFunc[**P] = Callable[P, int]
+
+type LabeledTuple[*Ts] = tuple[str, Unpack[Ts]]
+
+type RecursiveList[T] = T | list[RecursiveList[T]]
 
 class Basic:
     simple: list[str]
