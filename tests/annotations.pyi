@@ -12,6 +12,24 @@ Ts = TypeVarTuple('Ts')
 
 UserId = NewType('UserId', int)
 
+MyList = list[int]
+
+type StrList = list[str]
+
+type Alias0[T] = list[T]
+
+type Alias1[T] = Alias0[T]
+
+type AliasNewType = UserId
+
+type AliasTypeVar = T
+
+type AliasTypeVarTuple = Ts
+
+type AliasParamSpec = P
+
+type AliasUnion = int | str
+
 class Basic:
     simple: list[str]
     mapping: dict[str, int]

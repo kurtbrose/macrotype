@@ -277,12 +277,18 @@ class PyiVariable(PyiNamedElement):
 @dataclass
 class PyiAlias(PyiNamedElement):
     value: str
+    keyword: str = ""
+    type_params: list[str] = field(default_factory=list)
 
     def render(self, indent: int = 0) -> list[str]:
         """Return the pyi representation for this alias."""
 
         space = self._space(indent)
-        return [f"{space}{self.name} = {self.value}"]
+        kw = f"{self.keyword} " if self.keyword else ""
+        param_str = (
+            f"[{', '.join(self.type_params)}]" if self.type_params else ""
+        )
+        return [f"{space}{kw}{self.name}{param_str} = {self.value}"]
 
 
 # === Function ===
@@ -573,8 +579,47 @@ class PyiModule:
         used_types: set[type] = set()
         mod_name = mod.__name__
         globals_dict = vars(mod)
+        raw_ann = getattr(mod, "__annotations__", {})
+        try:
+            resolved_ann = get_type_hints(mod)
+        except Exception:
+            resolved_ann = raw_ann
 
         for name, obj in globals_dict.items():
+            if resolved_ann.get(name) is typing.TypeAlias:
+                fmt = format_type(obj)
+                used_types.update(fmt.used)
+                body.append(
+                    PyiAlias(
+                        name=name,
+                        value=fmt.text,
+                        used_types=fmt.used,
+                    )
+                )
+                continue
+
+            if isinstance(obj, typing.TypeAliasType):
+                fmt = format_type(obj.__value__)
+                used_types.update(fmt.used)
+                params = []
+                for tp in getattr(obj, "__type_params__", ()):  # pragma: no cover - py312
+                    if isinstance(tp, typing.TypeVar):
+                        params.append(tp.__name__)
+                    elif isinstance(tp, typing.ParamSpec):
+                        params.append(f"**{tp.__name__}")
+                    elif isinstance(tp, typing.TypeVarTuple):
+                        params.append(f"*{tp.__name__}")
+                body.append(
+                    PyiAlias(
+                        name=name,
+                        value=fmt.text,
+                        keyword="type",
+                        type_params=params,
+                        used_types=fmt.used,
+                    )
+                )
+                continue
+
             if not hasattr(obj, '__module__') or obj.__module__ != mod_name:
                 continue
             if id(obj) in seen:
