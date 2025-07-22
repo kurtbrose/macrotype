@@ -78,3 +78,15 @@ def test_old_style_generic_class():
     expected = expected_path.read_text().splitlines()
 
     assert generated == expected
+
+
+def test_tuple_ellipsis():
+    src = Path(__file__).with_name("elliptic_tuple.py")
+    loaded = load_module_from_path(src)
+    module = PyiModule.from_module(loaded)
+    generated = module.render()
+
+    expected_path = Path(__file__).with_name("elliptic_tuple.pyi")
+    expected = expected_path.read_text().splitlines()
+
+    assert generated == expected
