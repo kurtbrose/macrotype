@@ -1,4 +1,8 @@
 from pathlib import Path
+import sys
+import pytest
+
+pytestmark = pytest.mark.skipif(sys.version_info < (3, 13), reason="requires Python 3.13+")
 
 from macrotype.stubgen import process_file, process_directory
 

@@ -1,5 +1,8 @@
 import sys
 from pathlib import Path
+import pytest
+
+pytestmark = pytest.mark.skipif(sys.version_info < (3, 13), reason="requires Python 3.13+")
 
 # Ensure the package root is on sys.path when running tests directly.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))

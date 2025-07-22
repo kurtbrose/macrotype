@@ -1,6 +1,9 @@
 import sys
 from pathlib import Path
 import subprocess
+import pytest
+
+pytestmark = pytest.mark.skipif(sys.version_info < (3, 13), reason="requires Python 3.13+")
 
 
 def test_cli_stdout(tmp_path):

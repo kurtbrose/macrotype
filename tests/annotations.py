@@ -1,4 +1,5 @@
 import re
+import sys
 from functools import cached_property
 from dataclasses import dataclass
 from enum import Enum, IntEnum
@@ -228,6 +229,9 @@ def dict_echo(**kwargs: dict[str, Any]) -> dict[str, Any]:
 
 
 # from https://docs.python.org/3.13/reference/compound_stmts.html#type-params
+if sys.version_info >= (3, 13):
+    exec(
+        """
 def overly_generic[
     SimpleTypeVar,
     TypeVarWithBound: int,
@@ -243,3 +247,5 @@ def overly_generic[
     *e: SimpleTypeVarTuple,
 ) -> None:
     ...
+"""
+    )
