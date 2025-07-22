@@ -1,10 +1,10 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from tests.all_annotations import AllAnnotations
+    from tests.annotations import Basic
 else:
-    AllAnnotations = int
+    Basic = int
 
 
-def takes(x: 'AllAnnotations') -> None:
+def takes(x: 'Basic') -> None:
     pass
