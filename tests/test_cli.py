@@ -4,9 +4,9 @@ import subprocess
 
 
 def test_cli_stdout(tmp_path):
-    expected = Path(__file__).with_name("all_annotations.pyi").read_text()
+    expected = Path(__file__).with_name("annotations.pyi").read_text()
     result = subprocess.run(
-        [sys.executable, "-m", "macrotype", str(Path(__file__).with_name("all_annotations.py")), "-o", "-"],
+        [sys.executable, "-m", "macrotype", str(Path(__file__).with_name("annotations.py")), "-o", "-"],
         capture_output=True,
         text=True,
         cwd=Path(__file__).resolve().parents[1],
