@@ -1,4 +1,4 @@
-from typing import Callable, Generic, Literal, NewType, overload
+from typing import Callable, Generic, Literal, NewType, TypedDict, overload
 from functools import cached_property
 from re import Pattern
 

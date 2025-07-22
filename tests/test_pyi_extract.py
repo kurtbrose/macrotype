@@ -42,3 +42,15 @@ def test_nested_dataclass():
     expected = expected_path.read_text().splitlines()
 
     assert generated == expected
+
+
+def test_variadic_typevar_tuple():
+    src = Path(__file__).with_name("variadic.py")
+    loaded = load_module_from_path(src)
+    module = PyiModule.from_module(loaded)
+    generated = module.render()
+
+    expected_path = Path(__file__).with_name("variadic.pyi")
+    expected = expected_path.read_text().splitlines()
+
+    assert generated == expected
