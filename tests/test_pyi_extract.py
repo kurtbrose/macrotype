@@ -9,26 +9,24 @@ from macrotype.pyi_extract import PyiModule
 from macrotype.stubgen import load_module_from_path
 
 
-def test_stub_generation_matches_expected():
-    src = Path(__file__).with_name("annotations.py")
-    loaded = load_module_from_path(src)
+CASES = [
+    ("annotations.py", "annotations.pyi"),
+    pytest.param(
+        "annotations_13.py",
+        "annotations_13.pyi",
+        marks=pytest.mark.skipif(sys.version_info < (3, 13), reason="requires Python 3.13+"),
+    ),
+]
+
+
+@pytest.mark.parametrize("src, expected", CASES)
+def test_stub_generation_matches_expected(src: str, expected: str) -> None:
+    src_path = Path(__file__).with_name(src)
+    loaded = load_module_from_path(src_path)
     module = PyiModule.from_module(loaded)
     generated = module.render()
 
-    expected_path = Path(__file__).with_name("annotations.pyi")
-    expected = expected_path.read_text().splitlines()
+    expected_path = Path(__file__).with_name(expected)
+    expected_lines = expected_path.read_text().splitlines()
 
-    assert generated == expected
-
-
-@pytest.mark.skipif(sys.version_info < (3, 13), reason="requires Python 3.13+")
-def test_stub_generation_matches_expected_py313():
-    src = Path(__file__).with_name("annotations_13.py")
-    loaded = load_module_from_path(src)
-    module = PyiModule.from_module(loaded)
-    generated = module.render()
-
-    expected_path = Path(__file__).with_name("annotations_13.pyi")
-    expected = expected_path.read_text().splitlines()
-
-    assert generated == expected
+    assert generated == expected_lines
