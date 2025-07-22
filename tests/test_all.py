@@ -75,3 +75,15 @@ def test_mixed_typeddict_support() -> None:
     assert "class MixedDict(TypedDict):" in lines
     assert "    optional_field: NotRequired[str]" in lines
     assert "    required_override: Required[int]" in lines
+
+
+def test_special_form_support() -> None:
+    src_path = Path(__file__).with_name("annotations.py")
+    loaded = load_module_from_path(src_path)
+    module = PyiModule.from_module(loaded)
+    lines = module.render()
+    typing_line = next(l for l in lines if l.startswith("from typing import "))
+    assert "NoReturn" in typing_line
+    assert "Never" in typing_line
+    assert "def always_raises() -> NoReturn: ..." in lines
+    assert "def never_returns() -> Never: ..." in lines

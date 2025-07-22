@@ -74,6 +74,18 @@ def format_type(type_obj: Any) -> TypeRenderInfo:
     if type_obj is typing.Self:
         used.add(typing.Self)
         return TypeRenderInfo("Self", used)
+    if getattr(typing, "Never", None) is not None and type_obj is typing.Never:
+        used.add(typing.Never)
+        return TypeRenderInfo("Never", used)
+    if type_obj is typing.NoReturn:
+        used.add(typing.NoReturn)
+        return TypeRenderInfo("NoReturn", used)
+    if (
+        getattr(typing, "LiteralString", None) is not None
+        and type_obj is typing.LiteralString
+    ):
+        used.add(typing.LiteralString)
+        return TypeRenderInfo("LiteralString", used)
     if type_obj is Any:
         used.add(Any)
         return TypeRenderInfo("Any", used)

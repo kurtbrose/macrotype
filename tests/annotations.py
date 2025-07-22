@@ -7,6 +7,8 @@ from typing import (
     Annotated,
     Callable,
     ClassVar,
+    NoReturn,
+    Never,
     NamedTuple,
     Optional,
     Union,
@@ -234,5 +236,13 @@ def sum_of(*args: tuple[int]) -> int:
 
 def dict_echo(**kwargs: dict[str, Any]) -> dict[str, Any]:
     return kwargs
+
+
+def always_raises() -> NoReturn:
+    raise RuntimeError()
+
+
+def never_returns() -> Never:
+    raise RuntimeError()
 
 
