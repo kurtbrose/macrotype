@@ -184,10 +184,16 @@ def format_type_param(tp: Any) -> TypeRenderInfo:
 
     if hasattr(tp, "__default__"):
         default = getattr(tp, "__default__")
-        if default is not None:
-            fmt = format_type(default)
-            used.update(fmt.used)
-            text += f" = {fmt.text}"
+        if default is not None and default is not typing.NoDefault:
+            if isinstance(default, tuple) and all(isinstance(d, type) for d in default):
+                parts = [format_type(d) for d in default]
+                used.update(*(p.used for p in parts))
+                default_str = f"({', '.join(p.text for p in parts)})"
+            else:
+                fmt = format_type(default)
+                used.update(fmt.used)
+                default_str = fmt.text
+            text += f" = {default_str}"
 
     return TypeRenderInfo(text, used)
 
