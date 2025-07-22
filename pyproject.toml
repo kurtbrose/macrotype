@@ -24,3 +24,8 @@ where = ["."]
 
 [project.scripts]
 macrotype = "macrotype.cli:main"
+
+[project.optional-dependencies]
+test = [
+    "mypy",
+]

@@ -124,8 +124,12 @@ def format_type(tp: Any) -> TypeRenderInfo:
 
 def find_typevars(tp: Any) -> set[str]:
     found = set()
-    if isinstance(tp, (typing.TypeVar, typing.ParamSpec, typing.TypeVarTuple)):
+    if isinstance(tp, typing.TypeVar):
         found.add(tp.__name__)
+    elif isinstance(tp, typing.ParamSpec):
+        found.add(f"**{tp.__name__}")
+    elif isinstance(tp, typing.TypeVarTuple):
+        found.add(f"*{tp.__name__}")
     elif hasattr(tp, '__parameters__'):
         for p in tp.__parameters__:
             found.update(find_typevars(p))
@@ -194,7 +198,12 @@ class PyiFunction(PyiElement):
         return lines
 
     @classmethod
-    def from_function(cls, fn: Callable, decorators: list[str] | None = None) -> PyiFunction:
+    def from_function(
+        cls,
+        fn: Callable,
+        decorators: list[str] | None = None,
+        exclude_params: set[str] | None = None,
+    ) -> PyiFunction:
         try:
             hints = get_type_hints(fn)
         except Exception:
@@ -231,7 +240,9 @@ class PyiFunction(PyiElement):
 
         all_types = list(hints.values())
         type_params = sorted(find_typevars(tp) for tp in all_types)
-        flat_params = sorted(set().union(*type_params))
+        flat_params = sorted(set().union(*type_params)) if type_params else []
+        if exclude_params:
+            flat_params = [p for p in flat_params if p.lstrip('*') not in exclude_params]
 
         decorators = decorators or []
         if "overload" in decorators:
@@ -283,6 +294,7 @@ class PyiClass(PyiElement):
         typeddict_total = klass.__dict__.get("__total__", True) if is_typeddict else None
         decorators: list[str] = []
         used_types: set[type] = set()
+        class_params: set[str] = {t.__name__ for t in getattr(klass, '__parameters__', ())}
 
         if is_typeddict:
             bases = ["TypedDict"]
@@ -373,16 +385,34 @@ class PyiClass(PyiElement):
                     ovs = _get_overloads(attr)
                     if ovs:
                         for ov in ovs:
-                            members.append(PyiFunction.from_function(ov, decorators=["overload"]))
-                    members.append(PyiFunction.from_function(attr))
+                            members.append(
+                                PyiFunction.from_function(ov, decorators=["overload"], exclude_params=class_params)
+                            )
+                    members.append(PyiFunction.from_function(attr, exclude_params=class_params))
                 elif isinstance(attr, classmethod):
-                    members.append(PyiFunction.from_function(attr.__func__, decorators=["classmethod"]))
+                    members.append(
+                        PyiFunction.from_function(
+                            attr.__func__, decorators=["classmethod"], exclude_params=class_params
+                        )
+                    )
                 elif isinstance(attr, staticmethod):
-                    members.append(PyiFunction.from_function(attr.__func__, decorators=["staticmethod"]))
+                    members.append(
+                        PyiFunction.from_function(
+                            attr.__func__, decorators=["staticmethod"], exclude_params=class_params
+                        )
+                    )
                 elif isinstance(attr, property):
-                    members.append(PyiFunction.from_function(attr.fget, decorators=["property"]))
+                    members.append(
+                        PyiFunction.from_function(
+                            attr.fget, decorators=["property"], exclude_params=class_params
+                        )
+                    )
                 elif isinstance(attr, functools.cached_property):
-                    members.append(PyiFunction.from_function(attr.func, decorators=["cached_property"]))
+                    members.append(
+                        PyiFunction.from_function(
+                            attr.func, decorators=["cached_property"], exclude_params=class_params
+                        )
+                    )
                     used_types.add(functools.cached_property)
                 elif inspect.isclass(attr):
                     if attr.__qualname__.startswith(klass.__qualname__ + "."):
@@ -436,11 +466,14 @@ class PyiModule:
                         ofunc = PyiFunction.from_function(ov, decorators=["overload"])
                         used_types.update(ofunc.used_types)
                         body.append(ofunc)
-                func = PyiFunction.from_function(obj)
-                used_types.update(func.used_types)
-                body.append(func)
+                else:
+                    func = PyiFunction.from_function(obj)
+                    used_types.update(func.used_types)
+                    body.append(func)
             elif inspect.isclass(obj):
                 cls_obj = PyiClass.from_class(obj)
+                if cls_obj.name != name:
+                    cls_obj.name = name
                 used_types.update(cls_obj.used_types)
                 for item in cls_obj.body:
                     if isinstance(item, (PyiFunction, PyiVariable)):
@@ -467,6 +500,26 @@ class PyiModule:
                         used_types=alias_used,
                     )
                 )
+            elif isinstance(obj, typing.TypeVar):
+                alias_used = {typing.TypeVar}
+                used_types.update(alias_used)
+                body.append(
+                    PyiAlias(
+                        name=name,
+                        value=f"TypeVar('{obj.__name__}')",
+                        used_types=alias_used,
+                    )
+                )
+            elif isinstance(obj, typing.ParamSpec):
+                alias_used = {typing.ParamSpec}
+                used_types.update(alias_used)
+                body.append(
+                    PyiAlias(
+                        name=name,
+                        value=f"ParamSpec('{obj.__name__}')",
+                        used_types=alias_used,
+                    )
+                )
             elif isinstance(obj, (int, str, float, bool)):
                 body.append(PyiVariable.from_assignment(name, obj))
 
@@ -474,7 +527,7 @@ class PyiModule:
             t.__name__
             for t in used_types
             if getattr(t, '__module__', '') == 'typing'
-            and not isinstance(t, (typing.TypeVar, typing.ParamSpec))
+            and not isinstance(t, typing.TypeVarTuple)
         )
 
         external_imports = {}

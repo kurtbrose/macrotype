@@ -1,6 +1,10 @@
-from typing import Callable, Generic, Literal, NewType, TypedDict, overload
+from typing import Callable, Generic, Literal, NewType, ParamSpec, TypeVar, TypedDict, overload
 from functools import cached_property
 from re import Pattern
+
+T = TypeVar('T')
+
+P = ParamSpec('P')
 
 UserId = NewType('UserId', int)
 
@@ -16,7 +20,7 @@ class AllAnnotations:
     uid: UserId
     lit_attr: Literal['a', 'b']
     def copy[T](self, param: T) -> T: ...
-    def curry[P](self, f: Callable[P, int]) -> Callable[P, int]: ...
+    def curry[**P](self, f: Callable[P, int]) -> Callable[P, int]: ...
     def literal_method(self, flag: Literal['on', 'off']) -> Literal[1, 0]: ...
     @classmethod
     def cls_method(cls, value: int) -> AllAnnotations: ...
@@ -43,7 +47,7 @@ class PartialDict(TypedDict, total=False):
 
 class GenericClass(Generic[T]):
     value: T
-    def get[T](self) -> T: ...
+    def get(self) -> T: ...
 
 class Slotted:
     x: int
@@ -51,10 +55,10 @@ class Slotted:
 
 def make_wrapped(t: type): ...
 
-class Wrapper:
+class GeneratedInt:
     value: int
 
-class Wrapper:
+class GeneratedPattern:
     value: Pattern[str]
 
 @overload
@@ -62,5 +66,3 @@ def over(x: int) -> int: ...
 
 @overload
 def over(x: str) -> str: ...
-
-def over(x: int | str) -> int | str: ...
