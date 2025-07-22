@@ -258,3 +258,7 @@ def echo_literal(value: LiteralString) -> LiteralString:
     return value
 
 
+
+# Edge case: async function
+async def async_add_one(x: int) -> int:
+    return x + 1
