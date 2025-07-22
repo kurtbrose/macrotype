@@ -3,10 +3,12 @@ from dataclasses import dataclass, field
 import dataclasses
 from types import ModuleType
 import types
-from typing import Any, Callable, get_type_hints, _GenericAlias, get_origin, get_args
+from typing import Any, Callable, get_type_hints, get_origin, get_args
 import functools
 import inspect
 import typing
+
+_INDENT = "    "
 
 try:
     from typing import get_overloads as _get_overloads
@@ -16,25 +18,43 @@ except ImportError:  # pragma: no cover - Python < 3.11
     except Exception:  # pragma: no cover - very old typing
         def _get_overloads(func):
             return []
-import builtins
 import collections.abc
 
 
 # === Base Class ===
 
 class PyiElement:
+    """Abstract representation of an element in a ``.pyi`` file."""
+
     def render(self, indent: int = 0) -> list[str]:
+        """Return the lines for this element indented by ``indent`` levels."""
         raise NotImplementedError
+
+    @staticmethod
+    def _space(indent: int) -> str:
+        return _INDENT * indent
+
+
+@dataclass
+class PyiNamedElement(PyiElement):
+    """Base class for named elements that track used types."""
+
+    name: str
+    used_types: set[type] = field(default_factory=set, kw_only=True)
 
 
 # === Helpers ===
 
 @dataclass
 class TypeRenderInfo:
+    """Formatted representation of a type along with the used types."""
+
     text: str
     used: set[type]
 
 def format_type(tp: Any) -> TypeRenderInfo:
+    """Return a ``TypeRenderInfo`` instance for ``tp``."""
+
     used: set[type] = set()
 
     if isinstance(tp, (typing.TypeVar, typing.ParamSpec, typing.TypeVarTuple)):
@@ -53,7 +73,7 @@ def format_type(tp: Any) -> TypeRenderInfo:
     origin = get_origin(tp)
     args = get_args(tp)
 
-    if origin is Callable or origin is collections.abc.Callable:
+    if origin in {Callable, collections.abc.Callable}:
         used.add(Callable)
         if args:
             arg_list, ret = args
@@ -74,7 +94,7 @@ def format_type(tp: Any) -> TypeRenderInfo:
             return TypeRenderInfo(f"Callable[[{arg_str}], {ret_fmt.text}]", used)
         return TypeRenderInfo("Callable", used)
 
-    if origin is types.UnionType or origin is typing.Union:
+    if origin in {types.UnionType, typing.Union}:
         arg_strs = [format_type(a) for a in args]
         used.update(*(a.used for a in arg_strs))
         text = " | ".join(a.text for a in arg_strs)
@@ -123,6 +143,8 @@ def format_type(tp: Any) -> TypeRenderInfo:
 
 
 def find_typevars(tp: Any) -> set[str]:
+    """Return a set of type variable names referenced by ``tp``."""
+
     found = set()
     if isinstance(tp, typing.TypeVar):
         found.add(tp.__name__)
@@ -190,15 +212,11 @@ def _dataclass_decorator(klass: type) -> tuple[str, set[type]] | None:
         for name, default in _DATACLASS_DEFAULTS.items():
             if name == "match_args" and not hasattr(params, "match_args"):
                 continue
-            if hasattr(params, name):
-                val = getattr(params, name)
-            else:
-                if name == "slots":
-                    val = not hasattr(klass, "__dict__")
-                elif name == "weakref_slot":
-                    val = "__weakref__" in getattr(klass, "__slots__", ())
-                else:
-                    val = default
+            val = getattr(params, name, default)
+            if name == "slots" and not hasattr(params, name):
+                val = not hasattr(klass, "__dict__")
+            elif name == "weakref_slot" and not hasattr(params, name):
+                val = "__weakref__" in getattr(klass, "__slots__", ())
             if val != default:
                 args.append(f"{name}={val}")
 
@@ -209,46 +227,44 @@ def _dataclass_decorator(klass: type) -> tuple[str, set[type]] | None:
 # === Variable ===
 
 @dataclass
-class PyiVariable(PyiElement):
-    name: str
+class PyiVariable(PyiNamedElement):
     type_str: str
-    used_types: set[type] = field(default_factory=set)
 
     def render(self, indent: int = 0) -> list[str]:
-        space = "    " * indent
+        space = self._space(indent)
         return [f"{space}{self.name}: {self.type_str}"]
 
     @classmethod
     def from_assignment(cls, name: str, value: Any) -> PyiVariable:
+        """Create a :class:`PyiVariable` from an assignment value."""
+
         return cls(name=name, type_str=type(value).__name__)
 
 
 # === Alias ===
 
 @dataclass
-class PyiAlias(PyiElement):
-    name: str
+class PyiAlias(PyiNamedElement):
     value: str
-    used_types: set[type] = field(default_factory=set)
 
     def render(self, indent: int = 0) -> list[str]:
-        space = "    " * indent
+        """Return the pyi representation for this alias."""
+
+        space = self._space(indent)
         return [f"{space}{self.name} = {self.value}"]
 
 
 # === Function ===
 
 @dataclass
-class PyiFunction(PyiElement):
-    name: str
+class PyiFunction(PyiNamedElement):
     args: list[tuple[str, str | None]]
     return_type: str = ""
     decorators: list[str] = field(default_factory=list)
     type_params: list[str] = field(default_factory=list)
-    used_types: set[type] = field(default_factory=set)
 
     def render(self, indent: int = 0) -> list[str]:
-        space = "    " * indent
+        space = self._space(indent)
         lines = [f"{space}@{d}" for d in self.decorators]
         parts = []
         for n, t in self.args:
@@ -271,6 +287,8 @@ class PyiFunction(PyiElement):
         decorators: list[str] | None = None,
         exclude_params: set[str] | None = None,
     ) -> PyiFunction:
+        """Create a :class:`PyiFunction` from ``fn``."""
+
         try:
             hints = get_type_hints(fn)
         except Exception:
@@ -328,17 +346,15 @@ class PyiFunction(PyiElement):
 # === Class ===
 
 @dataclass
-class PyiClass(PyiElement):
-    name: str
+class PyiClass(PyiNamedElement):
     bases: list[str] = field(default_factory=list)
     type_params: list[str] = field(default_factory=list)
     body: list[PyiElement] = field(default_factory=list)
     typeddict_total: bool | None = None
     decorators: list[str] = field(default_factory=list)
-    used_types: set[type] = field(default_factory=set)
 
     def render(self, indent: int = 0) -> list[str]:
-        space = "    " * indent
+        space = self._space(indent)
         base_decl = ""
         if self.typeddict_total is False:
             base_decl = "(TypedDict, total=False)"
@@ -360,6 +376,8 @@ class PyiClass(PyiElement):
 
     @classmethod
     def from_class(cls, klass: type) -> "PyiClass":
+        """Create a :class:`PyiClass` representation of ``klass``."""
+
         is_typeddict = isinstance(klass, typing._TypedDictMeta)
         members: list[PyiElement] = []
         typeddict_total = klass.__dict__.get("__total__", True) if is_typeddict else None
@@ -406,7 +424,9 @@ class PyiClass(PyiElement):
 
         for name, tp in resolved.items():
             fmt = format_type(tp)
-            members.append(PyiVariable(name, fmt.text, fmt.used))
+            members.append(
+                PyiVariable(name=name, type_str=fmt.text, used_types=fmt.used)
+            )
 
         if not is_typeddict:
             auto_methods = _AUTO_DATACLASS_METHODS if is_dataclass_obj else set()
@@ -480,6 +500,8 @@ class PyiModule:
 
     @classmethod
     def from_module(cls, mod: ModuleType) -> PyiModule:
+        """Create a :class:`PyiModule` from a live module object."""
+
         seen: dict[int, str] = {}
         body: list[PyiElement] = []
         used_types: set[type] = set()
