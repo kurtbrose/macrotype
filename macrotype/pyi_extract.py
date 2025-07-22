@@ -1,4 +1,7 @@
 from __future__ import annotations
+
+"""Utilities for building ``.pyi`` objects from live Python modules."""
+
 from dataclasses import dataclass, field
 import dataclasses
 import enum
@@ -19,6 +22,7 @@ except ImportError:  # pragma: no cover - Python < 3.11
     except Exception:  # pragma: no cover - very old typing
         def _get_overloads(func):
             return []
+import collections
 import collections.abc
 
 
@@ -53,29 +57,29 @@ class TypeRenderInfo:
     text: str
     used: set[type]
 
-def format_type(tp: Any) -> TypeRenderInfo:
-    """Return a ``TypeRenderInfo`` instance for ``tp``."""
+def format_type(type_obj: Any) -> TypeRenderInfo:
+    """Return a ``TypeRenderInfo`` instance for ``type_obj``."""
 
     used: set[type] = set()
 
-    if isinstance(tp, (typing.TypeVar, typing.ParamSpec, typing.TypeVarTuple)):
-        used.add(tp)
-        return TypeRenderInfo(tp.__name__, used)
+    if isinstance(type_obj, (typing.TypeVar, typing.ParamSpec, typing.TypeVarTuple)):
+        used.add(type_obj)
+        return TypeRenderInfo(type_obj.__name__, used)
 
-    if hasattr(tp, '__supertype__'):
-        return TypeRenderInfo(tp.__qualname__, used)
+    if hasattr(type_obj, "__supertype__"):
+        return TypeRenderInfo(type_obj.__qualname__, used)
 
-    if tp is type(None):
+    if type_obj is type(None):
         return TypeRenderInfo("None", used)
-    if tp is typing.Self:
+    if type_obj is typing.Self:
         used.add(typing.Self)
         return TypeRenderInfo("Self", used)
-    if tp is Any:
+    if type_obj is Any:
         used.add(Any)
         return TypeRenderInfo("Any", used)
 
-    origin = get_origin(tp)
-    args = get_args(tp)
+    origin = get_origin(type_obj)
+    args = get_args(type_obj)
 
     if origin in {Callable, collections.abc.Callable}:
         used.add(Callable)
@@ -137,37 +141,37 @@ def format_type(tp: Any) -> TypeRenderInfo:
         else:
             return TypeRenderInfo(origin_name, used)
 
-    if hasattr(tp, '__args__'):
-        arg_strs = [format_type(a) for a in tp.__args__]
+    if hasattr(type_obj, "__args__"):
+        arg_strs = [format_type(a) for a in type_obj.__args__]
         used.update(*(a.used for a in arg_strs))
         args_str = ", ".join(a.text for a in arg_strs)
-        return TypeRenderInfo(f"{tp.__class__.__name__}[{args_str}]", used)
+        return TypeRenderInfo(f"{type_obj.__class__.__name__}[{args_str}]", used)
 
-    if isinstance(tp, type):
-        used.add(tp)
-        return TypeRenderInfo(tp.__name__, used)
-    if hasattr(tp, '_name') and tp._name:
-        return TypeRenderInfo(tp._name, used)
+    if isinstance(type_obj, type):
+        used.add(type_obj)
+        return TypeRenderInfo(type_obj.__name__, used)
+    if hasattr(type_obj, "_name") and type_obj._name:
+        return TypeRenderInfo(type_obj._name, used)
 
-    return TypeRenderInfo(repr(tp), used)
+    return TypeRenderInfo(repr(type_obj), used)
 
 
-def find_typevars(tp: Any) -> set[str]:
-    """Return a set of type variable names referenced by ``tp``."""
+def find_typevars(type_obj: Any) -> set[str]:
+    """Return a set of type variable names referenced by ``type_obj``."""
 
     found = set()
-    if isinstance(tp, typing.TypeVar):
-        found.add(tp.__name__)
-    elif isinstance(tp, typing.ParamSpec):
-        found.add(f"**{tp.__name__}")
-    elif isinstance(tp, typing.TypeVarTuple):
-        found.add(f"*{tp.__name__}")
-    elif hasattr(tp, '__parameters__'):
-        for p in tp.__parameters__:
-            found.update(find_typevars(p))
-    elif hasattr(tp, '__args__'):
-        for a in tp.__args__:
-            found.update(find_typevars(a))
+    if isinstance(type_obj, typing.TypeVar):
+        found.add(type_obj.__name__)
+    elif isinstance(type_obj, typing.ParamSpec):
+        found.add(f"**{type_obj.__name__}")
+    elif isinstance(type_obj, typing.TypeVarTuple):
+        found.add(f"*{type_obj.__name__}")
+    elif hasattr(type_obj, "__parameters__"):
+        for param in type_obj.__parameters__:
+            found.update(find_typevars(param))
+    elif hasattr(type_obj, "__args__"):
+        for arg in type_obj.__args__:
+            found.update(find_typevars(arg))
     return found
 
 
@@ -283,11 +287,14 @@ class PyiFunction(PyiNamedElement):
             else:
                 parts.append(f"{n}: {t}")
         args_str = ", ".join(parts)
-        tp_str = f"[{', '.join(self.type_params)}]" if self.type_params else ""
+        param_str = f"[{', '.join(self.type_params)}]" if self.type_params else ""
         if self.return_type:
-            lines.append(f"{space}def {self.name}{tp_str}({args_str}) -> {self.return_type}: ...")
+            signature = (
+                f"{space}def {self.name}{param_str}({args_str}) -> {self.return_type}: ..."
+            )
         else:
-            lines.append(f"{space}def {self.name}{tp_str}({args_str}): ...")
+            signature = f"{space}def {self.name}{param_str}({args_str}): ..."
+        lines.append(signature)
         return lines
 
     @classmethod
@@ -334,7 +341,7 @@ class PyiFunction(PyiNamedElement):
             ret_text = ""
 
         all_types = list(hints.values())
-        type_params = sorted(find_typevars(tp) for tp in all_types)
+        type_params = sorted(find_typevars(t) for t in all_types)
         flat_params = sorted(set().union(*type_params)) if type_params else []
         if exclude_params:
             flat_params = [p for p in flat_params if p.lstrip('*') not in exclude_params]
@@ -373,10 +380,10 @@ class PyiClass(PyiNamedElement):
         elif self.bases:
             base_decl = f"({', '.join(self.bases)})"
 
-        tp_str = f"[{', '.join(self.type_params)}]" if self.type_params else ""
+        param_str = f"[{', '.join(self.type_params)}]" if self.type_params else ""
 
         lines = [f"{space}@{d}" for d in self.decorators]
-        lines.append(f"{space}class {self.name}{tp_str}{base_decl}:")
+        lines.append(f"{space}class {self.name}{param_str}{base_decl}:")
         if self.body:
             for item in self.body:
                 lines.extend(item.render(indent + 1))
@@ -409,8 +416,8 @@ class PyiClass(PyiNamedElement):
                         type_params.append(fmt.text)
                         used_types.update(fmt.used)
             raw_ann = klass.__dict__.get("__annotations__", {})
-            for name, tp in raw_ann.items():
-                fmt = format_type(tp)
+            for name, annotation in raw_ann.items():
+                fmt = format_type(annotation)
                 members.append(
                     PyiVariable(name=name, type_str=fmt.text, used_types=fmt.used)
                 )
@@ -453,14 +460,14 @@ class PyiClass(PyiNamedElement):
         try:
             globalns = vars(inspect.getmodule(klass))
             resolved = {
-                name: get_type_hints(klass, globalns=globalns, localns=klass.__dict__).get(name, tp)
-                for name, tp in raw_ann.items()
+                name: get_type_hints(klass, globalns=globalns, localns=klass.__dict__).get(name, annotation)
+                for name, annotation in raw_ann.items()
             }
         except Exception:
             resolved = raw_ann
 
-        for name, tp in resolved.items():
-            fmt = format_type(tp)
+        for name, annotation in resolved.items():
+            fmt = format_type(annotation)
             members.append(
                 PyiVariable(name=name, type_str=fmt.text, used_types=fmt.used)
             )
@@ -634,15 +641,15 @@ class PyiModule:
             and not isinstance(t, (typing.TypeVar, typing.ParamSpec, typing.TypeVarTuple))
         )
 
-        external_imports = {}
-        for t in used_types:
-            modname = getattr(t, '__module__', None)
-            name = getattr(t, '__name__', None)
+        external_imports: dict[str, set[str]] = collections.defaultdict(set)
+        for used_type in used_types:
+            modname = getattr(used_type, "__module__", None)
+            name = getattr(used_type, "__name__", None)
             if not modname or not name:
                 continue
             if modname in ("builtins", "typing", mod_name):
                 continue
-            external_imports.setdefault(modname, set()).add(name)
+            external_imports[modname].add(name)
 
         import_lines = []
         if typing_names:
