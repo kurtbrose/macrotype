@@ -476,7 +476,7 @@ class PyiClass(PyiNamedElement):
         class_params: set[str] = {t.__name__ for t in getattr(klass, '__parameters__', ())}
 
         type_params: list[str] = []
-        if hasattr(klass, "__type_params__"):
+        if hasattr(klass, "__type_params__") and klass.__type_params__:
             for tp in klass.__type_params__:
                 fmt = format_type_param(tp)
                 type_params.append(fmt.text)
@@ -487,10 +487,12 @@ class PyiClass(PyiNamedElement):
             raw_bases = getattr(klass, "__orig_bases__", ())
             for b in raw_bases:
                 if get_origin(b) is typing.Generic:
-                    for param in get_args(b):
-                        fmt = format_type(param)
-                        type_params.append(fmt.text)
-                        used_types.update(fmt.used)
+                    if not type_params:
+                        for param in get_args(b):
+                            fmt = format_type(param)
+                            type_params.append(fmt.text)
+                            used_types.update(fmt.used)
+                    continue
             raw_ann = klass.__dict__.get("__annotations__", {})
             for name, annotation in raw_ann.items():
                 fmt = format_type(annotation)
@@ -516,10 +518,11 @@ class PyiClass(PyiNamedElement):
                 if b is object:
                     continue
                 if get_origin(b) is typing.Generic:
-                    for param in get_args(b):
-                        fmt = format_type(param)
-                        type_params.append(fmt.text)
-                        used_types.update(fmt.used)
+                    if not type_params:
+                        for param in get_args(b):
+                            fmt = format_type(param)
+                            type_params.append(fmt.text)
+                            used_types.update(fmt.used)
                     continue
                 fmt = format_type(b)
                 bases.append(fmt.text)

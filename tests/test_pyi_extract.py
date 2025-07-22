@@ -2,8 +2,6 @@ import sys
 from pathlib import Path
 import pytest
 
-pytestmark = pytest.mark.skipif(sys.version_info < (3, 13), reason="requires Python 3.13+")
-
 # Ensure the package root is on sys.path when running tests directly.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -18,6 +16,19 @@ def test_stub_generation_matches_expected():
     generated = module.render()
 
     expected_path = Path(__file__).with_name("annotations.pyi")
+    expected = expected_path.read_text().splitlines()
+
+    assert generated == expected
+
+
+@pytest.mark.skipif(sys.version_info < (3, 13), reason="requires Python 3.13+")
+def test_stub_generation_matches_expected_py313():
+    src = Path(__file__).with_name("annotations_13.py")
+    loaded = load_module_from_path(src)
+    module = PyiModule.from_module(loaded)
+    generated = module.render()
+
+    expected_path = Path(__file__).with_name("annotations_13.pyi")
     expected = expected_path.read_text().splitlines()
 
     assert generated == expected

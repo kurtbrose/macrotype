@@ -1,0 +1,3 @@
+from typing import Callable
+
+def overly_generic[**SimpleParamSpec, *SimpleTypeVarTuple, SimpleTypeVar, TypeVarWithBound, TypeVarWithConstraints, TypeVarWithDefault](a: SimpleTypeVar, b: TypeVarWithDefault, c: TypeVarWithBound, d: Callable[SimpleParamSpec, TypeVarWithConstraints], *e: SimpleTypeVarTuple) -> None: ...
