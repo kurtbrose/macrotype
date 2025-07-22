@@ -210,6 +210,23 @@ _AUTO_DATACLASS_METHODS = {
     "__replace__",
 }
 
+# Mapping of attribute types to the underlying function attribute and the
+# decorator name used when generating stubs for class attributes.
+_ATTR_DECORATORS: dict[type, tuple[str, str]] = {
+    classmethod: ("__func__", "classmethod"),
+    staticmethod: ("__func__", "staticmethod"),
+    property: ("fget", "property"),
+    functools.cached_property: ("func", "cached_property"),
+}
+
+# Mapping of typing alias types to the factory function used to recreate them.
+# Types that represent aliases and the factory function used to recreate them
+_ALIAS_TYPES: tuple[type, ...] = (
+    typing.TypeVarTuple,
+    typing.TypeVar,
+    typing.ParamSpec,
+)
+
 
 def _dataclass_decorator(klass: type) -> tuple[str, set[type]] | None:
     """Return the ``@dataclass`` decorator text for *klass*."""
@@ -494,35 +511,29 @@ class PyiClass(PyiNamedElement):
                     if ovs:
                         for ov in ovs:
                             members.append(
-                                PyiFunction.from_function(ov, decorators=["overload"], exclude_params=class_params)
+                                PyiFunction.from_function(
+                                    ov, decorators=["overload"], exclude_params=class_params
+                                )
                             )
                     members.append(PyiFunction.from_function(attr, exclude_params=class_params))
-                elif isinstance(attr, classmethod):
-                    members.append(
-                        PyiFunction.from_function(
-                            attr.__func__, decorators=["classmethod"], exclude_params=class_params
+                    continue
+
+                handled = False
+                for attr_type, (func_attr, deco) in _ATTR_DECORATORS.items():
+                    if isinstance(attr, attr_type):
+                        members.append(
+                            PyiFunction.from_function(
+                                getattr(attr, func_attr),
+                                decorators=[deco],
+                                exclude_params=class_params,
+                            )
                         )
-                    )
-                elif isinstance(attr, staticmethod):
-                    members.append(
-                        PyiFunction.from_function(
-                            attr.__func__, decorators=["staticmethod"], exclude_params=class_params
-                        )
-                    )
-                elif isinstance(attr, property):
-                    members.append(
-                        PyiFunction.from_function(
-                            attr.fget, decorators=["property"], exclude_params=class_params
-                        )
-                    )
-                elif isinstance(attr, functools.cached_property):
-                    members.append(
-                        PyiFunction.from_function(
-                            attr.func, decorators=["cached_property"], exclude_params=class_params
-                        )
-                    )
-                    used_types.add(functools.cached_property)
-                elif inspect.isclass(attr):
+                        if attr_type is functools.cached_property:
+                            used_types.add(functools.cached_property)
+                        handled = True
+                        break
+
+                if not handled and inspect.isclass(attr):
                     if attr.__qualname__.startswith(klass.__qualname__ + "."):
                         members.append(PyiClass.from_class(attr))
 
@@ -601,38 +612,24 @@ class PyiModule:
                         used_types=alias_used,
                     )
                 )
-            elif isinstance(obj, typing.TypeVarTuple):
-                alias_used = {typing.TypeVarTuple}
-                used_types.update(alias_used)
-                body.append(
-                    PyiAlias(
-                        name=name,
-                        value=f"TypeVarTuple('{obj.__name__}')",
-                        used_types=alias_used,
-                    )
-                )
-            elif isinstance(obj, typing.TypeVar):
-                alias_used = {typing.TypeVar}
-                used_types.update(alias_used)
-                body.append(
-                    PyiAlias(
-                        name=name,
-                        value=f"TypeVar('{obj.__name__}')",
-                        used_types=alias_used,
-                    )
-                )
-            elif isinstance(obj, typing.ParamSpec):
-                alias_used = {typing.ParamSpec}
-                used_types.update(alias_used)
-                body.append(
-                    PyiAlias(
-                        name=name,
-                        value=f"ParamSpec('{obj.__name__}')",
-                        used_types=alias_used,
-                    )
-                )
-            elif isinstance(obj, (int, str, float, bool)):
-                body.append(PyiVariable.from_assignment(name, obj))
+            else:
+                handled = False
+                for alias_type in _ALIAS_TYPES:
+                    if isinstance(obj, alias_type):
+                        alias_used = {alias_type}
+                        used_types.update(alias_used)
+                        body.append(
+                            PyiAlias(
+                                name=name,
+                                value=f"{alias_type.__name__}('{obj.__name__}')",
+                                used_types=alias_used,
+                            )
+                        )
+                        handled = True
+                        break
+
+                if not handled and isinstance(obj, (int, str, float, bool)):
+                    body.append(PyiVariable.from_assignment(name, obj))
 
         typing_names = sorted(
             t.__name__
