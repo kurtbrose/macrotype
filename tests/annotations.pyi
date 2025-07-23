@@ -57,6 +57,8 @@ type AliasNumberLikeList[NumberLike: (int, float)] = list[NumberLike]
 
 type AliasBoundU[U: str] = list[U]
 
+UNANNOTATED_CONST: int
+
 UNTYPED_LAMBDA: function
 
 TYPED_LAMBDA: Callable[[int, int], int]
