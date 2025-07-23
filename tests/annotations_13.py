@@ -16,3 +16,10 @@ def overly_generic[
     *e: SimpleTypeVarTuple,
 ) -> None:
     ...
+
+# Edge case: alias with a default type parameter
+type DefaultList[T = int] = list[T]
+
+# Edge case: class with a default type parameter
+class DefaultBox[T = int]:
+    value: T

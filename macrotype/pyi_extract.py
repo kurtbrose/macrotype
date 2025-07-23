@@ -232,7 +232,8 @@ def format_type_param(tp: Any) -> TypeRenderInfo:
 
     if hasattr(tp, "__default__"):
         default = getattr(tp, "__default__")
-        if default is not None and default is not typing.NoDefault:
+        _no_default = getattr(typing, "NoDefault", None)
+        if default is not None and (_no_default is None or default is not _no_default):
             if isinstance(default, tuple) and all(isinstance(d, type) for d in default):
                 parts = [format_type(d) for d in default]
                 used.update(*(p.used for p in parts))
