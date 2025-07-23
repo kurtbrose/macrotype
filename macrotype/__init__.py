@@ -39,4 +39,15 @@ __all__ += [
     "iter_python_files",
     "process_file",
     "process_directory",
+    "emit_as",
 ]
+
+
+def emit_as(name: str):
+    """Decorator that overrides the emitted name for a function or class."""
+
+    def set_qualname(obj):
+        obj.__qualname_override__ = name
+        return obj
+
+    return set_qualname

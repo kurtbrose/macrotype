@@ -39,6 +39,7 @@ from typing import (
     final,
     override,
 )
+from macrotype import emit_as
 
 T = TypeVar("T")
 P = ParamSpec("P")
@@ -587,3 +588,28 @@ class WrappedDescriptors:
     @cached_property
     def wrapped_cached(self) -> int:
         return 3
+
+
+# Test emit_as decorator for functions
+def make_emitter(name: str):
+    @emit_as(name)
+    def inner(x: int) -> int:
+        return x
+
+    return inner
+
+
+emitted_a = make_emitter("emitted_a")
+emitted_b = make_emitter("emitted_b")
+
+
+# Test emit_as decorator for classes
+def make_emitter_cls(name: str):
+    @emit_as(name)
+    class Inner:
+        value: int
+
+    return Inner
+
+
+EmittedCls = make_emitter_cls("EmittedCls")

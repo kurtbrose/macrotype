@@ -1013,7 +1013,7 @@ class PyiFunction(PyiNamedElement):
         is_async = inspect.iscoroutinefunction(fn) or inspect.isasyncgenfunction(fn)
 
         return cls(
-            name=fn.__name__,
+            name=getattr(fn, "__qualname_override__", fn.__name__),
             args=args,
             return_type=ret_text,
             decorators=decorators,
@@ -1091,7 +1091,7 @@ class PyiClass(PyiNamedElement):
             members.extend(vars_members)
             used_types.update(vars_used)
             return cls(
-                name=klass.__name__,
+                name=getattr(klass, "__qualname_override__", klass.__name__),
                 bases=bases,
                 type_params=type_params,
                 body=members,
@@ -1131,7 +1131,7 @@ class PyiClass(PyiNamedElement):
             used_types.update(method_used)
 
         return cls(
-            name=klass.__name__,
+            name=getattr(klass, "__qualname_override__", klass.__name__),
             bases=bases,
             type_params=type_params,
             body=members,
@@ -1247,6 +1247,7 @@ class _ModuleBuilder:
                 self._add(PyiVariable.from_assignment(name, obj))
             return True
 
+        canonical = getattr(fn_obj, "__qualname_override__", name)
         ovs = _get_overloads(fn_obj)
         if ovs:
             for ov in ovs:
@@ -1256,6 +1257,8 @@ class _ModuleBuilder:
                     globalns=self.globals,
                     localns=self.globals,
                 )
+                if func.name != canonical:
+                    func.name = canonical
                 self._add(func)
         else:
             func = PyiFunction.from_function(
@@ -1263,6 +1266,8 @@ class _ModuleBuilder:
                 globalns=self.globals,
                 localns=self.globals,
             )
+            if func.name != canonical:
+                func.name = canonical
             self._add(func)
         return True
 
@@ -1270,8 +1275,9 @@ class _ModuleBuilder:
         if not inspect.isclass(obj):
             return False
         cls_obj = PyiClass.from_class(obj)
-        if cls_obj.name != name:
-            cls_obj.name = name
+        canonical = getattr(obj, "__qualname_override__", name)
+        if cls_obj.name != canonical:
+            cls_obj.name = canonical
         self._add(cls_obj)
         for item in cls_obj.body:
             if isinstance(item, (PyiFunction, PyiVariable)):
@@ -1331,28 +1337,33 @@ class _ModuleBuilder:
             return
         if name == "TYPE_CHECKING":
             return
+        canonical = getattr(obj, "__qualname_override__", name)
+
+        if canonical in self.handled_names and id(obj) not in self.seen:
+            raise ValueError(f"duplicate emit name: {canonical}")
+
         if self._handle_alias(name, obj):
             return
         if self._handle_foreign_variable(name, obj):
             return
         if id(obj) in self.seen:
             orig = self.seen[id(obj)]
-            if orig != name:
-                self._add(PyiAlias(name=name, value=orig))
-                self.handled_names.add(name)
+            if orig != canonical:
+                self._add(PyiAlias(name=canonical, value=orig))
+            self.handled_names.add(canonical)
             return
-        self.seen[id(obj)] = name
-        self.handled_names.add(name)
+        self.seen[id(obj)] = canonical
+        self.handled_names.add(canonical)
 
-        if self._handle_function(name, obj):
+        if self._handle_function(canonical, obj):
             return
-        if self._handle_class(name, obj):
+        if self._handle_class(canonical, obj):
             return
-        if self._handle_newtype(name, obj):
+        if self._handle_newtype(canonical, obj):
             return
-        if self._handle_alias_types(name, obj):
+        if self._handle_alias_types(canonical, obj):
             return
-        self._handle_constant(name, obj)
+        self._handle_constant(canonical, obj)
 
     def _remaining_annotations(self) -> None:
         for name, annotation in self.resolved_ann.items():
