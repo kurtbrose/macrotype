@@ -265,6 +265,11 @@ def dict_echo(**kwargs: dict[str, Any]) -> dict[str, Any]:
     return kwargs
 
 
+# Edge case: function explicitly returning ``None``
+def do_nothing() -> None:
+    return None
+
+
 def always_raises() -> NoReturn:
     raise RuntimeError()
 
