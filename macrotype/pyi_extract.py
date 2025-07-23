@@ -775,6 +775,18 @@ def _auto_methods(klass: type, *, is_dataclass_obj: bool, is_enum: bool) -> set[
             value = klass.__dict__.get(name)
             if getattr(value, "__module__", None) == "enum":
                 auto.add(name)
+        if issubclass(klass, enum.Flag):
+            auto.update(
+                {
+                    "__or__",
+                    "__and__",
+                    "__xor__",
+                    "__ror__",
+                    "__rand__",
+                    "__rxor__",
+                    "__invert__",
+                }
+            )
     return auto
 
 

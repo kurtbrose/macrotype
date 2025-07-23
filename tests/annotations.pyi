@@ -1,7 +1,7 @@
 from typing import Annotated, Any, Callable, ClassVar, Concatenate, Final, Literal, LiteralString, NamedTuple, Never, NewType, NoReturn, NotRequired, ParamSpec, Protocol, Required, Self, TypeGuard, TypeVar, TypeVarTuple, TypedDict, Unpack, final, overload, override, runtime_checkable
 from collections.abc import AsyncIterator, Iterator, Sequence
 from dataclasses import dataclass
-from enum import Enum, IntEnum
+from enum import Enum, IntEnum, IntFlag
 from functools import cached_property
 from math import sin
 from re import Pattern
@@ -218,6 +218,11 @@ class Priority(IntEnum):
     LOW = 1
     MEDIUM = 2
     HIGH = 3
+
+class Permission(IntFlag):
+    READ = 1
+    WRITE = 2
+    EXECUTE = 4
 
 class StrEnum(str, Enum):
     A = 'a'
