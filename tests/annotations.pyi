@@ -107,6 +107,14 @@ class OverrideChild(Basic):
     @override
     def copy[T](self, param: T) -> T: ...
 
+class OverrideLate(Basic):
+    @classmethod
+    @override
+    def cls_override(cls) -> int: ...
+    @staticmethod
+    @override
+    def static_override() -> int: ...
+
 class SampleDict(TypedDict):
     name: str
     age: int

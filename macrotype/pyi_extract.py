@@ -847,10 +847,9 @@ def _descriptor_members(
     for attr_type, (func_attr, deco) in _ATTR_DECORATORS.items():
         if isinstance(unwrapped, attr_type):
             fn_obj = getattr(unwrapped, func_attr)
-            if unwrapped is not attr:
-                for flag in ("__final__", "__override__"):
-                    if getattr(attr, flag, False) and not getattr(fn_obj, flag, False):
-                        setattr(fn_obj, flag, True)
+            for flag in ("__final__", "__override__"):
+                if getattr(attr, flag, False) and not getattr(fn_obj, flag, False):
+                    setattr(fn_obj, flag, True)
             func = PyiFunction.from_function(
                 fn_obj,
                 decorators=[deco],
