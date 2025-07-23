@@ -126,6 +126,10 @@ class NoAutoEq:
     x: int
     def __eq__(self, other: object) -> bool: ...
 
+@dataclass(order=True, match_args=False, slots=True, weakref_slot=True)
+class OptionDataclass:
+    value: int
+
 @dataclass
 class Outer:
     x: int
