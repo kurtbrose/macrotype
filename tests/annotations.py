@@ -72,6 +72,9 @@ AliasListT = TypeAliasType("AliasListT", list[T], type_params=(T,))
 AliasFuncP = TypeAliasType("AliasFuncP", Callable[P, int], type_params=(P,))
 # Edge case: ``TypeAliasType`` used with a ``TypeVarTuple`` alias
 AliasTupleTs = TypeAliasType("AliasTupleTs", tuple[*Ts], type_params=(Ts,))
+# Edge case: ``TypeAliasType`` with constrained and bound type variables
+AliasNumberLikeList = TypeAliasType("AliasNumberLikeList", list[NumberLike], type_params=(NumberLike,))
+AliasBoundU = TypeAliasType("AliasBoundU", list[U], type_params=(U,))
 
 GLOBAL: int
 CONST: Final[str]
