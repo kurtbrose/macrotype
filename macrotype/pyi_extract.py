@@ -66,6 +66,16 @@ def format_type(type_obj: Any) -> TypeRenderInfo:
         used.add(type_obj)
         return TypeRenderInfo(type_obj.__name__, used)
 
+    if isinstance(type_obj, typing.ParamSpecArgs):
+        base = format_type(type_obj.__origin__)
+        used.update(base.used)
+        return TypeRenderInfo(f"{base.text}.args", used)
+
+    if isinstance(type_obj, typing.ParamSpecKwargs):
+        base = format_type(type_obj.__origin__)
+        used.update(base.used)
+        return TypeRenderInfo(f"{base.text}.kwargs", used)
+
     if hasattr(type_obj, "__supertype__"):
         return TypeRenderInfo(type_obj.__qualname__, used)
 
@@ -236,6 +246,10 @@ def find_typevars(type_obj: Any) -> set[str]:
         found.add(type_obj.__name__)
     elif isinstance(type_obj, typing.ParamSpec):
         found.add(f"**{type_obj.__name__}")
+    elif isinstance(type_obj, typing.ParamSpecArgs):
+        found.add(f"**{type_obj.__origin__.__name__}")
+    elif isinstance(type_obj, typing.ParamSpecKwargs):
+        found.add(f"**{type_obj.__origin__.__name__}")
     elif isinstance(type_obj, typing.TypeVarTuple):
         found.add(f"*{type_obj.__name__}")
     elif hasattr(type_obj, "__parameters__"):
