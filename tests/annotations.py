@@ -30,6 +30,7 @@ from typing import (
     TypeAliasType,
     NotRequired,
     Required,
+    TypeGuard,
 )
 
 T = TypeVar("T")
@@ -284,6 +285,11 @@ def always_raises() -> NoReturn:
 
 def never_returns() -> Never:
     raise RuntimeError()
+
+
+# Edge case: ``TypeGuard`` return type
+def is_str_list(val: list[object]) -> TypeGuard[list[str]]:
+    return all(isinstance(v, str) for v in val)
 
 
 # Edge case: LiteralString handling
