@@ -227,6 +227,15 @@ class OldGeneric(Generic[T]):
     def get(self) -> T:
         return self.value
 
+# PEP 695 class with a bounded type parameter
+class BoundClass[T: int]:
+    value: T
+
+
+# PEP 695 class with constrained type parameter
+class ConstrainedClass[T: (int, str)]:
+    value: T
+
 
 class Color(Enum):
     RED = 1

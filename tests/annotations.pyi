@@ -150,6 +150,12 @@ class OldGeneric[T]:
     value: T
     def get(self) -> T: ...
 
+class BoundClass[T: int]:
+    value: T
+
+class ConstrainedClass[T: (int, str)]:
+    value: T
+
 class Color(Enum):
     RED = 1
     GREEN = 2
