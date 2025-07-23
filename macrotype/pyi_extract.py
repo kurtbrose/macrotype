@@ -1019,6 +1019,228 @@ class PyiClass(PyiNamedElement):
 
 # === Module ===
 
+
+class _ModuleBuilder:
+    """Helper for building :class:`PyiModule` objects."""
+
+    def __init__(self, mod: ModuleType) -> None:
+        self.mod = mod
+        self.mod_name = mod.__name__
+        self.globals = vars(mod)
+        raw_ann = getattr(mod, "__annotations__", {})
+        try:
+            self.resolved_ann = get_type_hints(mod, include_extras=True)
+        except Exception:
+            self.resolved_ann = raw_ann
+
+        self.seen: dict[int, str] = {}
+        self.body: list[PyiElement] = []
+        self.used_types: set[type] = set()
+        self.handled_names: set[str] = set()
+
+    # -- helpers -----------------------------------------------------
+    def _add(self, item: PyiElement) -> None:
+        self.body.append(item)
+        self.used_types.update(getattr(item, "used_types", set()))
+
+    def _handle_alias(self, name: str, obj: Any) -> bool:
+        if self.resolved_ann.get(name) is typing.TypeAlias:
+            if isinstance(obj, str):
+                fmt_text = obj
+                alias_used: set[type] = set()
+            else:
+                fmt = format_type(obj)
+                fmt_text = fmt.text
+                alias_used = fmt.used
+            self._add(PyiAlias(name=name, value=fmt_text, used_types=alias_used))
+            return True
+
+        if isinstance(obj, typing.TypeAliasType):
+            fmt = format_type(obj.__value__)
+            params = []
+            for tp in getattr(obj, "__type_params__", ()):  # pragma: no cover - py312
+                fmt_tp = format_type_param(tp)
+                params.append(fmt_tp.text)
+                alias_used = fmt_tp.used
+                self.used_types.update(alias_used)
+            self._add(
+                PyiAlias(
+                    name=name,
+                    value=fmt.text,
+                    keyword="type",
+                    type_params=params,
+                    used_types=fmt.used,
+                )
+            )
+            self.used_types.update(fmt.used)
+            return True
+        return False
+
+    def _handle_foreign_variable(self, name: str, obj: Any) -> bool:
+        if not hasattr(obj, "__module__") or obj.__module__ != self.mod_name:
+            annotation = self.resolved_ann.get(name)
+            if annotation is not None:
+                fmt = format_type(annotation)
+                self._add(PyiVariable(name=name, type_str=fmt.text, used_types=fmt.used))
+            self.handled_names.add(name)
+            return True
+        return False
+
+    def _handle_function(self, name: str, obj: Any) -> bool:
+        fn_obj = _unwrap_decorated_function(obj)
+        if fn_obj is None:
+            return False
+
+        if fn_obj.__name__ == "<lambda>":
+            annotation = self.resolved_ann.get(name)
+            if annotation is not None:
+                fmt = format_type(annotation)
+                self._add(PyiVariable(name=name, type_str=fmt.text, used_types=fmt.used))
+            else:
+                self._add(PyiVariable.from_assignment(name, obj))
+            return True
+
+        ovs = _get_overloads(fn_obj)
+        if ovs:
+            for ov in ovs:
+                func = PyiFunction.from_function(
+                    ov,
+                    decorators=["overload"],
+                    globalns=self.globals,
+                    localns=self.globals,
+                )
+                self._add(func)
+        else:
+            func = PyiFunction.from_function(
+                fn_obj,
+                globalns=self.globals,
+                localns=self.globals,
+            )
+            self._add(func)
+        return True
+
+    def _handle_class(self, name: str, obj: Any) -> bool:
+        if not inspect.isclass(obj):
+            return False
+        cls_obj = PyiClass.from_class(obj)
+        if cls_obj.name != name:
+            cls_obj.name = name
+        self._add(cls_obj)
+        for item in cls_obj.body:
+            if isinstance(item, (PyiFunction, PyiVariable)):
+                self.used_types.update(getattr(item, "used_types", set()))
+        return True
+
+    def _handle_newtype(self, name: str, obj: Any) -> bool:
+        if callable(obj) and hasattr(obj, "__supertype__"):
+            base_fmt = format_type(obj.__supertype__)
+            alias_used = {typing.NewType, *base_fmt.used}
+            self._add(
+                PyiAlias(
+                    name=name,
+                    value=f"NewType('{name}', {base_fmt.text})",
+                    used_types=alias_used,
+                )
+            )
+            self.used_types.update(alias_used)
+            return True
+        return False
+
+    def _handle_alias_types(self, name: str, obj: Any) -> bool:
+        for alias_type in _ALIAS_TYPES:
+            if isinstance(obj, alias_type):
+                alias_used = {alias_type}
+                if isinstance(obj, typing.TypeVar):
+                    args = [f"'{obj.__name__}'"]
+                    if getattr(obj, "__covariant__", False):
+                        args.append("covariant=True")
+                    if getattr(obj, "__contravariant__", False):
+                        args.append("contravariant=True")
+                    if getattr(obj, "__infer_variance__", False):
+                        args.append("infer_variance=True")
+                    value = f"TypeVar({', '.join(args)})"
+                elif isinstance(obj, typing.ParamSpec):
+                    args = [f"'{obj.__name__}'"]
+                    if getattr(obj, "__covariant__", False):
+                        args.append("covariant=True")
+                    if getattr(obj, "__contravariant__", False):
+                        args.append("contravariant=True")
+                    value = f"ParamSpec({', '.join(args)})"
+                else:
+                    value = f"{alias_type.__name__}('{obj.__name__}')"
+                self._add(PyiAlias(name=name, value=value, used_types=alias_used))
+                self.used_types.update(alias_used)
+                return True
+        return False
+
+    def _handle_constant(self, name: str, obj: Any) -> bool:
+        if isinstance(obj, (int, str, float, bool)):
+            self._add(PyiVariable.from_assignment(name, obj))
+            return True
+        return False
+
+    def _process_object(self, name: str, obj: Any) -> None:
+        if self._handle_alias(name, obj):
+            return
+        if self._handle_foreign_variable(name, obj):
+            return
+        if id(obj) in self.seen:
+            return
+        self.seen[id(obj)] = name
+        self.handled_names.add(name)
+
+        if self._handle_function(name, obj):
+            return
+        if self._handle_class(name, obj):
+            return
+        if self._handle_newtype(name, obj):
+            return
+        if self._handle_alias_types(name, obj):
+            return
+        self._handle_constant(name, obj)
+
+    def _remaining_annotations(self) -> None:
+        for name, annotation in self.resolved_ann.items():
+            if name not in self.handled_names and name not in self.globals:
+                if annotation is typing.TypeAlias:
+                    continue
+                fmt = format_type(annotation)
+                self._add(PyiVariable(name=name, type_str=fmt.text, used_types=fmt.used))
+
+    def _imports(self) -> list[str]:
+        typing_names = sorted(
+            t.__name__
+            for t in self.used_types
+            if getattr(t, "__module__", "") == "typing"
+            and not isinstance(t, (typing.TypeVar, typing.ParamSpec, typing.TypeVarTuple))
+        )
+
+        external_imports: dict[str, set[str]] = collections.defaultdict(set)
+        for used_type in self.used_types:
+            modname = getattr(used_type, "__module__", None)
+            name = getattr(used_type, "__name__", None)
+            if not modname or not name:
+                continue
+            if modname in ("builtins", "typing", self.mod_name):
+                continue
+            external_imports[modname].add(name)
+
+        lines = []
+        if typing_names:
+            lines.append(f"from typing import {', '.join(typing_names)}")
+        for modname, names in sorted(external_imports.items()):
+            lines.append(f"from {modname} import {', '.join(sorted(names))}")
+        return lines
+
+    def build(self) -> "PyiModule":
+        for name, obj in self.globals.items():
+            self._process_object(name, obj)
+
+        self._remaining_annotations()
+        import_lines = self._imports()
+        return PyiModule(imports=import_lines, body=self.body)
+
+
 @dataclass
 class PyiModule:
     imports: list[str] = field(default_factory=list)
@@ -1037,211 +1259,7 @@ class PyiModule:
     def from_module(cls, mod: ModuleType) -> PyiModule:
         """Create a :class:`PyiModule` from a live module object."""
 
-        seen: dict[int, str] = {}
-        body: list[PyiElement] = []
-        used_types: set[type] = set()
-        mod_name = mod.__name__
-        globals_dict = vars(mod)
-        raw_ann = getattr(mod, "__annotations__", {})
-        try:
-            resolved_ann = get_type_hints(mod, include_extras=True)
-        except Exception:
-            resolved_ann = raw_ann
-
-        handled_names: set[str] = set()
-        for name, obj in globals_dict.items():
-            if resolved_ann.get(name) is typing.TypeAlias:
-                if isinstance(obj, str):
-                    fmt_text = obj
-                    alias_used: set[type] = set()
-                else:
-                    fmt = format_type(obj)
-                    fmt_text = fmt.text
-                    alias_used = fmt.used
-                    used_types.update(alias_used)
-                body.append(
-                    PyiAlias(
-                        name=name,
-                        value=fmt_text,
-                        used_types=alias_used,
-                    )
-                )
-                continue
-
-            if isinstance(obj, typing.TypeAliasType):
-                fmt = format_type(obj.__value__)
-                used_types.update(fmt.used)
-                params = []
-                for tp in getattr(obj, "__type_params__", ()):  # pragma: no cover - py312
-                    fmt_tp = format_type_param(tp)
-                    params.append(fmt_tp.text)
-                    used_types.update(fmt_tp.used)
-                body.append(
-                    PyiAlias(
-                        name=name,
-                        value=fmt.text,
-                        keyword="type",
-                        type_params=params,
-                        used_types=fmt.used,
-                    )
-                )
-                continue
-
-            if not hasattr(obj, '__module__') or obj.__module__ != mod_name:
-                annotation = resolved_ann.get(name)
-                if annotation is not None:
-                    fmt = format_type(annotation)
-                    used_types.update(fmt.used)
-                    body.append(
-                        PyiVariable(
-                            name=name,
-                            type_str=fmt.text,
-                            used_types=fmt.used,
-                        )
-                    )
-                    handled_names.add(name)
-                continue
-            if id(obj) in seen:
-                continue
-            seen[id(obj)] = name
-            handled_names.add(name)
-
-            # decorated callables like ``lru_cache`` wrappers are not
-            # ``inspect.isfunction`` but expose ``__wrapped__`` with the
-            # original function. Unwrap them so they emit correct stubs.
-            fn_obj = _unwrap_decorated_function(obj)
-
-            if fn_obj is not None:
-                if fn_obj.__name__ == "<lambda>":
-                    annotation = resolved_ann.get(name)
-                    if annotation is not None:
-                        fmt = format_type(annotation)
-                        used_types.update(fmt.used)
-                        body.append(
-                            PyiVariable(
-                                name=name,
-                                type_str=fmt.text,
-                                used_types=fmt.used,
-                            )
-                        )
-                    else:
-                        body.append(PyiVariable.from_assignment(name, obj))
-                    continue
-
-                ovs = _get_overloads(fn_obj)
-                if ovs:
-                    for ov in ovs:
-                        ofunc = PyiFunction.from_function(
-                            ov,
-                            decorators=["overload"],
-                            globalns=globals_dict,
-                            localns=globals_dict,
-                        )
-                        used_types.update(ofunc.used_types)
-                        body.append(ofunc)
-                else:
-                    func = PyiFunction.from_function(
-                        fn_obj,
-                        globalns=globals_dict,
-                        localns=globals_dict,
-                    )
-                    used_types.update(func.used_types)
-                    body.append(func)
-            elif inspect.isclass(obj):
-                cls_obj = PyiClass.from_class(obj)
-                if cls_obj.name != name:
-                    cls_obj.name = name
-                used_types.update(cls_obj.used_types)
-                for item in cls_obj.body:
-                    if isinstance(item, (PyiFunction, PyiVariable)):
-                        used_types.update(getattr(item, 'used_types', set()))
-                body.append(cls_obj)
-            elif callable(obj) and hasattr(obj, '__supertype__'):
-                base_fmt = format_type(obj.__supertype__)
-                alias_used = {typing.NewType, *base_fmt.used}
-                used_types.update(alias_used)
-                body.append(
-                    PyiAlias(
-                        name=name,
-                        value=f"NewType('{name}', {base_fmt.text})",
-                        used_types=alias_used,
-                    )
-                )
-            else:
-                handled = False
-                for alias_type in _ALIAS_TYPES:
-                    if isinstance(obj, alias_type):
-                        alias_used = {alias_type}
-                        used_types.update(alias_used)
-                        if isinstance(obj, typing.TypeVar):
-                            args = [f"'{obj.__name__}'"]
-                            if getattr(obj, "__covariant__", False):
-                                args.append("covariant=True")
-                            if getattr(obj, "__contravariant__", False):
-                                args.append("contravariant=True")
-                            if getattr(obj, "__infer_variance__", False):
-                                args.append("infer_variance=True")
-                            value = f"TypeVar({', '.join(args)})"
-                        elif isinstance(obj, typing.ParamSpec):
-                            args = [f"'{obj.__name__}'"]
-                            if getattr(obj, "__covariant__", False):
-                                args.append("covariant=True")
-                            if getattr(obj, "__contravariant__", False):
-                                args.append("contravariant=True")
-                            value = f"ParamSpec({', '.join(args)})"
-                        else:
-                            value = f"{alias_type.__name__}('{obj.__name__}')"
-                        body.append(
-                            PyiAlias(
-                                name=name,
-                                value=value,
-                                used_types=alias_used,
-                            )
-                        )
-                        handled = True
-                        break
-
-                if not handled and isinstance(obj, (int, str, float, bool)):
-                    body.append(PyiVariable.from_assignment(name, obj))
-
-        for name, annotation in resolved_ann.items():
-            if name not in handled_names and name not in globals_dict:
-                if annotation is typing.TypeAlias:
-                    continue
-                fmt = format_type(annotation)
-                used_types.update(fmt.used)
-                body.append(
-                    PyiVariable(
-                        name=name,
-                        type_str=fmt.text,
-                        used_types=fmt.used,
-                    )
-                )
-
-        typing_names = sorted(
-            t.__name__
-            for t in used_types
-            if getattr(t, '__module__', '') == 'typing'
-            and not isinstance(t, (typing.TypeVar, typing.ParamSpec, typing.TypeVarTuple))
-        )
-
-        external_imports: dict[str, set[str]] = collections.defaultdict(set)
-        for used_type in used_types:
-            modname = getattr(used_type, "__module__", None)
-            name = getattr(used_type, "__name__", None)
-            if not modname or not name:
-                continue
-            if modname in ("builtins", "typing", mod_name):
-                continue
-            external_imports[modname].add(name)
-
-        import_lines = []
-        if typing_names:
-            import_lines.append(f"from typing import {', '.join(typing_names)}")
-        for modname, names in sorted(external_imports.items()):
-            import_lines.append(f"from {modname} import {', '.join(sorted(names))}")
-
-        return cls(imports=import_lines, body=body)
+        return _ModuleBuilder(mod).build()
 
 
 # === Demo Smoke Test ===
