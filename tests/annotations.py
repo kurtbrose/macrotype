@@ -117,6 +117,14 @@ class Basic:
     @cached_property
     def cached(self) -> int: ...
 
+    @property
+    def data(self) -> int:
+        ...
+
+    @data.setter
+    def data(self, value: int) -> None:
+        ...
+
     class Nested:
         x: float
         y: str
