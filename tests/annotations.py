@@ -125,6 +125,14 @@ class Basic:
     def data(self, value: int) -> None:
         ...
 
+    @property
+    def temp(self) -> int:
+        ...
+
+    @temp.deleter
+    def temp(self) -> None:
+        ...
+
     class Nested:
         x: float
         y: str
