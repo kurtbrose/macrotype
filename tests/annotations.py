@@ -1,5 +1,6 @@
 import re
 import sys
+import functools
 from functools import cached_property
 from dataclasses import dataclass
 from enum import Enum, IntEnum
@@ -386,3 +387,8 @@ def pos_and_kw(a: int, /, b: int, *, c: int) -> None:
 def iter_sequence(seq: cabc.Sequence[int]) -> cabc.Iterator[int]:
     for item in seq:
         yield item
+
+# Edge case: decorated functions should retain original signature
+@functools.lru_cache()
+def cached_add(a: int, b: int) -> int:
+    return a + b
