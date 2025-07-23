@@ -377,6 +377,19 @@ def _unwrap_decorated_function(obj: Any) -> Callable | None:
         obj = obj.__wrapped__
 
 
+def _unwrap_descriptor(obj: Any) -> Any | None:
+    """Return the underlying descriptor for *obj* if wrapped by decorators."""
+
+    while True:
+        for typ in _ATTR_DECORATORS:
+            if isinstance(obj, typ):
+                return obj
+        if hasattr(obj, "__wrapped__"):
+            obj = obj.__wrapped__
+            continue
+        return None
+
+
 def _extract_partialmethod(
     pm: functools.partialmethod,
     klass: type,
@@ -817,11 +830,17 @@ def _descriptor_members(
     localns: dict[str, Any],
 ) -> tuple[list[PyiElement], set[type]]:
     """Return method objects generated from descriptor *attr*."""
+    unwrapped = _unwrap_descriptor(attr) or attr
 
     for attr_type, (func_attr, deco) in _ATTR_DECORATORS.items():
-        if isinstance(attr, attr_type):
+        if isinstance(unwrapped, attr_type):
+            fn_obj = getattr(unwrapped, func_attr)
+            if unwrapped is not attr:
+                for flag in ("__final__", "__override__"):
+                    if getattr(attr, flag, False) and not getattr(fn_obj, flag, False):
+                        setattr(fn_obj, flag, True)
             func = PyiFunction.from_function(
-                getattr(attr, func_attr),
+                fn_obj,
                 decorators=[deco],
                 exclude_params=class_params,
                 globalns=globalns,
@@ -830,9 +849,9 @@ def _descriptor_members(
             members = [func]
             used = set(func.used_types)
             if attr_type is property:
-                if attr.fset is not None:
+                if unwrapped.fset is not None:
                     setter = PyiFunction.from_function(
-                        attr.fset,
+                        unwrapped.fset,
                         decorators=[f"{attr_name}.setter"],
                         exclude_params=class_params,
                         globalns=globalns,
@@ -840,9 +859,9 @@ def _descriptor_members(
                     )
                     members.append(setter)
                     used.update(setter.used_types)
-                if attr.fdel is not None:
+                if unwrapped.fdel is not None:
                     deleter = PyiFunction.from_function(
-                        attr.fdel,
+                        unwrapped.fdel,
                         decorators=[f"{attr_name}.deleter"],
                         exclude_params=class_params,
                         globalns=globalns,
