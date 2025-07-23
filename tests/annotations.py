@@ -36,6 +36,7 @@ from typing import (
     runtime_checkable,
     TypeGuard,
     final,
+    override,
 )
 
 T = TypeVar("T")
@@ -143,6 +144,13 @@ class Basic:
 
 class Child(Basic):
     ...
+
+
+# Edge case: ``@override`` decorator handling
+class OverrideChild(Basic):
+    @override
+    def copy(self, param: T) -> T:
+        return param
 
 
 class SampleDict(TypedDict):
