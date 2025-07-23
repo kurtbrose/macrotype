@@ -211,6 +211,10 @@ class Priority(IntEnum):
     MEDIUM = 2
     HIGH = 3
 
+class StrEnum(str, Enum):
+    A = 'a'
+    B = 'b'
+
 class NamedPoint(NamedTuple):
     x: int
     y: int
