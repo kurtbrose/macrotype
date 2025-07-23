@@ -26,6 +26,7 @@ from typing import (
     Tuple,
     Any,
     TypeAlias,
+    TypeAliasType,
     NotRequired,
     Required,
 )
@@ -33,6 +34,10 @@ from typing import (
 T = TypeVar("T")
 P = ParamSpec("P")
 Ts = TypeVarTuple("Ts")
+# Bound type variable ensures bound metadata is ignored
+U = TypeVar("U", bound=str)
+# Constrained type variable ensures constraint metadata is ignored
+NumberLike = TypeVar("NumberLike", int, float)
 UserId = NewType("UserId", int)
 
 MyList: TypeAlias = list[int]
@@ -51,8 +56,19 @@ type IntFunc[**P] = Callable[P, int]
 type LabeledTuple[*Ts] = tuple[str, *Ts]
 type RecursiveList[T] = T | list[RecursiveList[T]]
 
+# Edge case: alias defined via ``TypeAliasType`` for a TypeVar alias
+AliasListT = TypeAliasType("AliasListT", list[T], type_params=(T,))
+# Edge case: ``TypeAliasType`` used with a ``ParamSpec`` alias
+AliasFuncP = TypeAliasType("AliasFuncP", Callable[P, int], type_params=(P,))
+
 GLOBAL: int
 CONST: Final[str]
+# Variable typed ``Any`` to ensure explicit Any is preserved
+ANY_VAR: Any
+# Variable using ``Callable`` with ellipsis argument list
+FUNC_ELLIPSIS: Callable[..., int]
+# Variable using tuple ellipsis syntax
+TUPLE_VAR: tuple[int, ...]
 
 
 class Basic:
@@ -158,6 +174,12 @@ class Point:
 class Frozen:
     a: int
     b: int
+
+# Dataclass using ``kw_only=True``
+@dataclass(kw_only=True)
+class KwOnlyPoint:
+    x: int
+    y: int
 
 
 @dataclass
