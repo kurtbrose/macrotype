@@ -91,6 +91,9 @@ FUNC_ELLIPSIS: Callable[..., int]
 # Variable using tuple ellipsis syntax
 TUPLE_VAR: tuple[int, ...]
 
+# Edge case: unannotated constant should be included
+UNANNOTATED_CONST = 42
+
 # Edge case: lambda expressions should be treated as variables, not functions
 UNTYPED_LAMBDA = lambda x, y: x + y
 TYPED_LAMBDA: Callable[[int, int], int] = lambda a, b: a + b
