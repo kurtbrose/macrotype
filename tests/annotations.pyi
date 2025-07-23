@@ -1,4 +1,5 @@
 from typing import Any, Callable, ClassVar, Concatenate, Final, Literal, LiteralString, NamedTuple, Never, NewType, NoReturn, NotRequired, ParamSpec, Required, Self, TypeGuard, TypeVar, TypeVarTuple, TypedDict, Unpack, final, overload
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from enum import Enum, IntEnum
 from functools import cached_property
@@ -227,6 +228,8 @@ def pos_only_func(a: int, b: str, /) -> None: ...
 def kw_only_func(*, x: int, y: str) -> None: ...
 
 def pos_and_kw(a: int, /, b: int, *, c: int) -> None: ...
+
+def iter_sequence(seq: Sequence[int]) -> Iterator[int]: ...
 
 GLOBAL: int
 
