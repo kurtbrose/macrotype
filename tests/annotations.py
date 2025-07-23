@@ -246,6 +246,15 @@ class SelfExample:
         return self
 
 
+class SelfFactory:
+    def __init__(self, value: int) -> None:
+        self.value = value
+
+    @classmethod
+    def create(cls: type[Self], value: int) -> Self:
+        return cls(value)
+
+
 def as_tuple(*args: Unpack[Ts]) -> Tuple[Unpack[Ts]]:
     return tuple(args)
 
