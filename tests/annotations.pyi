@@ -113,6 +113,10 @@ class Slotted:
     x: int
     y: str
 
+class HasPartialMethod:
+    def base(self, a: int, b: str) -> str: ...
+    def pm(self, b: str) -> str: ...
+
 def make_wrapper(t: type): ...
 
 class GeneratedInt:

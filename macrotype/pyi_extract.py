@@ -728,6 +728,24 @@ class PyiClass(PyiNamedElement):
                 ):
                     fn_attr = attr.__wrapped__
 
+                elif isinstance(attr, functools.partialmethod):
+                    fn_attr = attr.__get__(None, klass)
+                    try:
+                        hints = get_type_hints(
+                            attr.func,
+                            globalns=globalns,
+                            localns=klass.__dict__,
+                            include_extras=True,
+                        )
+                    except Exception:
+                        hints = getattr(attr.func, "__annotations__", {}).copy()
+
+                    sig_params = inspect.signature(fn_attr).parameters
+                    fn_attr.__annotations__ = {
+                        k: v for k, v in hints.items() if k in sig_params or k == "return"
+                    }
+                    fn_attr.__name__ = attr_name
+
                 if fn_attr is not None:
                     if fn_attr.__name__ == "<lambda>":
                         continue

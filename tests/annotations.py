@@ -170,6 +170,13 @@ class Slotted:
     x: int
     y: str
 
+# Edge case: ``functools.partialmethod`` should generate a normal method stub
+class HasPartialMethod:
+    def base(self, a: int, b: str) -> str:
+        return b * a
+
+    pm = functools.partialmethod(base, 2)
+
 
 def make_wrapper(t: type):
     class Wrapper:
