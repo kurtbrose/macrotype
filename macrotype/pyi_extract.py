@@ -438,24 +438,57 @@ class PyiFunction(PyiNamedElement):
         sig = inspect.signature(fn)
         args = []
         used_types = set()
+        posonly: list[tuple[str, str | None]] = []
+        star_added = False
+
         for name, param in sig.parameters.items():
             display_name = name
-            if param.kind is inspect.Parameter.VAR_POSITIONAL:
+            if param.kind is inspect.Parameter.POSITIONAL_ONLY:
+                kind = "posonly"
+            elif param.kind is inspect.Parameter.VAR_POSITIONAL:
                 display_name = f"*{name}"
+                star_added = True
+                kind = "varpos"
+            elif param.kind is inspect.Parameter.KEYWORD_ONLY:
+                kind = "kwonly"
             elif param.kind is inspect.Parameter.VAR_KEYWORD:
                 display_name = f"**{name}"
+                kind = "varkw"
+            else:
+                kind = "normal"
 
             if param.annotation is inspect._empty:
                 if name in {'self', 'cls'}:
-                    args.append((display_name, None))
+                    ann = None
                 else:
-                    args.append((display_name, 'Any'))
+                    ann = 'Any'
                     used_types.add(Any)
+            else:
+                hint = hints.get(name, 'Any')
+                fmt = format_type(hint)
+                used_types.update(fmt.used)
+                ann = fmt.text
+
+            pair = (display_name, ann)
+
+            if kind == "posonly":
+                posonly.append(pair)
                 continue
-            hint = hints.get(name, 'Any')
-            fmt = format_type(hint)
-            used_types.update(fmt.used)
-            args.append((display_name, fmt.text))
+
+            if posonly:
+                args.extend(posonly)
+                args.append(("/", None))
+                posonly.clear()
+
+            if kind == "kwonly" and not star_added:
+                args.append(("*", None))
+                star_added = True
+
+            args.append(pair)
+
+        if posonly:
+            args.extend(posonly)
+            args.append(("/", None))
 
         if 'return' in hints:
             return_fmt = format_type(hints['return'])

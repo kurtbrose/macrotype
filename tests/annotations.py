@@ -337,3 +337,13 @@ class HasFinalMethod:
     @final
     def do_final(self) -> None:
         pass
+
+# Edge case: positional-only and keyword-only parameters
+def pos_only_func(a: int, b: str, /) -> None:
+    pass
+
+def kw_only_func(*, x: int, y: str) -> None:
+    pass
+
+def pos_and_kw(a: int, /, b: int, *, c: int) -> None:
+    pass
