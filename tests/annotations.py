@@ -183,6 +183,14 @@ class KwOnlyPoint:
     x: int
     y: int
 
+# Dataclass using ``eq=False`` ensures explicit ``__eq__`` is retained
+@dataclass(eq=False)
+class NoAutoEq:
+    x: int
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, NoAutoEq) and self.x == other.x
+
 
 @dataclass
 class Outer:

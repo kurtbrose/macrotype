@@ -282,6 +282,33 @@ _AUTO_DATACLASS_METHODS = {
     "__replace__",
 }
 
+
+def _dataclass_auto_methods(params: dataclasses._DataclassParams | None) -> set[str]:
+    """Return the dataclass-generated methods based on *params*."""
+
+    if params is None:
+        return set(_AUTO_DATACLASS_METHODS)
+
+    auto_methods = {
+        "__init__",
+        "__repr__",
+        "__getstate__",
+        "__setstate__",
+        "_dataclass_getstate",
+        "_dataclass_setstate",
+        "__getattribute__",
+        "__replace__",
+    }
+    if params.eq:
+        auto_methods.add("__eq__")
+    if params.order:
+        auto_methods.update({"__lt__", "__le__", "__gt__", "__ge__"})
+    if params.frozen:
+        auto_methods.update({"__setattr__", "__delattr__"})
+    if params.eq and (params.frozen or params.unsafe_hash):
+        auto_methods.add("__hash__")
+    return auto_methods
+
 # Mapping of attribute types to the underlying function attribute and the
 # decorator name used when generating stubs for class attributes.
 _ATTR_DECORATORS: dict[type, tuple[str, str]] = {
@@ -605,7 +632,11 @@ class PyiClass(PyiNamedElement):
                 )
 
         if not is_typeddict:
-            auto_methods = _AUTO_DATACLASS_METHODS if is_dataclass_obj else set()
+            if is_dataclass_obj:
+                params = getattr(klass, "__dataclass_params__", None)
+                auto_methods = _dataclass_auto_methods(params)
+            else:
+                auto_methods = set()
             if is_enum:
                 auto_methods.update({"_generate_next_value_", "__new__"})
 
