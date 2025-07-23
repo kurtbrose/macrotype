@@ -1,5 +1,5 @@
 from typing import Annotated, Any, Callable, ClassVar, Concatenate, Final, Literal, LiteralString, NamedTuple, Never, NewType, NoReturn, NotRequired, ParamSpec, Protocol, Required, Self, TypeGuard, TypeVar, TypeVarTuple, TypedDict, Unpack, final, overload, override, runtime_checkable
-from collections.abc import Iterator, Sequence
+from collections.abc import AsyncIterator, Iterator, Sequence
 from dataclasses import dataclass
 from enum import Enum, IntEnum
 from functools import cached_property
@@ -256,6 +256,8 @@ def echo_literal(value: LiteralString) -> LiteralString: ...
 NONE_VAR: None
 
 async def async_add_one(x: int) -> int: ...
+
+async def gen_range(n: int) -> AsyncIterator[int]: ...
 
 @final
 def final_func(x: int) -> int: ...

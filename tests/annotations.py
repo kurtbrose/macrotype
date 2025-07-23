@@ -408,6 +408,11 @@ NONE_VAR: None = None
 async def async_add_one(x: int) -> int:
     return x + 1
 
+# Edge case: async generator function
+async def gen_range(n: int) -> cabc.AsyncIterator[int]:
+    for i in range(n):
+        yield i
+
 # Edge case: ``final`` decorator handling
 @final
 def final_func(x: int) -> int:
