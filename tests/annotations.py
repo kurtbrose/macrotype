@@ -3,6 +3,7 @@ import sys
 from functools import cached_property
 from dataclasses import dataclass
 from enum import Enum, IntEnum
+import collections.abc as cabc
 from typing import (
     Annotated,
     Callable,
@@ -363,3 +364,8 @@ def kw_only_func(*, x: int, y: str) -> None:
 
 def pos_and_kw(a: int, /, b: int, *, c: int) -> None:
     pass
+
+# Edge case: using ``collections.abc`` generic types
+def iter_sequence(seq: cabc.Sequence[int]) -> cabc.Iterator[int]:
+    for item in seq:
+        yield item
