@@ -698,10 +698,31 @@ class PyiClass(PyiNamedElement):
                     continue
                 if attr_name in protocol_skip or getattr(attr, "__name__", None) in protocol_method_names:
                     continue
+                # unwrap decorators that preserve __wrapped__ (e.g. lru_cache)
+                # so we treat the original function as a method
+                fn_attr = None
                 if inspect.isfunction(attr):
-                    if attr.__name__ == "<lambda>":
+                    fn_attr = attr
+                elif (
+                    callable(attr)
+                    and hasattr(attr, "__wrapped__")
+                    and inspect.isfunction(attr.__wrapped__)
+                    and not isinstance(
+                        attr,
+                        (
+                            classmethod,
+                            staticmethod,
+                            property,
+                            functools.cached_property,
+                        ),
+                    )
+                ):
+                    fn_attr = attr.__wrapped__
+
+                if fn_attr is not None:
+                    if fn_attr.__name__ == "<lambda>":
                         continue
-                    ovs = _get_overloads(attr)
+                    ovs = _get_overloads(fn_attr)
                     if ovs:
                         for ov in ovs:
                             members.append(
@@ -715,7 +736,7 @@ class PyiClass(PyiNamedElement):
                             )
                     members.append(
                         PyiFunction.from_function(
-                            attr,
+                            fn_attr,
                             exclude_params=class_params,
                             globalns=globalns,
                             localns=klass.__dict__,
@@ -841,8 +862,30 @@ class PyiModule:
             seen[id(obj)] = name
             handled_names.add(name)
 
+            # decorated callables like ``lru_cache`` wrappers are not
+            # ``inspect.isfunction`` but expose ``__wrapped__`` with the
+            # original function. Unwrap them so they emit correct stubs.
+            fn_obj = None
             if inspect.isfunction(obj):
-                if obj.__name__ == "<lambda>":
+                fn_obj = obj
+            elif (
+                callable(obj)
+                and hasattr(obj, "__wrapped__")
+                and inspect.isfunction(obj.__wrapped__)
+                and not isinstance(
+                    obj,
+                    (
+                        classmethod,
+                        staticmethod,
+                        property,
+                        functools.cached_property,
+                    ),
+                )
+            ):
+                fn_obj = obj.__wrapped__
+
+            if fn_obj is not None:
+                if fn_obj.__name__ == "<lambda>":
                     annotation = resolved_ann.get(name)
                     if annotation is not None:
                         fmt = format_type(annotation)
@@ -858,7 +901,7 @@ class PyiModule:
                         body.append(PyiVariable.from_assignment(name, obj))
                     continue
 
-                ovs = _get_overloads(obj)
+                ovs = _get_overloads(fn_obj)
                 if ovs:
                     for ov in ovs:
                         ofunc = PyiFunction.from_function(
@@ -871,7 +914,7 @@ class PyiModule:
                         body.append(ofunc)
                 else:
                     func = PyiFunction.from_function(
-                        obj,
+                        fn_obj,
                         globalns=globals_dict,
                         localns=globals_dict,
                     )
