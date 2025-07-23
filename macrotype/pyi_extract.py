@@ -757,6 +757,10 @@ def _auto_methods(klass: type, *, is_dataclass_obj: bool, is_enum: bool) -> set[
         auto = set()
     if is_enum:
         auto.update({"_generate_next_value_", "__new__"})
+        for name in ("__repr__", "__str__", "__format__"):
+            value = klass.__dict__.get(name)
+            if getattr(value, "__module__", None) == "enum":
+                auto.add(name)
     return auto
 
 
