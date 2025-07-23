@@ -1200,6 +1200,7 @@ class _ModuleBuilder:
         return False
 
     def _handle_foreign_variable(self, name: str, obj: Any) -> bool:
+        annotation = self.resolved_ann.get(name)
         if not hasattr(obj, "__module__"):
             annotation = self.resolved_ann.get(name)
             if annotation is not None:
@@ -1212,7 +1213,6 @@ class _ModuleBuilder:
             self.handled_names.add(name)
             return True
         if obj.__module__ != self.mod_name:
-            annotation = self.resolved_ann.get(name)
             if annotation is not None:
                 fmt = format_type(annotation)
                 self._add(

@@ -286,6 +286,10 @@ def never_returns() -> Never: ...
 
 def is_str_list(val: list[object]) -> TypeGuard[list[str]]: ...
 
+FINAL_VAR_WITH_VALUE: Final[int]
+
+PLAIN_FINAL_VAR: Final
+
 SIN_ALIAS = sin
 
 def local_alias_target(x: int) -> int: ...
