@@ -2,7 +2,7 @@ import re
 import sys
 import functools
 from functools import cached_property
-from dataclasses import dataclass
+from dataclasses import dataclass, InitVar
 from enum import Enum, IntEnum
 import collections.abc as cabc
 from typing import (
@@ -226,6 +226,16 @@ class NoAutoEq:
 @dataclass(order=True, match_args=False, slots=True, weakref_slot=True)
 class OptionDataclass:
     value: int
+
+
+# Edge case: dataclasses.InitVar fields should not appear in stubs
+@dataclass
+class InitVarExample:
+    x: int
+    init_only: InitVar[int]
+
+    def __post_init__(self, init_only: int) -> None:
+        self.x += init_only
 
 
 @dataclass
