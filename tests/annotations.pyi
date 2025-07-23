@@ -10,6 +10,10 @@ P = ParamSpec('P')
 
 Ts = TypeVarTuple('Ts')
 
+U = TypeVar('U')
+
+NumberLike = TypeVar('NumberLike')
+
 UserId = NewType('UserId', int)
 
 MyList = list[int]
@@ -33,6 +37,10 @@ type IntFunc[**P] = Callable[P, int]
 type LabeledTuple[*Ts] = tuple[str, Unpack[Ts]]
 
 type RecursiveList[T] = T | list[RecursiveList[T]]
+
+type AliasListT[T] = list[T]
+
+type AliasFuncP[**P] = Callable[P, int]
 
 class Basic:
     simple: list[str]
@@ -108,6 +116,11 @@ class Frozen:
     a: int
     b: int
 
+@dataclass(kw_only=True)
+class KwOnlyPoint:
+    x: int
+    y: int
+
 @dataclass
 class Outer:
     x: int
@@ -173,5 +186,11 @@ async def async_add_one(x: int) -> int: ...
 GLOBAL: int
 
 CONST: Final[str]
+
+ANY_VAR: Any
+
+FUNC_ELLIPSIS: Callable[..., int]
+
+TUPLE_VAR: tuple[int, ...]
 
 LITERAL_STR_VAR: LiteralString
