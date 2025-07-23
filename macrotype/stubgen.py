@@ -12,20 +12,27 @@ class _TypeCheckingTransformer(ast.NodeTransformer):
     """Rewrite ``if TYPE_CHECKING`` blocks to execute their body."""
 
     @staticmethod
-    def _is_type_checking(expr: ast.expr) -> bool:
-        # ``if TYPE_CHECKING:`` or ``if typing.TYPE_CHECKING:``
+    def _contains_type_checking(expr: ast.expr) -> bool:
+        """Return ``True`` if ``expr`` references ``TYPE_CHECKING`` anywhere."""
+
         if isinstance(expr, ast.Name) and expr.id == "TYPE_CHECKING":
             return True
-        return (
+        if (
             isinstance(expr, ast.Attribute)
             and isinstance(expr.value, ast.Name)
             and expr.value.id == "typing"
             and expr.attr == "TYPE_CHECKING"
-        )
+        ):
+            return True
+
+        for child in ast.iter_child_nodes(expr):
+            if _TypeCheckingTransformer._contains_type_checking(child):
+                return True
+        return False
 
     def visit_If(self, node: ast.If) -> ast.stmt:
         self.generic_visit(node)
-        if self._is_type_checking(node.test):
+        if self._contains_type_checking(node.test):
             # Execute the body and ignore the else branch. Errors while
             # executing the body (e.g. ImportError due to circular imports)
             # are suppressed so stub generation can proceed.
