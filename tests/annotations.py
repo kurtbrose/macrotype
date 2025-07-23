@@ -425,6 +425,13 @@ LITERAL_STR_VAR: LiteralString
 SIN_ALIAS = math.sin
 
 
+def local_alias_target(x: int) -> int:
+    return x
+
+# Edge case: alias to a local function should be preserved
+LOCAL_ALIAS = local_alias_target
+
+
 def echo_literal(value: LiteralString) -> LiteralString:
     return value
 

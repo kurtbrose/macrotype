@@ -266,6 +266,10 @@ def is_str_list(val: list[object]) -> TypeGuard[list[str]]: ...
 
 SIN_ALIAS = sin
 
+def local_alias_target(x: int) -> int: ...
+
+LOCAL_ALIAS = local_alias_target
+
 def echo_literal(value: LiteralString) -> LiteralString: ...
 
 NONE_VAR: None
