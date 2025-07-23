@@ -45,6 +45,8 @@ type LabeledTuple[*Ts] = tuple[str, Unpack[Ts]]
 
 type RecursiveList[T] = T | list[RecursiveList[T]]
 
+ForwardAlias = FutureClass
+
 type AliasListT[T] = list[T]
 
 type AliasFuncP[**P] = Callable[P, int]
@@ -277,6 +279,9 @@ def iter_sequence(seq: Sequence[int]) -> Iterator[int]: ...
 def cached_add(a: int, b: int) -> int: ...
 
 def annotated_fn(x: Annotated[int, 'inp']) -> Annotated[str, 'out']: ...
+
+class FutureClass:
+    pass
 
 GLOBAL: int
 
