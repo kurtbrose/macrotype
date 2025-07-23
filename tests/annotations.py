@@ -369,6 +369,10 @@ def prepend_one(fn: Callable[Concatenate[int, P], int]) -> Callable[P, int]:
 
     return inner
 
+# Edge case: direct use of ``P.args`` and ``P.kwargs``
+def use_params(*args: P.args, **kwargs: P.kwargs) -> int:
+    return 0
+
 
 # Edge case: function explicitly returning ``None``
 def do_nothing() -> None:
