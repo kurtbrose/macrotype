@@ -115,6 +115,12 @@ class MixedDict(TypedDict):
     optional_field: NotRequired[str]
     required_override: Required[int]
 
+class BaseTD(TypedDict):
+    base_field: int
+
+class SubTD(BaseTD):
+    sub_field: str
+
 class GenericClass[T]:
     value: T
     def get(self) -> T: ...

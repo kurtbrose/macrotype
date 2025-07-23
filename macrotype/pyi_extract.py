@@ -599,7 +599,14 @@ class PyiClass(PyiNamedElement):
         is_enum = isinstance(klass, enum.EnumMeta)
         is_namedtuple = issubclass(klass, tuple) and hasattr(klass, "_fields")
         members: list[PyiElement] = []
-        typeddict_total = klass.__dict__.get("__total__", True) if is_typeddict else None
+        td_bases = [
+            b
+            for b in getattr(klass, "__orig_bases__", ())
+            if isinstance(b, typing._TypedDictMeta)
+        ] if is_typeddict else []
+        typeddict_total = (
+            klass.__dict__.get("__total__", True) if is_typeddict and not td_bases else None
+        )
         decorators: list[str] = []
         used_types: set[type] = set()
         if getattr(klass, "__final__", False):
@@ -644,8 +651,14 @@ class PyiClass(PyiNamedElement):
                 used_types=used_types,
             )
         if is_typeddict:
-            bases = ["TypedDict"]
-            used_types.add(typing.TypedDict)
+            bases = []
+            for b in td_bases:
+                fmt = format_type(b)
+                bases.append(fmt.text)
+                used_types.update(fmt.used)
+            if not bases:
+                bases = ["TypedDict"]
+                used_types.add(typing.TypedDict)
         else:
             raw_bases = getattr(klass, "__orig_bases__", None) or klass.__bases__
             bases = []
@@ -672,7 +685,10 @@ class PyiClass(PyiNamedElement):
 
         raw_ann = klass.__dict__.get("__annotations__", {})
         if is_typeddict:
-            resolved = raw_ann
+            base_fields: set[str] = set()
+            for b in td_bases:
+                base_fields.update(getattr(b, "__annotations__", {}).keys())
+            resolved = {n: a for n, a in raw_ann.items() if n not in base_fields}
         else:
             try:
                 globalns = vars(inspect.getmodule(klass))
