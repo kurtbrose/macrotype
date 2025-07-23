@@ -874,12 +874,9 @@ class PyiModule:
                 used_types.update(fmt.used)
                 params = []
                 for tp in getattr(obj, "__type_params__", ()):  # pragma: no cover - py312
-                    if isinstance(tp, typing.TypeVar):
-                        params.append(tp.__name__)
-                    elif isinstance(tp, typing.ParamSpec):
-                        params.append(f"**{tp.__name__}")
-                    elif isinstance(tp, typing.TypeVarTuple):
-                        params.append(f"*{tp.__name__}")
+                    fmt_tp = format_type_param(tp)
+                    params.append(fmt_tp.text)
+                    used_types.update(fmt_tp.used)
                 body.append(
                     PyiAlias(
                         name=name,

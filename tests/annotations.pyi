@@ -51,6 +51,10 @@ type AliasFuncP[**P] = Callable[P, int]
 
 type AliasTupleTs[*Ts] = tuple[Unpack[Ts]]
 
+type AliasNumberLikeList[NumberLike: (int, float)] = list[NumberLike]
+
+type AliasBoundU[U: str] = list[U]
+
 UNTYPED_LAMBDA: function
 
 TYPED_LAMBDA: Callable[[int, int], int]
