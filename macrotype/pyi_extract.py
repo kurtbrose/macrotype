@@ -356,24 +356,25 @@ _ALIAS_TYPES: tuple[type, ...] = (
 def _unwrap_decorated_function(obj: Any) -> Callable | None:
     """Return the underlying function for *obj* if it is a decorated callable."""
 
-    if inspect.isfunction(obj):
-        return obj
-    if (
-        callable(obj)
-        and hasattr(obj, "__wrapped__")
-        and inspect.isfunction(obj.__wrapped__)
-        and not isinstance(
-            obj,
-            (
-                classmethod,
-                staticmethod,
-                property,
-                functools.cached_property,
-            ),
-        )
-    ):
-        return obj.__wrapped__
-    return None
+    while True:
+        if inspect.isfunction(obj):
+            return obj
+        if not (
+            callable(obj)
+            and hasattr(obj, "__wrapped__")
+            and inspect.isfunction(obj.__wrapped__)
+            and not isinstance(
+                obj,
+                (
+                    classmethod,
+                    staticmethod,
+                    property,
+                    functools.cached_property,
+                ),
+            )
+        ):
+            return None
+        obj = obj.__wrapped__
 
 
 def _extract_partialmethod(

@@ -473,6 +473,20 @@ def iter_sequence(seq: cabc.Sequence[int]) -> cabc.Iterator[int]:
 
 
 # Edge case: decorated functions should retain original signature
+def simple_wrap(fn: Callable[[int], int]) -> Callable[[int], int]:
+    @functools.wraps(fn)
+    def inner(x: int) -> int:
+        return fn(x)
+
+    return inner
+
+
+@simple_wrap
+@simple_wrap
+def double_wrapped(x: int) -> int:
+    return x + 1
+
+
 @functools.lru_cache()
 def cached_add(a: int, b: int) -> int:
     return a + b
