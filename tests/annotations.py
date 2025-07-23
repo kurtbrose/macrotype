@@ -172,6 +172,15 @@ class MixedDict(TypedDict):
     required_override: Required[int]
 
 
+# Edge case: TypedDict inheritance should retain base class
+class BaseTD(TypedDict):
+    base_field: int
+
+
+class SubTD(BaseTD):
+    sub_field: str
+
+
 class GenericClass(Generic[T]):
     value: T
 
