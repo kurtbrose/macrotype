@@ -1320,6 +1320,10 @@ class _ModuleBuilder:
         if self._handle_foreign_variable(name, obj):
             return
         if id(obj) in self.seen:
+            orig = self.seen[id(obj)]
+            if orig != name:
+                self._add(PyiAlias(name=name, value=orig))
+                self.handled_names.add(name)
             return
         self.seen[id(obj)] = name
         self.handled_names.add(name)
