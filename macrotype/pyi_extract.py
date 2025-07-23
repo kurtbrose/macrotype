@@ -527,6 +527,9 @@ class PyiFunction(PyiNamedElement):
         if getattr(fn, "__final__", False):
             decorators.append("final")
             used_types.add(typing.final)
+        if getattr(fn, "__override__", False):
+            decorators.append("override")
+            used_types.add(getattr(typing, "override"))
         if "overload" in decorators:
             used_types.add(typing.overload)
 

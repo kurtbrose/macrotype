@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Callable, ClassVar, Concatenate, Final, Literal, LiteralString, NamedTuple, Never, NewType, NoReturn, NotRequired, ParamSpec, Protocol, Required, Self, TypeGuard, TypeVar, TypeVarTuple, TypedDict, Unpack, final, overload, runtime_checkable
+from typing import Annotated, Any, Callable, ClassVar, Concatenate, Final, Literal, LiteralString, NamedTuple, Never, NewType, NoReturn, NotRequired, ParamSpec, Protocol, Required, Self, TypeGuard, TypeVar, TypeVarTuple, TypedDict, Unpack, final, overload, override, runtime_checkable
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from enum import Enum, IntEnum
@@ -95,6 +95,10 @@ class Basic:
 
 class Child(Basic):
     pass
+
+class OverrideChild(Basic):
+    @override
+    def copy[T](self, param: T) -> T: ...
 
 class SampleDict(TypedDict):
     name: str
