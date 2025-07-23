@@ -44,6 +44,9 @@ Ts = TypeVarTuple("Ts")
 U = TypeVar("U", bound=str)
 # Constrained type variable ensures constraint metadata is ignored
 NumberLike = TypeVar("NumberLike", int, float)
+CovariantT = TypeVar("CovariantT", covariant=True)
+ContravariantT = TypeVar("ContravariantT", contravariant=True)
+InferredT = TypeVar("InferredT", infer_variance=True)
 UserId = NewType("UserId", int)
 
 MyList: TypeAlias = list[int]
