@@ -903,10 +903,28 @@ class PyiModule:
                     if isinstance(obj, alias_type):
                         alias_used = {alias_type}
                         used_types.update(alias_used)
+                        if isinstance(obj, typing.TypeVar):
+                            args = [f"'{obj.__name__}'"]
+                            if getattr(obj, "__covariant__", False):
+                                args.append("covariant=True")
+                            if getattr(obj, "__contravariant__", False):
+                                args.append("contravariant=True")
+                            if getattr(obj, "__infer_variance__", False):
+                                args.append("infer_variance=True")
+                            value = f"TypeVar({', '.join(args)})"
+                        elif isinstance(obj, typing.ParamSpec):
+                            args = [f"'{obj.__name__}'"]
+                            if getattr(obj, "__covariant__", False):
+                                args.append("covariant=True")
+                            if getattr(obj, "__contravariant__", False):
+                                args.append("contravariant=True")
+                            value = f"ParamSpec({', '.join(args)})"
+                        else:
+                            value = f"{alias_type.__name__}('{obj.__name__}')"
                         body.append(
                             PyiAlias(
                                 name=name,
-                                value=f"{alias_type.__name__}('{obj.__name__}')",
+                                value=value,
                                 used_types=alias_used,
                             )
                         )

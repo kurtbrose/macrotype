@@ -15,6 +15,12 @@ U = TypeVar('U')
 
 NumberLike = TypeVar('NumberLike')
 
+CovariantT = TypeVar('CovariantT', covariant=True)
+
+ContravariantT = TypeVar('ContravariantT', contravariant=True)
+
+InferredT = TypeVar('InferredT', infer_variance=True)
+
 UserId = NewType('UserId', int)
 
 MyList = list[int]
