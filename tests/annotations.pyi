@@ -152,6 +152,11 @@ class OptionDataclass:
     value: int
 
 @dataclass
+class InitVarExample:
+    x: int
+    def __post_init__(self, init_only: int) -> None: ...
+
+@dataclass
 class Outer:
     x: int
     @dataclass

@@ -672,6 +672,8 @@ class PyiClass(PyiNamedElement):
                 resolved = raw_ann
 
         for name, annotation in resolved.items():
+            if is_dataclass_obj and isinstance(annotation, dataclasses.InitVar):
+                continue
             fmt = format_type(annotation)
             members.append(
                 PyiVariable(name=name, type_str=fmt.text, used_types=fmt.used)
