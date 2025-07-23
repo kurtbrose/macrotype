@@ -60,6 +60,10 @@ type AliasNumberLikeList[NumberLike: (int, float)] = list[NumberLike]
 
 type AliasBoundU[U: str] = list[U]
 
+ANNOTATED_FINAL: Final[int]
+
+ANNOTATED_CLASSVAR: ClassVar[int]
+
 UNANNOTATED_CONST: int
 
 UNTYPED_LAMBDA: function
