@@ -23,6 +23,7 @@ from typing import (
     Self,
     TypeVarTuple,
     Unpack,
+    Concatenate,
     Tuple,
     Any,
     TypeAlias,
@@ -263,6 +264,13 @@ def sum_of(*args: tuple[int]) -> int:
 
 def dict_echo(**kwargs: dict[str, Any]) -> dict[str, Any]:
     return kwargs
+
+# Edge case: ``Concatenate`` parameter handling
+def prepend_one(fn: Callable[Concatenate[int, P], int]) -> Callable[P, int]:
+    def inner(*args: P.args, **kwargs: P.kwargs) -> int:
+        return fn(1, *args, **kwargs)
+
+    return inner
 
 
 # Edge case: function explicitly returning ``None``

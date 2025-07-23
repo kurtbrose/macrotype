@@ -93,6 +93,15 @@ def format_type(type_obj: Any) -> TypeRenderInfo:
     origin = get_origin(type_obj)
     args = get_args(type_obj)
 
+    if origin is typing.Concatenate:
+        used.add(typing.Concatenate)
+        arg_parts = [format_type(a) for a in args]
+        used.update(*(p.used for p in arg_parts))
+        return TypeRenderInfo(
+            f"Concatenate[{', '.join(p.text for p in arg_parts)}]",
+            used,
+        )
+
     if origin in {Callable, collections.abc.Callable}:
         used.add(Callable)
         if args:
@@ -106,6 +115,15 @@ def format_type(type_obj: Any) -> TypeRenderInfo:
                 ret_fmt = format_type(ret)
                 used.update(ret_fmt.used)
                 return TypeRenderInfo(f"Callable[{arg_list.__name__}, {ret_fmt.text}]", used)
+            if get_origin(arg_list) is typing.Concatenate:
+                concat_fmt = format_type(arg_list)
+                used.update(concat_fmt.used)
+                ret_fmt = format_type(ret)
+                used.update(ret_fmt.used)
+                return TypeRenderInfo(
+                    f"Callable[{concat_fmt.text}, {ret_fmt.text}]",
+                    used,
+                )
             arg_strs = [format_type(a) for a in arg_list]
             used.update(*(a.used for a in arg_strs))
             ret_fmt = format_type(ret)
