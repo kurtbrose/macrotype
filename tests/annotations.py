@@ -331,7 +331,8 @@ LITERAL_STR_VAR: LiteralString
 def echo_literal(value: LiteralString) -> LiteralString:
     return value
 
-
+# Edge case: variable annotated as ``None``
+NONE_VAR: None = None
 
 # Edge case: async function
 async def async_add_one(x: int) -> int:

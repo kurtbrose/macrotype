@@ -367,8 +367,11 @@ class PyiVariable(PyiNamedElement):
     @classmethod
     def from_assignment(cls, name: str, value: Any) -> PyiVariable:
         """Create a :class:`PyiVariable` from an assignment value."""
-
-        return cls(name=name, type_str=type(value).__name__)
+        if value is None:
+            type_name = "None"
+        else:
+            type_name = type(value).__name__
+        return cls(name=name, type_str=type_name)
 
 
 # === Alias ===
@@ -808,6 +811,18 @@ class PyiModule:
                 continue
 
             if not hasattr(obj, '__module__') or obj.__module__ != mod_name:
+                annotation = resolved_ann.get(name)
+                if annotation is not None:
+                    fmt = format_type(annotation)
+                    used_types.update(fmt.used)
+                    body.append(
+                        PyiVariable(
+                            name=name,
+                            type_str=fmt.text,
+                            used_types=fmt.used,
+                        )
+                    )
+                    handled_names.add(name)
                 continue
             if id(obj) in seen:
                 continue
