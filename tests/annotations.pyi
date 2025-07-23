@@ -121,6 +121,11 @@ class KwOnlyPoint:
     x: int
     y: int
 
+@dataclass(eq=False)
+class NoAutoEq:
+    x: int
+    def __eq__(self, other: object) -> bool: ...
+
 @dataclass
 class Outer:
     x: int
