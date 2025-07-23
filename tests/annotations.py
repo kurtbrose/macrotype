@@ -93,6 +93,10 @@ FUNC_ELLIPSIS: Callable[..., int]
 # Variable using tuple ellipsis syntax
 TUPLE_VAR: tuple[int, ...]
 
+# Edge case: annotated constants with values should honor the annotation
+ANNOTATED_FINAL: Final[int] = 5
+ANNOTATED_CLASSVAR: ClassVar[int] = 1
+
 # Edge case: unannotated constant should be included
 UNANNOTATED_CONST = 42
 
