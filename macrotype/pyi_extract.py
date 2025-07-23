@@ -427,11 +427,14 @@ class PyiFunction(PyiNamedElement):
         fn: Callable,
         decorators: list[str] | None = None,
         exclude_params: set[str] | None = None,
+        *,
+        globalns: dict[str, Any] | None = None,
+        localns: dict[str, Any] | None = None,
     ) -> PyiFunction:
         """Create a :class:`PyiFunction` from ``fn``."""
 
         try:
-            hints = get_type_hints(fn)
+            hints = get_type_hints(fn, globalns=globalns, localns=localns)
         except Exception:
             hints = {}
 
@@ -688,10 +691,21 @@ class PyiClass(PyiNamedElement):
                         for ov in ovs:
                             members.append(
                                 PyiFunction.from_function(
-                                    ov, decorators=["overload"], exclude_params=class_params
+                                    ov,
+                                    decorators=["overload"],
+                                    exclude_params=class_params,
+                                    globalns=globalns,
+                                    localns=klass.__dict__,
                                 )
                             )
-                    members.append(PyiFunction.from_function(attr, exclude_params=class_params))
+                    members.append(
+                        PyiFunction.from_function(
+                            attr,
+                            exclude_params=class_params,
+                            globalns=globalns,
+                            localns=klass.__dict__,
+                        )
+                    )
                     continue
 
                 handled = False
@@ -702,6 +716,8 @@ class PyiClass(PyiNamedElement):
                                 getattr(attr, func_attr),
                                 decorators=[deco],
                                 exclude_params=class_params,
+                                globalns=globalns,
+                                localns=klass.__dict__,
                             )
                         )
                         if attr_type is functools.cached_property:
@@ -802,11 +818,20 @@ class PyiModule:
                 ovs = _get_overloads(obj)
                 if ovs:
                     for ov in ovs:
-                        ofunc = PyiFunction.from_function(ov, decorators=["overload"])
+                        ofunc = PyiFunction.from_function(
+                            ov,
+                            decorators=["overload"],
+                            globalns=globals_dict,
+                            localns=globals_dict,
+                        )
                         used_types.update(ofunc.used_types)
                         body.append(ofunc)
                 else:
-                    func = PyiFunction.from_function(obj)
+                    func = PyiFunction.from_function(
+                        obj,
+                        globalns=globals_dict,
+                        localns=globals_dict,
+                    )
                     used_types.update(func.used_types)
                     body.append(func)
             elif inspect.isclass(obj):
