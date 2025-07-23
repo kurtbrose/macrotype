@@ -341,6 +341,67 @@ _ALIAS_TYPES: tuple[type, ...] = (
 )
 
 
+def _unwrap_decorated_function(obj: Any) -> Callable | None:
+    """Return the underlying function for *obj* if it is a decorated callable."""
+
+    if inspect.isfunction(obj):
+        return obj
+    if (
+        callable(obj)
+        and hasattr(obj, "__wrapped__")
+        and inspect.isfunction(obj.__wrapped__)
+        and not isinstance(
+            obj,
+            (
+                classmethod,
+                staticmethod,
+                property,
+                functools.cached_property,
+            ),
+        )
+    ):
+        return obj.__wrapped__
+    return None
+
+
+def _extract_partialmethod(
+    pm: functools.partialmethod,
+    klass: type,
+    name: str,
+    *,
+    globalns: dict[str, Any],
+) -> Callable:
+    """Return a function object for ``partialmethod`` *pm* defined on *klass*."""
+
+    fn = pm.__get__(None, klass)
+    try:
+        hints = get_type_hints(pm.func, globalns=globalns, localns=klass.__dict__, include_extras=True)
+    except Exception:
+        hints = getattr(pm.func, "__annotations__", {}).copy()
+
+    sig_params = inspect.signature(fn).parameters
+    fn.__annotations__ = {k: v for k, v in hints.items() if k in sig_params or k == "return"}
+    fn.__name__ = name
+    return fn
+
+
+def _get_class_function(
+    attr: Any,
+    name: str,
+    klass: type,
+    *,
+    globalns: dict[str, Any],
+) -> Callable | None:
+    """Return the underlying function represented by *attr* on *klass*."""
+
+    fn = _unwrap_decorated_function(attr)
+    if fn is not None:
+        return fn
+    if isinstance(attr, functools.partialmethod):
+        return _extract_partialmethod(attr, klass, name, globalns=globalns)
+    return None
+
+
 def _dataclass_decorator(klass: type) -> tuple[str, set[type]] | None:
     """Return the ``@dataclass`` decorator text for *klass*."""
 
@@ -407,6 +468,111 @@ class PyiAlias(PyiNamedElement):
         return [f"{space}{kw}{self.name}{param_str} = {self.value}"]
 
 
+def _collect_args(sig: inspect.Signature, hints: dict[str, Any]) -> tuple[list[tuple[str, str | None]], set[type]]:
+    """Return rendered arguments and used types for ``sig``."""
+
+    args: list[tuple[str, str | None]] = []
+    used_types: set[type] = set()
+    posonly: list[tuple[str, str | None]] = []
+    star_added = False
+
+    for name, param in sig.parameters.items():
+        display_name = name
+        if param.kind is inspect.Parameter.POSITIONAL_ONLY:
+            kind = "posonly"
+        elif param.kind is inspect.Parameter.VAR_POSITIONAL:
+            display_name = f"*{name}"
+            star_added = True
+            kind = "varpos"
+        elif param.kind is inspect.Parameter.KEYWORD_ONLY:
+            kind = "kwonly"
+        elif param.kind is inspect.Parameter.VAR_KEYWORD:
+            display_name = f"**{name}"
+            kind = "varkw"
+        else:
+            kind = "normal"
+
+        if param.annotation is inspect._empty:
+            if name in {"self", "cls"}:
+                ann = None
+            else:
+                ann = "Any"
+                used_types.add(Any)
+        else:
+            hint = hints.get(name, "Any")
+            fmt = format_type(hint)
+            used_types.update(fmt.used)
+            ann = fmt.text
+
+        pair = (display_name, ann)
+
+        if kind == "posonly":
+            posonly.append(pair)
+            continue
+
+        if posonly:
+            args.extend(posonly)
+            args.append(("/", None))
+            posonly.clear()
+
+        if kind == "kwonly" and not star_added:
+            args.append(("*", None))
+            star_added = True
+
+        args.append(pair)
+
+    if posonly:
+        args.extend(posonly)
+        args.append(("/", None))
+
+    return args, used_types
+
+
+def _collect_type_params(
+    fn: Callable,
+    hints: dict[str, Any],
+    exclude_params: set[str] | None,
+) -> tuple[list[str], set[type]]:
+    """Return type parameter strings and used types for ``fn``."""
+
+    tp_strings: list[str] = []
+    used: set[type] = set()
+    type_param_objs = getattr(fn, "__type_params__", None)
+    if type_param_objs:
+        for tp in type_param_objs:
+            name = tp.__name__
+            if exclude_params and name in exclude_params:
+                continue
+            fmt = format_type_param(tp)
+            tp_strings.append(fmt.text)
+            used.update(fmt.used)
+    else:
+        all_types = list(hints.values())
+        type_params = sorted(find_typevars(t) for t in all_types)
+        flat_params = sorted(set().union(*type_params)) if type_params else []
+        if exclude_params:
+            flat_params = [p for p in flat_params if p.lstrip("*") not in exclude_params]
+        tp_strings = flat_params
+    return tp_strings, used
+
+
+def _collect_decorators(decorators: list[str] | None, fn: Callable) -> tuple[list[str], set[type]]:
+    """Return decorator strings and used types for ``fn``."""
+
+    decos = list(decorators or [])
+    used: set[type] = set()
+    if getattr(fn, "__final__", False):
+        decos.append("final")
+        used.add(typing.final)
+    if getattr(fn, "__override__", False):
+        decos.append("override")
+        used.add(getattr(typing, "override"))
+    if "overload" in decos:
+        used.add(typing.overload)
+    return decos, used
+
+
+
 # === Function ===
 
 @dataclass
@@ -458,94 +624,20 @@ class PyiFunction(PyiNamedElement):
             hints = {}
 
         sig = inspect.signature(fn)
-        args = []
-        used_types = set()
-        posonly: list[tuple[str, str | None]] = []
-        star_added = False
+        args, used_types = _collect_args(sig, hints)
 
-        for name, param in sig.parameters.items():
-            display_name = name
-            if param.kind is inspect.Parameter.POSITIONAL_ONLY:
-                kind = "posonly"
-            elif param.kind is inspect.Parameter.VAR_POSITIONAL:
-                display_name = f"*{name}"
-                star_added = True
-                kind = "varpos"
-            elif param.kind is inspect.Parameter.KEYWORD_ONLY:
-                kind = "kwonly"
-            elif param.kind is inspect.Parameter.VAR_KEYWORD:
-                display_name = f"**{name}"
-                kind = "varkw"
-            else:
-                kind = "normal"
-
-            if param.annotation is inspect._empty:
-                if name in {'self', 'cls'}:
-                    ann = None
-                else:
-                    ann = 'Any'
-                    used_types.add(Any)
-            else:
-                hint = hints.get(name, 'Any')
-                fmt = format_type(hint)
-                used_types.update(fmt.used)
-                ann = fmt.text
-
-            pair = (display_name, ann)
-
-            if kind == "posonly":
-                posonly.append(pair)
-                continue
-
-            if posonly:
-                args.extend(posonly)
-                args.append(("/", None))
-                posonly.clear()
-
-            if kind == "kwonly" and not star_added:
-                args.append(("*", None))
-                star_added = True
-
-            args.append(pair)
-
-        if posonly:
-            args.extend(posonly)
-            args.append(("/", None))
-
-        if 'return' in hints:
-            return_fmt = format_type(hints['return'])
-            used_types.update(return_fmt.used)
-            ret_text = return_fmt.text
+        if "return" in hints:
+            ret_fmt = format_type(hints["return"])
+            ret_text = ret_fmt.text
+            used_types.update(ret_fmt.used)
         else:
             ret_text = ""
 
-        tp_strings: list[str] = []
-        type_param_objs = getattr(fn, "__type_params__", None)
-        if type_param_objs:
-            for tp in type_param_objs:
-                name = tp.__name__
-                if exclude_params and name in exclude_params:
-                    continue
-                fmt = format_type_param(tp)
-                tp_strings.append(fmt.text)
-                used_types.update(fmt.used)
-        else:
-            all_types = list(hints.values())
-            type_params = sorted(find_typevars(t) for t in all_types)
-            flat_params = sorted(set().union(*type_params)) if type_params else []
-            if exclude_params:
-                flat_params = [p for p in flat_params if p.lstrip('*') not in exclude_params]
-            tp_strings = flat_params
+        tp_strings, tp_used = _collect_type_params(fn, hints, exclude_params)
+        used_types.update(tp_used)
 
-        decorators = list(decorators or [])
-        if getattr(fn, "__final__", False):
-            decorators.append("final")
-            used_types.add(typing.final)
-        if getattr(fn, "__override__", False):
-            decorators.append("override")
-            used_types.add(getattr(typing, "override"))
-        if "overload" in decorators:
-            used_types.add(typing.overload)
+        decorators, dec_used = _collect_decorators(decorators, fn)
+        used_types.update(dec_used)
 
         is_async = inspect.iscoroutinefunction(fn) or inspect.isasyncgenfunction(fn)
 
@@ -598,6 +690,7 @@ class PyiClass(PyiNamedElement):
         is_typeddict = isinstance(klass, typing._TypedDictMeta)
         is_enum = isinstance(klass, enum.EnumMeta)
         is_namedtuple = issubclass(klass, tuple) and hasattr(klass, "_fields")
+        globalns = vars(inspect.getmodule(klass))
         members: list[PyiElement] = []
         td_bases = [
             b
@@ -691,7 +784,6 @@ class PyiClass(PyiNamedElement):
             resolved = {n: a for n, a in raw_ann.items() if n not in base_fields}
         else:
             try:
-                globalns = vars(inspect.getmodule(klass))
                 resolved = {
                     name: get_type_hints(
                         klass,
@@ -740,44 +832,7 @@ class PyiClass(PyiNamedElement):
                     continue
                 if attr_name in protocol_skip or getattr(attr, "__name__", None) in protocol_method_names:
                     continue
-                # unwrap decorators that preserve __wrapped__ (e.g. lru_cache)
-                # so we treat the original function as a method
-                fn_attr = None
-                if inspect.isfunction(attr):
-                    fn_attr = attr
-                elif (
-                    callable(attr)
-                    and hasattr(attr, "__wrapped__")
-                    and inspect.isfunction(attr.__wrapped__)
-                    and not isinstance(
-                        attr,
-                        (
-                            classmethod,
-                            staticmethod,
-                            property,
-                            functools.cached_property,
-                        ),
-                    )
-                ):
-                    fn_attr = attr.__wrapped__
-
-                elif isinstance(attr, functools.partialmethod):
-                    fn_attr = attr.__get__(None, klass)
-                    try:
-                        hints = get_type_hints(
-                            attr.func,
-                            globalns=globalns,
-                            localns=klass.__dict__,
-                            include_extras=True,
-                        )
-                    except Exception:
-                        hints = getattr(attr.func, "__annotations__", {}).copy()
-
-                    sig_params = inspect.signature(fn_attr).parameters
-                    fn_attr.__annotations__ = {
-                        k: v for k, v in hints.items() if k in sig_params or k == "return"
-                    }
-                    fn_attr.__name__ = attr_name
+                fn_attr = _get_class_function(attr, attr_name, klass, globalns=globalns)
 
                 if fn_attr is not None:
                     if fn_attr.__name__ == "<lambda>":
@@ -949,24 +1004,7 @@ class PyiModule:
             # decorated callables like ``lru_cache`` wrappers are not
             # ``inspect.isfunction`` but expose ``__wrapped__`` with the
             # original function. Unwrap them so they emit correct stubs.
-            fn_obj = None
-            if inspect.isfunction(obj):
-                fn_obj = obj
-            elif (
-                callable(obj)
-                and hasattr(obj, "__wrapped__")
-                and inspect.isfunction(obj.__wrapped__)
-                and not isinstance(
-                    obj,
-                    (
-                        classmethod,
-                        staticmethod,
-                        property,
-                        functools.cached_property,
-                    ),
-                )
-            ):
-                fn_obj = obj.__wrapped__
+            fn_obj = _unwrap_decorated_function(obj)
 
             if fn_obj is not None:
                 if fn_obj.__name__ == "<lambda>":
