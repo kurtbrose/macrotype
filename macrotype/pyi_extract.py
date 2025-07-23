@@ -1203,6 +1203,14 @@ class _ModuleBuilder:
                 self._add(
                     PyiVariable(name=name, type_str=fmt.text, used_types=fmt.used)
                 )
+            elif isinstance(obj, (int, str, float, bool)):
+                self._add(PyiVariable.from_assignment(name, obj))
+            else:
+                alias_name = getattr(obj, "__name__", None)
+                if alias_name and alias_name != name:
+                    self._add(
+                        PyiAlias(name=name, value=alias_name, used_types={obj})
+                    )
             self.handled_names.add(name)
             return True
         return False
