@@ -465,3 +465,22 @@ def annotated_fn(x: Annotated[int, "inp"]) -> Annotated[str, "out"]:
 
 class FutureClass:
     ...
+
+# Edge case: decorated classmethod and staticmethod retain their names
+def _plain_deco(fn):
+    def wrapper(*args, **kwargs):
+        return fn(*args, **kwargs)
+    wrapper.__wrapped__ = fn
+    return wrapper
+
+
+class DecoratedMethods:
+    @classmethod
+    @_plain_deco
+    def cls_decorated(cls, x: int) -> int:
+        return x
+
+    @staticmethod
+    @_plain_deco
+    def static_decorated(x: int) -> int:
+        return x

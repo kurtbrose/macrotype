@@ -291,6 +291,14 @@ def annotated_fn(x: Annotated[int, 'inp']) -> Annotated[str, 'out']: ...
 class FutureClass:
     pass
 
+def _plain_deco(fn: Any): ...
+
+class DecoratedMethods:
+    @classmethod
+    def cls_decorated(cls, x: int) -> int: ...
+    @staticmethod
+    def static_decorated(x: int) -> int: ...
+
 GLOBAL: int
 
 CONST: Final[str]

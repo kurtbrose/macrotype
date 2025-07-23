@@ -807,34 +807,58 @@ class PyiClass(PyiNamedElement):
                 handled = False
                 for attr_type, (func_attr, deco) in _ATTR_DECORATORS.items():
                     if isinstance(attr, attr_type):
+                        func_obj = getattr(attr, func_attr)
+                        if (
+                            hasattr(func_obj, "__wrapped__")
+                            and inspect.isfunction(func_obj.__wrapped__)
+                        ):
+                            func_obj = func_obj.__wrapped__
                         func = PyiFunction.from_function(
-                            getattr(attr, func_attr),
+                            func_obj,
                             decorators=[deco],
                             exclude_params=class_params,
                             globalns=globalns,
                             localns=klass.__dict__,
                         )
+                        if func.name != attr_name:
+                            func.name = attr_name
                         members.append(func)
                         used_types.update(func.used_types)
                         if attr_type is property:
                             if attr.fset is not None:
+                                fset_obj = attr.fset
+                                if (
+                                    hasattr(fset_obj, "__wrapped__")
+                                    and inspect.isfunction(fset_obj.__wrapped__)
+                                ):
+                                    fset_obj = fset_obj.__wrapped__
                                 setter = PyiFunction.from_function(
-                                    attr.fset,
+                                    fset_obj,
                                     decorators=[f"{attr_name}.setter"],
                                     exclude_params=class_params,
                                     globalns=globalns,
                                     localns=klass.__dict__,
                                 )
+                                if setter.name != attr_name:
+                                    setter.name = attr_name
                                 members.append(setter)
                                 used_types.update(setter.used_types)
                             if attr.fdel is not None:
+                                fdel_obj = attr.fdel
+                                if (
+                                    hasattr(fdel_obj, "__wrapped__")
+                                    and inspect.isfunction(fdel_obj.__wrapped__)
+                                ):
+                                    fdel_obj = fdel_obj.__wrapped__
                                 deleter = PyiFunction.from_function(
-                                    attr.fdel,
+                                    fdel_obj,
                                     decorators=[f"{attr_name}.deleter"],
                                     exclude_params=class_params,
                                     globalns=globalns,
                                     localns=klass.__dict__,
                                 )
+                                if deleter.name != attr_name:
+                                    deleter.name = attr_name
                                 members.append(deleter)
                                 used_types.update(deleter.used_types)
                         elif attr_type is functools.cached_property:
