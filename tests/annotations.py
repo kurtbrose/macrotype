@@ -498,3 +498,46 @@ def annotated_fn(x: Annotated[int, "inp"]) -> Annotated[str, "out"]:
 
 
 class FutureClass: ...
+
+
+# Helper decorator to wrap descriptors and set ``__wrapped__``
+def wrap_descriptor(desc):
+    class Wrapper:
+        def __init__(self, d):
+            self.__wrapped__ = d
+            self._d = d
+
+        def __get__(self, obj, objtype=None):
+            return self._d.__get__(obj, objtype)
+
+        def __set__(self, obj, value):
+            return self._d.__set__(obj, value)
+
+        def __delete__(self, obj):
+            return self._d.__delete__(obj)
+
+    return Wrapper(desc)
+
+
+class WrappedDescriptors:
+    """Class with descriptors wrapped by another decorator."""
+
+    @wrap_descriptor
+    @property
+    def wrapped_prop(self) -> int:
+        return 1
+
+    @wrap_descriptor
+    @classmethod
+    def wrapped_cls(cls) -> int:
+        return 2
+
+    @wrap_descriptor
+    @staticmethod
+    def wrapped_static(x: int) -> int:
+        return x
+
+    @wrap_descriptor
+    @cached_property
+    def wrapped_cached(self) -> int:
+        return 3
