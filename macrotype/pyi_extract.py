@@ -875,13 +875,19 @@ class PyiModule:
         handled_names: set[str] = set()
         for name, obj in globals_dict.items():
             if resolved_ann.get(name) is typing.TypeAlias:
-                fmt = format_type(obj)
-                used_types.update(fmt.used)
+                if isinstance(obj, str):
+                    fmt_text = obj
+                    alias_used: set[type] = set()
+                else:
+                    fmt = format_type(obj)
+                    fmt_text = fmt.text
+                    alias_used = fmt.used
+                    used_types.update(alias_used)
                 body.append(
                     PyiAlias(
                         name=name,
-                        value=fmt.text,
-                        used_types=fmt.used,
+                        value=fmt_text,
+                        used_types=alias_used,
                     )
                 )
                 continue

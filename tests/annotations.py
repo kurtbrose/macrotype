@@ -67,6 +67,9 @@ type IntFunc[**P] = Callable[P, int]
 type LabeledTuple[*Ts] = tuple[str, *Ts]
 type RecursiveList[T] = T | list[RecursiveList[T]]
 
+# Edge case: alias referencing a forward-declared class
+ForwardAlias: TypeAlias = "FutureClass"
+
 # Edge case: alias defined via ``TypeAliasType`` for a TypeVar alias
 AliasListT = TypeAliasType("AliasListT", list[T], type_params=(T,))
 # Edge case: ``TypeAliasType`` used with a ``ParamSpec`` alias
@@ -444,3 +447,7 @@ def cached_add(a: int, b: int) -> int:
 # Edge case: ``Annotated`` parameter and return types
 def annotated_fn(x: Annotated[int, "inp"]) -> Annotated[str, "out"]:
     return str(x)
+
+
+class FutureClass:
+    ...
