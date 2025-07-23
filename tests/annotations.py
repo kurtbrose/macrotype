@@ -192,6 +192,12 @@ class NoAutoEq:
     def __eq__(self, other: object) -> bool:
         return isinstance(other, NoAutoEq) and self.x == other.x
 
+# Dataclass with additional options to test decorator generation
+# ``weakref_slot=True`` requires ``slots=True``
+@dataclass(order=True, match_args=False, slots=True, weakref_slot=True)
+class OptionDataclass:
+    value: int
+
 
 @dataclass
 class Outer:
