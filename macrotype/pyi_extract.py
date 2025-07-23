@@ -1201,15 +1201,14 @@ class _ModuleBuilder:
 
     def _handle_foreign_variable(self, name: str, obj: Any) -> bool:
         if not hasattr(obj, "__module__"):
-            if isinstance(obj, (int, str, float, bool)):
+            annotation = self.resolved_ann.get(name)
+            if annotation is not None:
+                fmt = format_type(annotation)
+                self._add(
+                    PyiVariable(name=name, type_str=fmt.text, used_types=fmt.used)
+                )
+            elif isinstance(obj, (int, str, float, bool)):
                 self._add(PyiVariable.from_assignment(name, obj))
-            else:
-                annotation = self.resolved_ann.get(name)
-                if annotation is not None:
-                    fmt = format_type(annotation)
-                    self._add(
-                        PyiVariable(name=name, type_str=fmt.text, used_types=fmt.used)
-                    )
             self.handled_names.add(name)
             return True
         if obj.__module__ != self.mod_name:
