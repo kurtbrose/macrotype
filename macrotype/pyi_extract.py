@@ -754,16 +754,37 @@ class PyiClass(PyiNamedElement):
                 handled = False
                 for attr_type, (func_attr, deco) in _ATTR_DECORATORS.items():
                     if isinstance(attr, attr_type):
-                        members.append(
-                            PyiFunction.from_function(
-                                getattr(attr, func_attr),
-                                decorators=[deco],
-                                exclude_params=class_params,
-                                globalns=globalns,
-                                localns=klass.__dict__,
-                            )
+                        func = PyiFunction.from_function(
+                            getattr(attr, func_attr),
+                            decorators=[deco],
+                            exclude_params=class_params,
+                            globalns=globalns,
+                            localns=klass.__dict__,
                         )
-                        if attr_type is functools.cached_property:
+                        members.append(func)
+                        used_types.update(func.used_types)
+                        if attr_type is property:
+                            if attr.fset is not None:
+                                setter = PyiFunction.from_function(
+                                    attr.fset,
+                                    decorators=[f"{attr_name}.setter"],
+                                    exclude_params=class_params,
+                                    globalns=globalns,
+                                    localns=klass.__dict__,
+                                )
+                                members.append(setter)
+                                used_types.update(setter.used_types)
+                            if attr.fdel is not None:
+                                deleter = PyiFunction.from_function(
+                                    attr.fdel,
+                                    decorators=[f"{attr_name}.deleter"],
+                                    exclude_params=class_params,
+                                    globalns=globalns,
+                                    localns=klass.__dict__,
+                                )
+                                members.append(deleter)
+                                used_types.update(deleter.used_types)
+                        elif attr_type is functools.cached_property:
                             used_types.add(functools.cached_property)
                         handled = True
                         break
