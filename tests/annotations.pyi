@@ -45,6 +45,10 @@ type AliasFuncP[**P] = Callable[P, int]
 
 type AliasTupleTs[*Ts] = tuple[Unpack[Ts]]
 
+UNTYPED_LAMBDA: function
+
+TYPED_LAMBDA: Callable[[int, int], int]
+
 class Basic:
     simple: list[str]
     mapping: dict[str, int]

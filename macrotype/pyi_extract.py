@@ -689,6 +689,8 @@ class PyiClass(PyiNamedElement):
                 if attr_name in auto_methods:
                     continue
                 if inspect.isfunction(attr):
+                    if attr.__name__ == "<lambda>":
+                        continue
                     ovs = _get_overloads(attr)
                     if ovs:
                         for ov in ovs:
@@ -830,6 +832,22 @@ class PyiModule:
             handled_names.add(name)
 
             if inspect.isfunction(obj):
+                if obj.__name__ == "<lambda>":
+                    annotation = resolved_ann.get(name)
+                    if annotation is not None:
+                        fmt = format_type(annotation)
+                        used_types.update(fmt.used)
+                        body.append(
+                            PyiVariable(
+                                name=name,
+                                type_str=fmt.text,
+                                used_types=fmt.used,
+                            )
+                        )
+                    else:
+                        body.append(PyiVariable.from_assignment(name, obj))
+                    continue
+
                 ovs = _get_overloads(obj)
                 if ovs:
                     for ov in ovs:

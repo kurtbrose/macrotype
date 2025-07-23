@@ -76,6 +76,10 @@ FUNC_ELLIPSIS: Callable[..., int]
 # Variable using tuple ellipsis syntax
 TUPLE_VAR: tuple[int, ...]
 
+# Edge case: lambda expressions should be treated as variables, not functions
+UNTYPED_LAMBDA = lambda x, y: x + y
+TYPED_LAMBDA: Callable[[int, int], int] = lambda a, b: a + b
+
 
 class Basic:
     simple: list[str]
