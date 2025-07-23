@@ -572,6 +572,261 @@ def _collect_decorators(decorators: list[str] | None, fn: Callable) -> tuple[lis
     return decos, used
 
 
+def _typeddict_info(klass: type) -> tuple[list[type], bool | None]:
+    """Return TypedDict base classes and total value for *klass*."""
+
+    if not isinstance(klass, typing._TypedDictMeta):
+        return [], None
+    bases = [
+        b
+        for b in getattr(klass, "__orig_bases__", ())
+        if isinstance(b, typing._TypedDictMeta)
+    ]
+    total = klass.__dict__.get("__total__", True) if not bases else None
+    return bases, total
+
+
+def _class_decorators(klass: type) -> tuple[list[str], set[type], bool]:
+    """Return decorators, used types and dataclass flag for *klass*."""
+
+    decos: list[str] = []
+    used: set[type] = set()
+    if getattr(klass, "__final__", False):
+        decos.append("final")
+        used.add(typing.final)
+    if getattr(klass, "_is_runtime_protocol", False):
+        decos.append("runtime_checkable")
+        used.add(typing.runtime_checkable)
+
+    deco_info = _dataclass_decorator(klass)
+    is_dc = deco_info is not None
+    if deco_info:
+        deco, dec_used = deco_info
+        decos.append(deco)
+        used.update(dec_used)
+
+    return decos, used, is_dc
+
+
+def _namedtuple_members(klass: type) -> tuple[list[PyiElement], set[type]]:
+    """Return ``PyiVariable`` members for ``NamedTuple`` classes."""
+
+    members: list[PyiElement] = []
+    used: set[type] = set()
+    raw_ann = klass.__dict__.get("__annotations__", {})
+    for name, annotation in raw_ann.items():
+        fmt = format_type(annotation)
+        members.append(PyiVariable(name=name, type_str=fmt.text, used_types=fmt.used))
+        used.update(fmt.used)
+    return members, used
+
+
+def _namedtuple_bases(klass: type, type_params: list[str]) -> tuple[list[str], set[type]]:
+    """Return bases and used types for ``NamedTuple`` classes."""
+
+    bases = ["NamedTuple"]
+    used: set[type] = {typing.NamedTuple}
+    raw_bases = getattr(klass, "__orig_bases__", ())
+    for b in raw_bases:
+        if get_origin(b) is typing.Generic:
+            if not type_params:
+                for param in get_args(b):
+                    fmt = format_type(param)
+                    type_params.append(fmt.text)
+                    used.update(fmt.used)
+    return bases, used
+
+
+def _typeddict_bases(klass: type, bases: list[type]) -> tuple[list[str], set[type]]:
+    """Return rendered bases and used types for ``TypedDict`` classes."""
+
+    rendered: list[str] = []
+    used: set[type] = set()
+    for b in bases:
+        fmt = format_type(b)
+        rendered.append(fmt.text)
+        used.update(fmt.used)
+    if not rendered:
+        rendered = ["TypedDict"]
+        used.add(typing.TypedDict)
+    return rendered, used
+
+
+def _normal_class_bases(klass: type, type_params: list[str]) -> tuple[list[str], set[type]]:
+    """Return rendered bases and used types for normal classes."""
+
+    raw_bases = getattr(klass, "__orig_bases__", None) or klass.__bases__
+    rendered: list[str] = []
+    used: set[type] = set()
+    for b in raw_bases:
+        if b is object:
+            continue
+        if get_origin(b) is typing.Generic:
+            if not type_params:
+                for param in get_args(b):
+                    fmt = format_type(param)
+                    type_params.append(fmt.text)
+                    used.update(fmt.used)
+            continue
+        fmt = format_type(b)
+        rendered.append(fmt.text)
+        used.update(fmt.used)
+    return rendered, used
+
+
+def _class_variables(
+    klass: type,
+    *,
+    globalns: dict[str, Any],
+    is_typeddict: bool,
+    td_bases: list[type],
+    is_dataclass_obj: bool,
+) -> tuple[list[PyiElement], set[type]]:
+    """Return ``PyiVariable`` members for ``klass``."""
+
+    raw_ann = klass.__dict__.get("__annotations__", {})
+    if is_typeddict:
+        base_fields: set[str] = set()
+        for b in td_bases:
+            base_fields.update(getattr(b, "__annotations__", {}).keys())
+        resolved = {n: a for n, a in raw_ann.items() if n not in base_fields}
+    else:
+        try:
+            resolved = {
+                name: get_type_hints(
+                    klass,
+                    globalns=globalns,
+                    localns=klass.__dict__,
+                    include_extras=True,
+                ).get(name, annotation)
+                for name, annotation in raw_ann.items()
+            }
+        except Exception:
+            resolved = raw_ann
+
+    members: list[PyiElement] = []
+    used: set[type] = set()
+    for name, annotation in resolved.items():
+        if is_dataclass_obj and isinstance(annotation, dataclasses.InitVar):
+            continue
+        fmt = format_type(annotation)
+        members.append(PyiVariable(name=name, type_str=fmt.text, used_types=fmt.used))
+        used.update(fmt.used)
+    return members, used
+
+
+def _enum_members(klass: enum.EnumMeta) -> list[PyiElement]:
+    """Return ``PyiAlias`` members for ``Enum`` classes."""
+
+    members: list[PyiElement] = []
+    for member_name, member in klass.__members__.items():
+        members.append(PyiAlias(name=member_name, value=repr(member.value)))
+    return members
+
+
+def _class_methods(
+    klass: type,
+    *,
+    globalns: dict[str, Any],
+    class_params: set[str],
+    is_enum: bool,
+    is_dataclass_obj: bool,
+) -> tuple[list[PyiElement], set[type]]:
+    """Return ``PyiFunction`` members for *klass*."""
+
+    if is_dataclass_obj:
+        params = getattr(klass, "__dataclass_params__", None)
+        auto_methods = _dataclass_auto_methods(params)
+    else:
+        auto_methods = set()
+    if is_enum:
+        auto_methods.update({"_generate_next_value_", "__new__"})
+
+    protocol_skip: set[str] = set()
+    protocol_method_names = {"_proto_hook", "_no_init_or_replace_init"}
+    if getattr(klass, "_is_protocol", False):
+        protocol_skip.update({"__init__", "__subclasshook__"})
+
+    members: list[PyiElement] = []
+    used: set[type] = set()
+
+    for attr_name, attr in klass.__dict__.items():
+        if attr_name in auto_methods:
+            continue
+        if attr_name in protocol_skip or getattr(attr, "__name__", None) in protocol_method_names:
+            continue
+        fn_attr = _get_class_function(attr, attr_name, klass, globalns=globalns)
+
+        if fn_attr is not None:
+            if fn_attr.__name__ == "<lambda>":
+                continue
+            ovs = _get_overloads(fn_attr)
+            if ovs:
+                for ov in ovs:
+                    func = PyiFunction.from_function(
+                        ov,
+                        decorators=["overload"],
+                        exclude_params=class_params,
+                        globalns=globalns,
+                        localns=klass.__dict__,
+                    )
+                    members.append(func)
+                    used.update(func.used_types)
+            func = PyiFunction.from_function(
+                fn_attr,
+                exclude_params=class_params,
+                globalns=globalns,
+                localns=klass.__dict__,
+            )
+            members.append(func)
+            used.update(func.used_types)
+            continue
+
+        handled = False
+        for attr_type, (func_attr, deco) in _ATTR_DECORATORS.items():
+            if isinstance(attr, attr_type):
+                func = PyiFunction.from_function(
+                    getattr(attr, func_attr),
+                    decorators=[deco],
+                    exclude_params=class_params,
+                    globalns=globalns,
+                    localns=klass.__dict__,
+                )
+                members.append(func)
+                used.update(func.used_types)
+                if attr_type is property:
+                    if attr.fset is not None:
+                        setter = PyiFunction.from_function(
+                            attr.fset,
+                            decorators=[f"{attr_name}.setter"],
+                            exclude_params=class_params,
+                            globalns=globalns,
+                            localns=klass.__dict__,
+                        )
+                        members.append(setter)
+                        used.update(setter.used_types)
+                    if attr.fdel is not None:
+                        deleter = PyiFunction.from_function(
+                            attr.fdel,
+                            decorators=[f"{attr_name}.deleter"],
+                            exclude_params=class_params,
+                            globalns=globalns,
+                            localns=klass.__dict__,
+                        )
+                        members.append(deleter)
+                        used.update(deleter.used_types)
+                elif attr_type is functools.cached_property:
+                    used.add(functools.cached_property)
+                handled = True
+                break
+
+        if not handled and inspect.isclass(attr):
+            if attr.__qualname__.startswith(klass.__qualname__ + "."):
+                members.append(PyiClass.from_class(attr))
+
+    return members, used
+
+
 
 # === Function ===
 
@@ -691,24 +946,10 @@ class PyiClass(PyiNamedElement):
         is_enum = isinstance(klass, enum.EnumMeta)
         is_namedtuple = issubclass(klass, tuple) and hasattr(klass, "_fields")
         globalns = vars(inspect.getmodule(klass))
-        members: list[PyiElement] = []
-        td_bases = [
-            b
-            for b in getattr(klass, "__orig_bases__", ())
-            if isinstance(b, typing._TypedDictMeta)
-        ] if is_typeddict else []
-        typeddict_total = (
-            klass.__dict__.get("__total__", True) if is_typeddict and not td_bases else None
-        )
-        decorators: list[str] = []
-        used_types: set[type] = set()
-        if getattr(klass, "__final__", False):
-            decorators.append("final")
-            used_types.add(typing.final)
-        if getattr(klass, "_is_runtime_protocol", False):
-            decorators.append("runtime_checkable")
-            used_types.add(typing.runtime_checkable)
-        class_params: set[str] = {t.__name__ for t in getattr(klass, '__parameters__', ())}
+
+        td_bases, typeddict_total = _typeddict_info(klass)
+        decorators, used_types, is_dataclass_obj = _class_decorators(klass)
+        class_params: set[str] = {t.__name__ for t in getattr(klass, "__parameters__", ())}
 
         type_params: list[str] = []
         if hasattr(klass, "__type_params__") and klass.__type_params__:
@@ -716,24 +957,15 @@ class PyiClass(PyiNamedElement):
                 fmt = format_type_param(tp)
                 type_params.append(fmt.text)
                 used_types.update(fmt.used)
-        elif is_namedtuple:
-            bases = ["NamedTuple"]
-            used_types.add(typing.NamedTuple)
-            raw_bases = getattr(klass, "__orig_bases__", ())
-            for b in raw_bases:
-                if get_origin(b) is typing.Generic:
-                    if not type_params:
-                        for param in get_args(b):
-                            fmt = format_type(param)
-                            type_params.append(fmt.text)
-                            used_types.update(fmt.used)
-                    continue
-            raw_ann = klass.__dict__.get("__annotations__", {})
-            for name, annotation in raw_ann.items():
-                fmt = format_type(annotation)
-                members.append(
-                    PyiVariable(name=name, type_str=fmt.text, used_types=fmt.used)
-                )
+
+        members: list[PyiElement] = []
+
+        if is_namedtuple:
+            bases, base_used = _namedtuple_bases(klass, type_params)
+            used_types.update(base_used)
+            vars_members, vars_used = _namedtuple_members(klass)
+            members.extend(vars_members)
+            used_types.update(vars_used)
             return cls(
                 name=klass.__name__,
                 bases=bases,
@@ -743,163 +975,36 @@ class PyiClass(PyiNamedElement):
                 decorators=decorators,
                 used_types=used_types,
             )
+
         if is_typeddict:
-            bases = []
-            for b in td_bases:
-                fmt = format_type(b)
-                bases.append(fmt.text)
-                used_types.update(fmt.used)
-            if not bases:
-                bases = ["TypedDict"]
-                used_types.add(typing.TypedDict)
+            bases, base_used = _typeddict_bases(klass, td_bases)
         else:
-            raw_bases = getattr(klass, "__orig_bases__", None) or klass.__bases__
-            bases = []
-            for b in raw_bases:
-                if b is object:
-                    continue
-                if get_origin(b) is typing.Generic:
-                    if not type_params:
-                        for param in get_args(b):
-                            fmt = format_type(param)
-                            type_params.append(fmt.text)
-                            used_types.update(fmt.used)
-                    continue
-                fmt = format_type(b)
-                bases.append(fmt.text)
-                used_types.update(fmt.used)
+            bases, base_used = _normal_class_bases(klass, type_params)
+        used_types.update(base_used)
 
-        deco_info = _dataclass_decorator(klass)
-        is_dataclass_obj = deco_info is not None
-        if deco_info:
-            deco, used = deco_info
-            decorators.append(deco)
-            used_types.update(used)
-
-        raw_ann = klass.__dict__.get("__annotations__", {})
-        if is_typeddict:
-            base_fields: set[str] = set()
-            for b in td_bases:
-                base_fields.update(getattr(b, "__annotations__", {}).keys())
-            resolved = {n: a for n, a in raw_ann.items() if n not in base_fields}
-        else:
-            try:
-                resolved = {
-                    name: get_type_hints(
-                        klass,
-                        globalns=globalns,
-                        localns=klass.__dict__,
-                        include_extras=True,
-                    ).get(name, annotation)
-                    for name, annotation in raw_ann.items()
-                }
-            except Exception:
-                resolved = raw_ann
-
-        for name, annotation in resolved.items():
-            if is_dataclass_obj and isinstance(annotation, dataclasses.InitVar):
-                continue
-            fmt = format_type(annotation)
-            members.append(
-                PyiVariable(name=name, type_str=fmt.text, used_types=fmt.used)
-            )
+        vars_members, vars_used = _class_variables(
+            klass,
+            globalns=globalns,
+            is_typeddict=is_typeddict,
+            td_bases=td_bases,
+            is_dataclass_obj=is_dataclass_obj,
+        )
+        members.extend(vars_members)
+        used_types.update(vars_used)
 
         if is_enum:
-            for member_name, member in klass.__members__.items():
-                members.append(
-                    PyiAlias(
-                        name=member_name,
-                        value=repr(member.value),
-                    )
-                )
+            members.extend(_enum_members(klass))
 
         if not is_typeddict:
-            if is_dataclass_obj:
-                params = getattr(klass, "__dataclass_params__", None)
-                auto_methods = _dataclass_auto_methods(params)
-            else:
-                auto_methods = set()
-            if is_enum:
-                auto_methods.update({"_generate_next_value_", "__new__"})
-
-            protocol_skip: set[str] = set()
-            protocol_method_names = {"_proto_hook", "_no_init_or_replace_init"}
-            if getattr(klass, "_is_protocol", False):
-                protocol_skip.update({"__init__", "__subclasshook__"})
-
-            for attr_name, attr in klass.__dict__.items():
-                if attr_name in auto_methods:
-                    continue
-                if attr_name in protocol_skip or getattr(attr, "__name__", None) in protocol_method_names:
-                    continue
-                fn_attr = _get_class_function(attr, attr_name, klass, globalns=globalns)
-
-                if fn_attr is not None:
-                    if fn_attr.__name__ == "<lambda>":
-                        continue
-                    ovs = _get_overloads(fn_attr)
-                    if ovs:
-                        for ov in ovs:
-                            members.append(
-                                PyiFunction.from_function(
-                                    ov,
-                                    decorators=["overload"],
-                                    exclude_params=class_params,
-                                    globalns=globalns,
-                                    localns=klass.__dict__,
-                                )
-                            )
-                    members.append(
-                        PyiFunction.from_function(
-                            fn_attr,
-                            exclude_params=class_params,
-                            globalns=globalns,
-                            localns=klass.__dict__,
-                        )
-                    )
-                    continue
-
-                handled = False
-                for attr_type, (func_attr, deco) in _ATTR_DECORATORS.items():
-                    if isinstance(attr, attr_type):
-                        func = PyiFunction.from_function(
-                            getattr(attr, func_attr),
-                            decorators=[deco],
-                            exclude_params=class_params,
-                            globalns=globalns,
-                            localns=klass.__dict__,
-                        )
-                        members.append(func)
-                        used_types.update(func.used_types)
-                        if attr_type is property:
-                            if attr.fset is not None:
-                                setter = PyiFunction.from_function(
-                                    attr.fset,
-                                    decorators=[f"{attr_name}.setter"],
-                                    exclude_params=class_params,
-                                    globalns=globalns,
-                                    localns=klass.__dict__,
-                                )
-                                members.append(setter)
-                                used_types.update(setter.used_types)
-                            if attr.fdel is not None:
-                                deleter = PyiFunction.from_function(
-                                    attr.fdel,
-                                    decorators=[f"{attr_name}.deleter"],
-                                    exclude_params=class_params,
-                                    globalns=globalns,
-                                    localns=klass.__dict__,
-                                )
-                                members.append(deleter)
-                                used_types.update(deleter.used_types)
-                        elif attr_type is functools.cached_property:
-                            used_types.add(functools.cached_property)
-                        handled = True
-                        break
-
-                if not handled and inspect.isclass(attr):
-                    if attr.__qualname__.startswith(klass.__qualname__ + "."):
-                        members.append(PyiClass.from_class(attr))
+            method_members, method_used = _class_methods(
+                klass,
+                globalns=globalns,
+                class_params=class_params,
+                is_enum=is_enum,
+                is_dataclass_obj=is_dataclass_obj,
+            )
+            members.extend(method_members)
+            used_types.update(method_used)
 
         return cls(
             name=klass.__name__,
