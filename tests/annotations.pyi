@@ -43,6 +43,8 @@ type AliasListT[T] = list[T]
 
 type AliasFuncP[**P] = Callable[P, int]
 
+type AliasTupleTs[*Ts] = tuple[Unpack[Ts]]
+
 class Basic:
     simple: list[str]
     mapping: dict[str, int]

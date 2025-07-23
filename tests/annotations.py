@@ -64,6 +64,8 @@ type RecursiveList[T] = T | list[RecursiveList[T]]
 AliasListT = TypeAliasType("AliasListT", list[T], type_params=(T,))
 # Edge case: ``TypeAliasType`` used with a ``ParamSpec`` alias
 AliasFuncP = TypeAliasType("AliasFuncP", Callable[P, int], type_params=(P,))
+# Edge case: ``TypeAliasType`` used with a ``TypeVarTuple`` alias
+AliasTupleTs = TypeAliasType("AliasTupleTs", tuple[*Ts], type_params=(Ts,))
 
 GLOBAL: int
 CONST: Final[str]
