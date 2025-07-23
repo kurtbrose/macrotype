@@ -31,6 +31,8 @@ from typing import (
     TypeAliasType,
     NotRequired,
     Required,
+    Protocol,
+    runtime_checkable,
     TypeGuard,
     final,
 )
@@ -276,6 +278,12 @@ class SelfFactory:
     @classmethod
     def create(cls: type[Self], value: int) -> Self:
         return cls(value)
+
+
+@runtime_checkable
+class Runnable(Protocol):
+    def run(self) -> int:
+        ...
 
 
 def as_tuple(*args: Unpack[Ts]) -> Tuple[Unpack[Ts]]:

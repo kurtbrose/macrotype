@@ -586,6 +586,9 @@ class PyiClass(PyiNamedElement):
         if getattr(klass, "__final__", False):
             decorators.append("final")
             used_types.add(typing.final)
+        if getattr(klass, "_is_runtime_protocol", False):
+            decorators.append("runtime_checkable")
+            used_types.add(typing.runtime_checkable)
         class_params: set[str] = {t.__name__ for t in getattr(klass, '__parameters__', ())}
 
         type_params: list[str] = []
@@ -685,8 +688,15 @@ class PyiClass(PyiNamedElement):
             if is_enum:
                 auto_methods.update({"_generate_next_value_", "__new__"})
 
+            protocol_skip: set[str] = set()
+            protocol_method_names = {"_proto_hook", "_no_init_or_replace_init"}
+            if getattr(klass, "_is_protocol", False):
+                protocol_skip.update({"__init__", "__subclasshook__"})
+
             for attr_name, attr in klass.__dict__.items():
                 if attr_name in auto_methods:
+                    continue
+                if attr_name in protocol_skip or getattr(attr, "__name__", None) in protocol_method_names:
                     continue
                 if inspect.isfunction(attr):
                     if attr.__name__ == "<lambda>":

@@ -1,4 +1,4 @@
-from typing import Any, Callable, ClassVar, Concatenate, Final, Literal, LiteralString, NamedTuple, Never, NewType, NoReturn, NotRequired, ParamSpec, Required, Self, TypeGuard, TypeVar, TypeVarTuple, TypedDict, Unpack, final, overload
+from typing import Any, Callable, ClassVar, Concatenate, Final, Literal, LiteralString, NamedTuple, Never, NewType, NoReturn, NotRequired, ParamSpec, Protocol, Required, Self, TypeGuard, TypeVar, TypeVarTuple, TypedDict, Unpack, final, overload, runtime_checkable
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from enum import Enum, IntEnum
@@ -185,6 +185,10 @@ class SelfFactory:
     def __init__(self, value: int) -> None: ...
     @classmethod
     def create(cls: type[Self], value: int) -> Self: ...
+
+@runtime_checkable
+class Runnable(Protocol):
+    def run(self) -> int: ...
 
 def as_tuple[*Ts](*args: Unpack[Ts]) -> tuple[Unpack[Ts]]: ...
 
