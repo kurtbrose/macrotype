@@ -1,6 +1,7 @@
 import re
 import sys
 import functools
+import math
 from functools import cached_property
 from dataclasses import dataclass, InitVar
 from enum import Enum, IntEnum
@@ -419,6 +420,9 @@ def is_str_list(val: list[object]) -> TypeGuard[list[str]]:
 
 # Edge case: LiteralString handling
 LITERAL_STR_VAR: LiteralString
+
+# Edge case: alias to a foreign function should be preserved
+SIN_ALIAS = math.sin
 
 
 def echo_literal(value: LiteralString) -> LiteralString:

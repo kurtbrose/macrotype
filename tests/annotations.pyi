@@ -3,6 +3,7 @@ from collections.abc import AsyncIterator, Iterator, Sequence
 from dataclasses import dataclass
 from enum import Enum, IntEnum
 from functools import cached_property
+from math import sin
 from re import Pattern
 
 T = TypeVar('T')
@@ -262,6 +263,8 @@ def always_raises() -> NoReturn: ...
 def never_returns() -> Never: ...
 
 def is_str_list(val: list[object]) -> TypeGuard[list[str]]: ...
+
+SIN_ALIAS = sin
 
 def echo_literal(value: LiteralString) -> LiteralString: ...
 
