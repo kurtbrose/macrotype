@@ -157,6 +157,18 @@ class OverrideChild(Basic):
     def copy(self, param: T) -> T:
         return param
 
+# Edge case: @override applied after descriptor
+class OverrideLate(Basic):
+    @override
+    @classmethod
+    def cls_override(cls) -> int:
+        return 1
+
+    @override
+    @staticmethod
+    def static_override() -> int:
+        return 2
+
 
 class SampleDict(TypedDict):
     name: str
