@@ -1,4 +1,4 @@
-from typing import Any, Callable, ClassVar, Concatenate, Final, Literal, LiteralString, NamedTuple, Never, NewType, NoReturn, NotRequired, ParamSpec, Protocol, Required, Self, TypeGuard, TypeVar, TypeVarTuple, TypedDict, Unpack, final, overload, runtime_checkable
+from typing import Annotated, Any, Callable, ClassVar, Concatenate, Final, Literal, LiteralString, NamedTuple, Never, NewType, NoReturn, NotRequired, ParamSpec, Protocol, Required, Self, TypeGuard, TypeVar, TypeVarTuple, TypedDict, Unpack, final, overload, runtime_checkable
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from enum import Enum, IntEnum
@@ -62,7 +62,7 @@ class Basic:
     union: int | str
     pipe_union: int | str
     func: Callable[[int, str], bool]
-    annotated: int
+    annotated: Annotated[int, 'meta']
     pattern: Pattern[str]
     uid: UserId
     lit_attr: Literal['a', 'b']
@@ -248,6 +248,8 @@ def pos_and_kw(a: int, /, b: int, *, c: int) -> None: ...
 def iter_sequence(seq: Sequence[int]) -> Iterator[int]: ...
 
 def cached_add(a: int, b: int) -> int: ...
+
+def annotated_fn(x: Annotated[int, 'inp']) -> Annotated[str, 'out']: ...
 
 GLOBAL: int
 

@@ -392,3 +392,7 @@ def iter_sequence(seq: cabc.Sequence[int]) -> cabc.Iterator[int]:
 @functools.lru_cache()
 def cached_add(a: int, b: int) -> int:
     return a + b
+
+# Edge case: ``Annotated`` parameter and return types
+def annotated_fn(x: Annotated[int, "inp"]) -> Annotated[str, "out"]:
+    return str(x)

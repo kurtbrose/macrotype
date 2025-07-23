@@ -437,7 +437,9 @@ class PyiFunction(PyiNamedElement):
         """Create a :class:`PyiFunction` from ``fn``."""
 
         try:
-            hints = get_type_hints(fn, globalns=globalns, localns=localns)
+            hints = get_type_hints(
+                fn, globalns=globalns, localns=localns, include_extras=True
+            )
         except Exception:
             hints = {}
 
@@ -658,7 +660,12 @@ class PyiClass(PyiNamedElement):
             try:
                 globalns = vars(inspect.getmodule(klass))
                 resolved = {
-                    name: get_type_hints(klass, globalns=globalns, localns=klass.__dict__).get(name, annotation)
+                    name: get_type_hints(
+                        klass,
+                        globalns=globalns,
+                        localns=klass.__dict__,
+                        include_extras=True,
+                    ).get(name, annotation)
                     for name, annotation in raw_ann.items()
                 }
             except Exception:
@@ -803,7 +810,7 @@ class PyiModule:
         globals_dict = vars(mod)
         raw_ann = getattr(mod, "__annotations__", {})
         try:
-            resolved_ann = get_type_hints(mod)
+            resolved_ann = get_type_hints(mod, include_extras=True)
         except Exception:
             resolved_ann = raw_ann
 
