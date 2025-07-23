@@ -1064,6 +1064,11 @@ class PyiClass(PyiNamedElement):
                 fmt = format_type_param(tp)
                 type_params.append(fmt.text)
                 used_types.update(fmt.used)
+        elif is_typeddict and getattr(klass, "__parameters__", ()):
+            for tp in klass.__parameters__:
+                fmt = format_type_param(tp)
+                type_params.append(fmt.text)
+                used_types.update(fmt.used)
 
         members: list[PyiElement] = []
 

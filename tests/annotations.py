@@ -50,6 +50,7 @@ NumberLike = TypeVar("NumberLike", int, float)
 CovariantT = TypeVar("CovariantT", covariant=True)
 ContravariantT = TypeVar("ContravariantT", contravariant=True)
 InferredT = TypeVar("InferredT", infer_variance=True)
+TDV = TypeVar("TDV")
 UserId = NewType("UserId", int)
 
 MyList: TypeAlias = list[int]
@@ -180,6 +181,11 @@ class BaseTD(TypedDict):
 
 class SubTD(BaseTD):
     sub_field: str
+
+
+# Edge case: Generic TypedDict should retain type parameters
+class GenericBox(TypedDict, Generic[TDV]):
+    item: TDV
 
 
 class GenericClass(Generic[T]):

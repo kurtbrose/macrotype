@@ -22,6 +22,8 @@ ContravariantT = TypeVar('ContravariantT', contravariant=True)
 
 InferredT = TypeVar('InferredT', infer_variance=True)
 
+TDV = TypeVar('TDV')
+
 UserId = NewType('UserId', int)
 
 MyList = list[int]
@@ -123,6 +125,9 @@ class BaseTD(TypedDict):
 
 class SubTD(BaseTD):
     sub_field: str
+
+class GenericBox[TDV](TypedDict):
+    item: TDV
 
 class GenericClass[T]:
     value: T
