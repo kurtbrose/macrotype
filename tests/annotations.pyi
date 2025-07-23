@@ -346,6 +346,17 @@ class WrappedDescriptors:
     @cached_property
     def wrapped_cached(self) -> int: ...
 
+def make_emitter(name: str): ...
+
+def emitted_a(x: int) -> int: ...
+
+def emitted_b(x: int) -> int: ...
+
+def make_emitter_cls(name: str): ...
+
+class EmittedCls:
+    value: int
+
 GLOBAL: int
 
 CONST: Final[str]
