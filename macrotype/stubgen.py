@@ -7,6 +7,8 @@ from types import ModuleType
 import ast
 import typing
 
+from .overload_support import patch_typing
+
 
 class _TypeCheckingTransformer(ast.NodeTransformer):
     """Rewrite ``if TYPE_CHECKING`` blocks to execute their body."""
@@ -63,7 +65,8 @@ def _exec_with_type_checking(code: str, module: ModuleType) -> None:
     original = typing.TYPE_CHECKING
     typing.TYPE_CHECKING = True
     try:
-        exec(compile(tree, getattr(module, "__file__", "<string>"), "exec"), module.__dict__)
+        with patch_typing():
+            exec(compile(tree, getattr(module, "__file__", "<string>"), "exec"), module.__dict__)
     finally:
         typing.TYPE_CHECKING = original
 
@@ -90,7 +93,8 @@ def load_module_from_path(
             raise ImportError(f"Cannot import {path}")
         module = importlib.util.module_from_spec(spec)
         sys.modules[name] = module
-        spec.loader.exec_module(module)
+        with patch_typing():
+            spec.loader.exec_module(module)
         return module
 
     code = Path(path).read_text()
@@ -115,7 +119,8 @@ def load_module_from_code(
         _exec_with_type_checking(code, module)
     else:
         sys.modules[name] = module
-        exec(compile(code, name, "exec"), module.__dict__)
+        with patch_typing():
+            exec(compile(code, name, "exec"), module.__dict__)
     return module
 
 
