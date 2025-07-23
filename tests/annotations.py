@@ -31,6 +31,7 @@ from typing import (
     NotRequired,
     Required,
     TypeGuard,
+    final,
 )
 
 T = TypeVar("T")
@@ -320,3 +321,19 @@ def echo_literal(value: LiteralString) -> LiteralString:
 # Edge case: async function
 async def async_add_one(x: int) -> int:
     return x + 1
+
+# Edge case: ``final`` decorator handling
+@final
+def final_func(x: int) -> int:
+    return x
+
+
+@final
+class FinalClass:
+    ...
+
+
+class HasFinalMethod:
+    @final
+    def do_final(self) -> None:
+        pass

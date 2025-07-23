@@ -482,7 +482,10 @@ class PyiFunction(PyiNamedElement):
                 flat_params = [p for p in flat_params if p.lstrip('*') not in exclude_params]
             tp_strings = flat_params
 
-        decorators = decorators or []
+        decorators = list(decorators or [])
+        if getattr(fn, "__final__", False):
+            decorators.append("final")
+            used_types.add(typing.final)
         if "overload" in decorators:
             used_types.add(typing.overload)
 
@@ -541,6 +544,9 @@ class PyiClass(PyiNamedElement):
         typeddict_total = klass.__dict__.get("__total__", True) if is_typeddict else None
         decorators: list[str] = []
         used_types: set[type] = set()
+        if getattr(klass, "__final__", False):
+            decorators.append("final")
+            used_types.add(typing.final)
         class_params: set[str] = {t.__name__ for t in getattr(klass, '__parameters__', ())}
 
         type_params: list[str] = []
