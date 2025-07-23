@@ -1,4 +1,4 @@
-from typing import Any, Callable, ClassVar, Concatenate, Final, Literal, LiteralString, NamedTuple, Never, NewType, NoReturn, NotRequired, ParamSpec, Required, Self, TypeGuard, TypeVar, TypeVarTuple, TypedDict, Unpack, overload
+from typing import Any, Callable, ClassVar, Concatenate, Final, Literal, LiteralString, NamedTuple, Never, NewType, NoReturn, NotRequired, ParamSpec, Required, Self, TypeGuard, TypeVar, TypeVarTuple, TypedDict, Unpack, final, overload
 from dataclasses import dataclass
 from enum import Enum, IntEnum
 from functools import cached_property
@@ -198,6 +198,17 @@ def is_str_list(val: list[object]) -> TypeGuard[list[str]]: ...
 def echo_literal(value: LiteralString) -> LiteralString: ...
 
 async def async_add_one(x: int) -> int: ...
+
+@final
+def final_func(x: int) -> int: ...
+
+@final
+class FinalClass:
+    pass
+
+class HasFinalMethod:
+    @final
+    def do_final(self) -> None: ...
 
 GLOBAL: int
 
