@@ -251,6 +251,16 @@ def over(x: str) -> str: ...
 def over(x: int | str) -> int | str:
     return x
 
+# Overloads generated in a loop
+for typ in (bytes, bytearray):
+    @overload
+    def loop_over(x: typ) -> str: ...
+
+del typ
+
+def loop_over(x: bytes | bytearray) -> str:
+    return str(x)
+
 
 @dataclass
 class Point:

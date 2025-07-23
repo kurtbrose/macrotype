@@ -14,15 +14,7 @@ import typing
 
 _INDENT = "    "
 
-try:
-    from typing import get_overloads as _get_overloads
-except ImportError:  # pragma: no cover - Python < 3.11
-    try:
-        from typing_extensions import get_overloads as _get_overloads
-    except Exception:  # pragma: no cover - very old typing
-
-        def _get_overloads(func):
-            return []
+from .overload_support import get_overloads as _get_overloads
 
 
 import collections
