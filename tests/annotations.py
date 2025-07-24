@@ -467,6 +467,9 @@ PLAIN_FINAL_VAR: Final = 1
 # Edge case: alias to a foreign function should be preserved
 SIN_ALIAS = math.sin
 
+# Edge case: alias to a foreign constant should retain its type
+PI_ALIAS = math.pi
+
 
 def local_alias_target(x: int) -> int:
     return x
