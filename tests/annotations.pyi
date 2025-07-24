@@ -363,6 +363,13 @@ def make_emitter_cls(name: str): ...
 class EmittedCls:
     value: int
 
+class EmittedMap:
+    @overload
+    def __getitem__(self, key: Literal['a']) -> Literal[1]: ...
+    @overload
+    def __getitem__(self, key: Literal['b']) -> Literal[2]: ...
+    def __getitem__(self, key: Any): ...
+
 GLOBAL: int
 
 CONST: Final[str]

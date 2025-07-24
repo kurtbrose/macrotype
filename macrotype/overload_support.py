@@ -23,7 +23,8 @@ def overload(func: Callable) -> Callable:
 def get_overloads(func: Callable) -> list[Callable]:
     """Return overloads registered for *func* including builtin ones."""
     f = getattr(func, "__func__", func)
-    ours = _OVERLOAD_REGISTRY[f.__module__][f.__qualname__]
+    qualname = getattr(f, "__overload_name__", getattr(f, "__qualname_override__", f.__qualname__))
+    ours = _OVERLOAD_REGISTRY[f.__module__][qualname]
     return _ORIG_GET_OVERLOADS(f) + list(ours)
 
 

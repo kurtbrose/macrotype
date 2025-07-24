@@ -39,7 +39,7 @@ from typing import (
     final,
     override,
 )
-from macrotype import emit_as
+from macrotype import emit_as, make_literal_map
 
 T = TypeVar("T")
 P = ParamSpec("P")
@@ -623,3 +623,7 @@ def make_emitter_cls(name: str):
 
 
 EmittedCls = make_emitter_cls("EmittedCls")
+
+
+# Use emit_as with overloads defined dynamically on a class via API helper
+EmittedMap = make_literal_map("EmittedMap", {"a": 1, "b": 2})
