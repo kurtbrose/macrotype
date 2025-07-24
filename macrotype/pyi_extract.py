@@ -14,7 +14,7 @@ import typing
 
 _INDENT = "    "
 
-from .overload_support import get_overloads as _get_overloads
+from .meta_types import get_overloads as _get_overloads
 
 
 import collections

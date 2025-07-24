@@ -372,6 +372,11 @@ class EmittedMap:
     def __getitem__(self, key: Literal['b']) -> Literal[2]: ...
     def __getitem__(self, key: Any): ...
 
+def make_dynamic_cls(): ...
+
+class FixedModuleCls:
+    pass
+
 GLOBAL: int
 
 CONST: Final[str]
