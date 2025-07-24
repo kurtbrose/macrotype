@@ -7,7 +7,7 @@ from types import ModuleType
 import ast
 import typing
 
-from .overload_support import patch_typing
+from .meta_types import patch_typing
 
 
 class _TypeCheckingTransformer(ast.NodeTransformer):
