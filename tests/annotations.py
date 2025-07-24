@@ -39,7 +39,12 @@ from typing import (
     final,
     override,
 )
-from macrotype import emit_as, make_literal_map
+from macrotype.meta_types import (
+    emit_as,
+    make_literal_map,
+    set_module,
+    get_caller_module,
+)
 
 T = TypeVar("T")
 P = ParamSpec("P")
@@ -627,3 +632,11 @@ EmittedCls = make_emitter_cls("EmittedCls")
 
 # Use emit_as with overloads defined dynamically on a class via API helper
 EmittedMap = make_literal_map("EmittedMap", {"a": 1, "b": 2})
+
+# Demonstrate adjusting a dynamically created class using helpers
+def make_dynamic_cls():
+    cls = type("FixedModuleCls", (), {"__module__": "tests.factory"})
+    set_module(cls, get_caller_module())
+    return cls
+
+FixedModuleCls = make_dynamic_cls()
