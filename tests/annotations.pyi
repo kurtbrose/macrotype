@@ -298,6 +298,8 @@ PLAIN_FINAL_VAR: Final
 
 SIN_ALIAS = sin
 
+PI_ALIAS: float
+
 def local_alias_target(x: int) -> int: ...
 
 LOCAL_ALIAS = local_alias_target
