@@ -5,8 +5,10 @@ if TYPE_CHECKING:
 else:
     B = int
 
+
 class A:
     pass
 
-def takes_b(x: 'B') -> None:
+
+def takes_b(x: "B") -> None:
     pass
