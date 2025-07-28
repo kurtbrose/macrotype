@@ -1,9 +1,11 @@
 import typing
 
-from macrotype.meta_types import patch_typing, overload, get_overloads, clear_registry
+from macrotype.meta_types import clear_registry, get_overloads, overload, patch_typing
+
 
 def test_patch_typing_updates_typing_registry():
     with patch_typing():
+
         @overload
         def local(x: int) -> int: ...
         def local(x: int) -> int:

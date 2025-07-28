@@ -58,6 +58,7 @@ def patch_typing():
         if orig_get is not None:
             typing.get_overloads = orig_get
 
+
 __all__ = [
     "emit_as",
     "set_module",
@@ -95,10 +96,7 @@ def set_module(obj: Any, module: str) -> None:
     if old_mod and old_mod != module:
         old_overloads = _OVERLOAD_REGISTRY.get(old_mod)
         if old_overloads:
-            prefix = (
-                getattr(obj, "__qualname_override__", getattr(obj, "__name__", ""))
-                + "."
-            )
+            prefix = getattr(obj, "__qualname_override__", getattr(obj, "__name__", "")) + "."
             for key in list(old_overloads.keys()):
                 if key.startswith(prefix):
                     _OVERLOAD_REGISTRY[module][key] = old_overloads.pop(key)
@@ -117,9 +115,9 @@ def emit_as(name: str):
             for key in list(mod_overloads.keys()):
                 if key.startswith(old_prefix):
                     funcs = mod_overloads.pop(key)
-                    new_key = new_prefix + key[len(old_prefix):]
+                    new_key = new_prefix + key[len(old_prefix) :]
                     mod_overloads[new_key] = funcs
-                    method_name = key[len(old_prefix):].split(".", 1)[0]
+                    method_name = key[len(old_prefix) :].split(".", 1)[0]
                     attr = getattr(obj, method_name, None)
                     if callable(attr):
                         setattr(attr, "__overload_name__", new_key)
@@ -139,6 +137,7 @@ def make_literal_map(name: str, mapping: dict[str | int, str | int]):
     @emit_as(name)
     class LiteralMap:
         for k, v in mapping.items():
+
             @typing.overload  # type: ignore[misc]
             def __getitem__(self, key: typing.Literal[k]) -> typing.Literal[v]: ...
 
@@ -148,4 +147,3 @@ def make_literal_map(name: str, mapping: dict[str | int, str | int]):
     set_module(LiteralMap, caller_mod)
 
     return LiteralMap
-

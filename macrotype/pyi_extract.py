@@ -2,24 +2,22 @@ from __future__ import annotations
 
 """Utilities for building ``.pyi`` objects from live Python modules."""
 
-from dataclasses import dataclass, field
 import dataclasses
 import enum
-from types import ModuleType
-import types
-from typing import Any, Callable, get_type_hints, get_origin, get_args
 import functools
 import inspect
+import types
 import typing
+from dataclasses import dataclass, field
+from types import ModuleType
+from typing import Any, Callable, get_args, get_origin, get_type_hints
 
 _INDENT = "    "
-
-from .meta_types import get_overloads as _get_overloads
-
 
 import collections
 import collections.abc
 
+from .meta_types import get_overloads as _get_overloads
 
 # === Base Class ===
 
@@ -88,10 +86,7 @@ def format_type(type_obj: Any) -> TypeRenderInfo:
     if type_obj is typing.NoReturn:
         used.add(typing.NoReturn)
         return TypeRenderInfo("NoReturn", used)
-    if (
-        getattr(typing, "LiteralString", None) is not None
-        and type_obj is typing.LiteralString
-    ):
+    if getattr(typing, "LiteralString", None) is not None and type_obj is typing.LiteralString:
         used.add(typing.LiteralString)
         return TypeRenderInfo("LiteralString", used)
     if type_obj is Any:
@@ -122,9 +117,7 @@ def format_type(type_obj: Any) -> TypeRenderInfo:
                 used.add(arg_list)
                 ret_fmt = format_type(ret)
                 used.update(ret_fmt.used)
-                return TypeRenderInfo(
-                    f"Callable[{arg_list.__name__}, {ret_fmt.text}]", used
-                )
+                return TypeRenderInfo(f"Callable[{arg_list.__name__}, {ret_fmt.text}]", used)
             if get_origin(arg_list) is typing.Concatenate:
                 concat_fmt = format_type(arg_list)
                 used.update(concat_fmt.used)
@@ -401,9 +394,7 @@ def _extract_partialmethod(
         hints = getattr(pm.func, "__annotations__", {}).copy()
 
     sig_params = inspect.signature(fn).parameters
-    fn.__annotations__ = {
-        k: v for k, v in hints.items() if k in sig_params or k == "return"
-    }
+    fn.__annotations__ = {k: v for k, v in hints.items() if k in sig_params or k == "return"}
     fn.__name__ = name
     return fn
 
@@ -573,16 +564,12 @@ def _collect_type_params(
         type_params = sorted(find_typevars(t) for t in all_types)
         flat_params = sorted(set().union(*type_params)) if type_params else []
         if exclude_params:
-            flat_params = [
-                p for p in flat_params if p.lstrip("*") not in exclude_params
-            ]
+            flat_params = [p for p in flat_params if p.lstrip("*") not in exclude_params]
         tp_strings = flat_params
     return tp_strings, used
 
 
-def _collect_decorators(
-    decorators: list[str] | None, fn: Callable
-) -> tuple[list[str], set[type]]:
+def _collect_decorators(decorators: list[str] | None, fn: Callable) -> tuple[list[str], set[type]]:
     """Return decorator strings and used types for ``fn``."""
 
     decos = list(decorators or [])
@@ -604,9 +591,7 @@ def _typeddict_info(klass: type) -> tuple[list[type], bool | None]:
     if not isinstance(klass, typing._TypedDictMeta):
         return [], None
     bases = [
-        b
-        for b in getattr(klass, "__orig_bases__", ())
-        if isinstance(b, typing._TypedDictMeta)
+        b for b in getattr(klass, "__orig_bases__", ()) if isinstance(b, typing._TypedDictMeta)
     ]
     total = klass.__dict__.get("__total__", True) if not bases else None
     return bases, total
@@ -647,9 +632,7 @@ def _namedtuple_members(klass: type) -> tuple[list[PyiElement], set[type]]:
     return members, used
 
 
-def _namedtuple_bases(
-    klass: type, type_params: list[str]
-) -> tuple[list[str], set[type]]:
+def _namedtuple_bases(klass: type, type_params: list[str]) -> tuple[list[str], set[type]]:
     """Return bases and used types for ``NamedTuple`` classes."""
 
     bases = ["NamedTuple"]
@@ -680,9 +663,7 @@ def _typeddict_bases(klass: type, bases: list[type]) -> tuple[list[str], set[typ
     return rendered, used
 
 
-def _normal_class_bases(
-    klass: type, type_params: list[str]
-) -> tuple[list[str], set[type]]:
+def _normal_class_bases(klass: type, type_params: list[str]) -> tuple[list[str], set[type]]:
     """Return rendered bases and used types for normal classes."""
 
     raw_bases = getattr(klass, "__orig_bases__", None) or klass.__bases__
@@ -889,9 +870,7 @@ def _class_methods(
 ) -> tuple[list[PyiElement], set[type]]:
     """Return ``PyiFunction`` members for *klass*."""
 
-    auto_methods = _auto_methods(
-        klass, is_dataclass_obj=is_dataclass_obj, is_enum=is_enum
-    )
+    auto_methods = _auto_methods(klass, is_dataclass_obj=is_dataclass_obj, is_enum=is_enum)
     protocol_skip = _protocol_skip_methods(klass)
 
     members: list[PyiElement] = []
@@ -900,10 +879,7 @@ def _class_methods(
     for attr_name, attr in klass.__dict__.items():
         if attr_name in auto_methods:
             continue
-        if (
-            attr_name in protocol_skip
-            or getattr(attr, "__name__", None) in _PROTOCOL_METHOD_NAMES
-        ):
+        if attr_name in protocol_skip or getattr(attr, "__name__", None) in _PROTOCOL_METHOD_NAMES:
             continue
         fn_attr = _get_class_function(attr, attr_name, klass, globalns=globalns)
         if fn_attr is not None and fn_attr.__name__ != "<lambda>":
@@ -929,9 +905,7 @@ def _class_methods(
             used.update(desc_used)
             continue
 
-        if inspect.isclass(attr) and attr.__qualname__.startswith(
-            klass.__qualname__ + "."
-        ):
+        if inspect.isclass(attr) and attr.__qualname__.startswith(klass.__qualname__ + "."):
             members.append(PyiClass.from_class(attr))
 
     return members, used
@@ -961,7 +935,9 @@ class PyiFunction(PyiNamedElement):
         param_str = f"[{', '.join(self.type_params)}]" if self.type_params else ""
         prefix = "async " if self.is_async else ""
         if self.return_type:
-            signature = f"{space}{prefix}def {self.name}{param_str}({args_str}) -> {self.return_type}: ..."
+            signature = (
+                f"{space}{prefix}def {self.name}{param_str}({args_str}) -> {self.return_type}: ..."
+            )
         else:
             signature = f"{space}{prefix}def {self.name}{param_str}({args_str}): ..."
         lines.append(signature)
@@ -980,9 +956,7 @@ class PyiFunction(PyiNamedElement):
         """Create a :class:`PyiFunction` from ``fn``."""
 
         try:
-            hints = get_type_hints(
-                fn, globalns=globalns, localns=localns, include_extras=True
-            )
+            hints = get_type_hints(fn, globalns=globalns, localns=localns, include_extras=True)
         except Exception:
             hints = {}
 
@@ -1058,9 +1032,7 @@ class PyiClass(PyiNamedElement):
 
         td_bases, typeddict_total = _typeddict_info(klass)
         decorators, used_types, is_dataclass_obj = _class_decorators(klass)
-        class_params: set[str] = {
-            t.__name__ for t in getattr(klass, "__parameters__", ())
-        }
+        class_params: set[str] = {t.__name__ for t in getattr(klass, "__parameters__", ())}
 
         type_params: list[str] = []
         if hasattr(klass, "__type_params__") and klass.__type_params__:
@@ -1198,9 +1170,7 @@ class _ModuleBuilder:
             annotation = self.resolved_ann.get(name)
             if annotation is not None:
                 fmt = format_type(annotation)
-                self._add(
-                    PyiVariable(name=name, type_str=fmt.text, used_types=fmt.used)
-                )
+                self._add(PyiVariable(name=name, type_str=fmt.text, used_types=fmt.used))
             elif isinstance(obj, (int, str, float, bool)):
                 self._add(PyiVariable.from_assignment(name, obj))
             self.handled_names.add(name)
@@ -1208,17 +1178,13 @@ class _ModuleBuilder:
         if obj.__module__ != self.mod_name:
             if annotation is not None:
                 fmt = format_type(annotation)
-                self._add(
-                    PyiVariable(name=name, type_str=fmt.text, used_types=fmt.used)
-                )
+                self._add(PyiVariable(name=name, type_str=fmt.text, used_types=fmt.used))
             elif isinstance(obj, (int, str, float, bool)):
                 self._add(PyiVariable.from_assignment(name, obj))
             else:
                 alias_name = getattr(obj, "__name__", None)
                 if alias_name and alias_name != name:
-                    self._add(
-                        PyiAlias(name=name, value=alias_name, used_types={obj})
-                    )
+                    self._add(PyiAlias(name=name, value=alias_name, used_types={obj}))
             self.handled_names.add(name)
             return True
         return False
@@ -1232,9 +1198,7 @@ class _ModuleBuilder:
             annotation = self.resolved_ann.get(name)
             if annotation is not None:
                 fmt = format_type(annotation)
-                self._add(
-                    PyiVariable(name=name, type_str=fmt.text, used_types=fmt.used)
-                )
+                self._add(PyiVariable(name=name, type_str=fmt.text, used_types=fmt.used))
             else:
                 self._add(PyiVariable.from_assignment(name, obj))
             return True
@@ -1363,18 +1327,14 @@ class _ModuleBuilder:
                 if annotation is typing.TypeAlias:
                     continue
                 fmt = format_type(annotation)
-                self._add(
-                    PyiVariable(name=name, type_str=fmt.text, used_types=fmt.used)
-                )
+                self._add(PyiVariable(name=name, type_str=fmt.text, used_types=fmt.used))
 
     def _imports(self) -> list[str]:
         typing_names = sorted(
             t.__name__
             for t in self.used_types
             if getattr(t, "__module__", "") == "typing"
-            and not isinstance(
-                t, (typing.TypeVar, typing.ParamSpec, typing.TypeVarTuple)
-            )
+            and not isinstance(t, (typing.TypeVar, typing.ParamSpec, typing.TypeVarTuple))
         )
 
         external_imports: dict[str, set[str]] = collections.defaultdict(set)

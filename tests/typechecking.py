@@ -1,5 +1,5 @@
-from typing import TYPE_CHECKING
 import typing
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from tests.annotations import Basic
@@ -13,5 +13,5 @@ else:
     COS_ALIAS = None
 
 
-def takes(x: 'Basic') -> None:
+def takes(x: "Basic") -> None:
     pass

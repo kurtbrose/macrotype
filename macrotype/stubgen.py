@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+import ast
 import importlib.util
 import sys
+import typing
 from pathlib import Path
 from types import ModuleType
-import ast
-import typing
 
 from .meta_types import patch_typing
 
@@ -51,6 +51,7 @@ class _TypeCheckingTransformer(ast.NodeTransformer):
                 finalbody=[],
             )
         return node
+
 
 from .pyi_extract import PyiModule
 

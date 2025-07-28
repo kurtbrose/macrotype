@@ -1,13 +1,14 @@
-import sys
 import subprocess
+import sys
 from pathlib import Path
+
 import pytest
 
 # Ensure the package root is on sys.path when running tests directly.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from macrotype.pyi_extract import PyiModule
-from macrotype.stubgen import load_module_from_path, process_file, process_directory
+from macrotype.stubgen import load_module_from_path, process_directory, process_file
 
 CASES = [
     ("annotations.py", "annotations.pyi"),

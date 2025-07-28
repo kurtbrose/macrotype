@@ -5,9 +5,10 @@ if TYPE_CHECKING or False:
 else:
     BComplex = int
 
+
 class AComplex:
     pass
 
-def takes_b(x: 'BComplex') -> None:
-    pass
 
+def takes_b(x: "BComplex") -> None:
+    pass

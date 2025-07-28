@@ -1,14 +1,14 @@
 """Utilities for extracting type information and generating stub files."""
 
 from .pyi_extract import (
-    PyiElement,
-    TypeRenderInfo,
-    PyiVariable,
-    PyiFunction,
     PyiClass,
+    PyiElement,
+    PyiFunction,
     PyiModule,
-    format_type,
+    PyiVariable,
+    TypeRenderInfo,
     find_typevars,
+    format_type,
 )
 
 __all__ = [
@@ -21,25 +21,24 @@ __all__ = [
     "format_type",
     "find_typevars",
 ]
+from .meta_types import (
+    clear_registry,
+    emit_as,
+    get_caller_module,
+    get_overloads,
+    make_literal_map,
+    overload,
+    patch_typing,
+    set_module,
+)
 from .stubgen import (
-    load_module_from_path,
+    iter_python_files,
     load_module_from_code,
+    load_module_from_path,
+    process_directory,
+    process_file,
     stub_lines,
     write_stub,
-    iter_python_files,
-    process_file,
-    process_directory,
-)
-
-from .meta_types import (
-    emit_as,
-    make_literal_map,
-    set_module,
-    get_caller_module,
-    overload,
-    get_overloads,
-    clear_registry,
-    patch_typing,
 )
 
 __all__ += [
