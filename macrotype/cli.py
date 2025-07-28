@@ -7,8 +7,8 @@ from pathlib import Path
 from . import stubgen
 
 
-def _stdout_write(lines: list[str]) -> None:
-    sys.stdout.write("\n".join(lines) + "\n")
+def _stdout_write(lines: list[str], command: str | None = None) -> None:
+    sys.stdout.write("\n".join(stubgen._header_lines(command) + lines) + "\n")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -25,15 +25,16 @@ def main(argv: list[str] | None = None) -> int:
         help="Output directory or file. Use '-' for stdout when processing a single file or stdin.",
     )
     args = parser.parse_args(argv)
+    command = "macrotype " + " ".join(argv or sys.argv[1:])
 
     if args.paths == ["-"]:
         code = sys.stdin.read()
         module = stubgen.load_module_from_code(code, "<stdin>")
         lines = stubgen.stub_lines(module)
         if args.output and args.output != "-":
-            stubgen.write_stub(Path(args.output), lines)
+            stubgen.write_stub(Path(args.output), lines, command)
         else:
-            _stdout_write(lines)
+            _stdout_write(lines, command)
         return 0
 
     for target in args.paths:
@@ -41,13 +42,13 @@ def main(argv: list[str] | None = None) -> int:
         if path.is_file():
             lines = stubgen.stub_lines(stubgen.load_module_from_path(path))
             if args.output == "-":
-                _stdout_write(lines)
+                _stdout_write(lines, command)
             else:
                 dest = Path(args.output) if args.output else path.with_suffix(".pyi")
-                stubgen.write_stub(dest, lines)
+                stubgen.write_stub(dest, lines, command)
         else:
             out_dir = Path(args.output) if args.output and args.output != "-" else None
-            stubgen.process_directory(path, out_dir)
+            stubgen.process_directory(path, out_dir, command=command)
     return 0
 
 

@@ -22,7 +22,9 @@ CASES = [
 
 @pytest.mark.parametrize("src, expected", CASES)
 def test_cli_stdout(tmp_path, src: str, expected: str) -> None:
-    expected_text = Path(__file__).with_name(expected).read_text()
+    expected_path = Path(__file__).with_name(expected)
+    expected_lines = expected_path.read_text().splitlines()
+    expected_lines[0] = f"# Generated via: macrotype {expected_path.with_name(src)} -o -"
     result = subprocess.run(
         [sys.executable, "-m", "macrotype", str(Path(__file__).with_name(src)), "-o", "-"],
         capture_output=True,
@@ -30,7 +32,7 @@ def test_cli_stdout(tmp_path, src: str, expected: str) -> None:
         cwd=Path(__file__).resolve().parents[1],
         check=True,
     )
-    assert result.stdout.strip().splitlines() == expected_text.strip().splitlines()
+    assert result.stdout.strip().splitlines() == expected_lines
 
 
 @pytest.mark.parametrize("src, expected", CASES)
@@ -41,7 +43,7 @@ def test_stub_generation_matches_expected(src: str, expected: str) -> None:
     generated = module.render()
 
     expected_path = Path(__file__).with_name(expected)
-    expected_lines = expected_path.read_text().splitlines()
+    expected_lines = expected_path.read_text().splitlines()[2:]
 
     assert generated == expected_lines
 
@@ -51,7 +53,7 @@ def test_process_file(tmp_path, src: str, expected: str) -> None:
     src_path = Path(__file__).with_name(src)
     dest = tmp_path / f"out_{src_path.stem}.pyi"
     process_file(src_path, dest)
-    expected_lines = Path(__file__).with_name(expected).read_text().splitlines()
+    expected_lines = Path(__file__).with_name(expected).read_text().splitlines()[2:]
     assert dest.read_text().splitlines() == expected_lines
 
 
@@ -64,5 +66,5 @@ def test_process_directory(tmp_path, src: str, expected: str) -> None:
     dest_src.write_text(src_path.read_text())
     process_directory(src_dir, tmp_path)
     generated = (tmp_path / expected).read_text().splitlines()
-    expected_lines = Path(__file__).with_name(expected).read_text().splitlines()
+    expected_lines = Path(__file__).with_name(expected).read_text().splitlines()[2:]
     assert generated == expected_lines

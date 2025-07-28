@@ -39,6 +39,7 @@ exclude = [
     "tests/annotations_13.pyi",
     "tests/annotations.pyi",
     "tests/typechecking.pyi",
+    "stubs",
 ]
 
 [tool.ruff.lint]
