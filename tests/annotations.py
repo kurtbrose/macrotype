@@ -44,6 +44,7 @@ from macrotype.meta_types import (
     make_literal_map,
     set_module,
     get_caller_module,
+    overload,
 )
 
 T = TypeVar("T")

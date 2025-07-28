@@ -13,8 +13,12 @@ _ORIG_OVERLOAD = typing.overload
 
 
 def overload(func: Callable) -> Callable:
-    """Replacement ``overload`` decorator using a list registry."""
+    """Replacement ``overload`` decorator that also registers with ``typing``."""
     _OVERLOAD_REGISTRY[func.__module__][func.__qualname__].append(func)
+    try:
+        func = _ORIG_OVERLOAD(func)
+    except Exception:
+        pass
     return func
 
 
@@ -22,13 +26,20 @@ def get_overloads(func: Callable) -> list[Callable]:
     """Return overloads registered for *func* including builtin ones."""
     f = getattr(func, "__func__", func)
     qualname = getattr(f, "__overload_name__", getattr(f, "__qualname_override__", f.__qualname__))
-    ours = _OVERLOAD_REGISTRY[f.__module__][qualname]
-    return _ORIG_GET_OVERLOADS(f) + list(ours)
+    ours = list(_OVERLOAD_REGISTRY[f.__module__][qualname])
+    orig = list(_ORIG_GET_OVERLOADS(f))
+    return ours + [ov for ov in orig if ov not in ours]
 
 
 def clear_registry() -> None:
-    """Remove all registered overloads."""
+    """Remove all registered overloads and clear ``typing``'s registry."""
     _OVERLOAD_REGISTRY.clear()
+    clear = getattr(typing, "clear_overloads", None)
+    if clear is not None:
+        try:
+            clear()
+        except Exception:
+            pass
 
 
 @contextmanager
