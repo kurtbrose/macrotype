@@ -29,6 +29,7 @@ macrotype = "macrotype.cli:main"
 test = [
     "mypy",
     "ruff",
+    "pyright",
 ]
 
 [tool.ruff]
