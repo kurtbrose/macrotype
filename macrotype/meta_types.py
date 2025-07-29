@@ -32,6 +32,19 @@ def get_overloads(func: Callable) -> list[Callable]:
     return all_ovs
 
 
+def overload_for(*args, **kwargs):
+    """Decorator that records literal overload information for *args* and *kwargs*."""
+
+    def decorator(func: Callable) -> Callable:
+        result = func(*args, **kwargs)
+        cases = getattr(func, "__overload_for__", [])
+        cases.insert(0, (args, kwargs, result))
+        func.__overload_for__ = cases
+        return func
+
+    return decorator
+
+
 def clear_registry() -> None:
     """Remove all registered overloads and clear ``typing``'s registry."""
     _OVERLOAD_REGISTRY.clear()
@@ -66,6 +79,7 @@ __all__ = [
     "get_caller_module",
     "make_literal_map",
     "overload",
+    "overload_for",
     "get_overloads",
     "clear_registry",
     "patch_typing",

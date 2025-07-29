@@ -46,6 +46,7 @@ from macrotype.meta_types import (
     get_caller_module,
     make_literal_map,
     overload,
+    overload_for,
     set_module,
 )
 
@@ -665,6 +666,18 @@ def prepend_one(fn: Callable[Concatenate[int, P], int]) -> Callable[P, int]:
         return fn(1, *args, **kwargs)
 
     return inner
+
+# Demonstrate overload_for decorator generating literal overloads
+@overload_for(0)
+@overload_for(1)
+def special_neg(val: int) -> int:
+    match val:
+        case 0:
+            return 0
+        case 1:
+            return -1
+        case _:
+            return -val
 
 
 # Class with an abstract method to verify abstract decorators
