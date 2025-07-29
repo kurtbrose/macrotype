@@ -1,5 +1,6 @@
 # Generated via: macrotype tests/annotations.py -o -
 # Do not edit by hand
+# pyright: basic
 from typing import Annotated, Any, Callable, ClassVar, Concatenate, Final, Literal, LiteralString, NamedTuple, Never, NewType, NoReturn, NotRequired, ParamSpec, Protocol, Required, Self, TypeGuard, TypeVar, TypeVarTuple, TypedDict, Unpack, final, overload, override, runtime_checkable
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Iterator, Sequence
@@ -293,6 +294,8 @@ SIN_ALIAS = sin
 
 PI_ALIAS: float
 
+PRAGMA_VAR: int  # type: ignore
+
 def local_alias_target(x: int) -> int: ...
 
 LOCAL_ALIAS = local_alias_target
@@ -314,6 +317,8 @@ class HasFinalMethod:
     def do_final(self) -> None: ...
 
 def final_func(x: int) -> int: ...
+
+def pragma_func(x: int) -> int: ...  # pyright: ignore
 
 def pos_only_func(a: int, b: str, /) -> None: ...
 

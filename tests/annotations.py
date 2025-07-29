@@ -1,3 +1,4 @@
+# pyright: basic
 import collections.abc as cabc
 import functools
 import math
@@ -454,6 +455,9 @@ SIN_ALIAS = math.sin
 # Edge case: alias to a foreign constant should retain its type
 PI_ALIAS = math.pi
 
+# Variable with pragma comment should retain comment in stub
+PRAGMA_VAR = 1  # type: ignore
+
 
 def local_alias_target(x: int) -> int:
     return x
@@ -495,6 +499,10 @@ class HasFinalMethod:
 
 @final
 def final_func(x: int) -> int:
+    return x
+
+# Function with pragma comment should retain comment in stub
+def pragma_func(x: int) -> int:  # pyright: ignore
     return x
 
 
