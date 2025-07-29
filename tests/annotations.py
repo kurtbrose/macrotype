@@ -61,9 +61,7 @@ UserId = NewType("UserId", int)
 # Type aliases created via ``TypeAliasType``
 AliasListT = TypeAliasType("AliasListT", list[T], type_params=(T,))
 AliasFuncP = TypeAliasType("AliasFuncP", Callable[P, int], type_params=(P,))
-AliasTupleTs = TypeAliasType(
-    "AliasTupleTs", tuple[Unpack[Ts]], type_params=(Ts,)
-)
+AliasTupleTs = TypeAliasType("AliasTupleTs", tuple[Unpack[Ts]], type_params=(Ts,))
 AliasNumberLikeList = TypeAliasType(
     "AliasNumberLikeList", list[NumberLike], type_params=(NumberLike,)
 )
