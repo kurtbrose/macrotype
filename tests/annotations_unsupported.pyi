@@ -1,8 +1,7 @@
 # Generated via: manual separation of unsupported features
 # These declarations use syntax from PEP 695 that mypy fails to parse.
-from typing import Callable, ClassVar, TypeAliasType, TypeVar, TypeVarTuple, ParamSpec, Unpack, NewType, Tuple, final, overload, Concatenate
+from typing import Any, Callable, ClassVar, Literal, TypeAliasType, TypeVar, TypeVarTuple, ParamSpec, Unpack, NewType, Tuple, final, overload, Concatenate
 from dataclasses import dataclass, InitVar
-from macrotype.meta_types import make_literal_map
 
 T = TypeVar('T')
 P = ParamSpec('P')
@@ -71,7 +70,12 @@ def loop_over(x: bytearray) -> str: ...
 
 def loop_over(x: bytes | bytearray) -> str: ...
 
-EmittedMap = make_literal_map("EmittedMap", {"a": 1, "b": 2})
+class EmittedMap:
+    @overload
+    def __getitem__(self, key: Literal['a']) -> Literal[1]: ...
+    @overload
+    def __getitem__(self, key: Literal['b']) -> Literal[2]: ...
+    def __getitem__(self, key: Any): ...
 
 def use_params(*args: P.args, **kwargs: P.kwargs) -> int: ...
 
