@@ -5,6 +5,7 @@ import re
 from dataclasses import InitVar, dataclass
 from enum import Enum, IntEnum, IntFlag
 from functools import cached_property
+from pathlib import Path
 from typing import (
     Annotated,
     Any,
@@ -653,3 +654,8 @@ def make_dynamic_cls():
 
 
 FixedModuleCls = make_dynamic_cls()
+
+
+# Used to verify import path canonicalization across Python versions
+def path_passthrough(p: Path) -> Path:
+    return p

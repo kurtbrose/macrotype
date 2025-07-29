@@ -1,9 +1,12 @@
+# Generated via: macrotype tests/annotations.py -o -
+# Do not edit by hand
 from typing import Annotated, Any, Callable, ClassVar, Concatenate, Final, Literal, LiteralString, NamedTuple, Never, NewType, NoReturn, NotRequired, ParamSpec, Protocol, Required, Self, TypeGuard, TypeVar, TypeVarTuple, TypedDict, Unpack, final, overload, override, runtime_checkable
 from collections.abc import AsyncIterator, Iterator, Sequence
 from dataclasses import dataclass
 from enum import Enum, IntEnum, IntFlag
 from functools import cached_property
 from math import sin
+from pathlib import Path
 from re import Pattern
 
 T = TypeVar('T')
@@ -376,6 +379,8 @@ def make_dynamic_cls(): ...
 
 class FixedModuleCls:
     pass
+
+def path_passthrough(p: Path) -> Path: ...
 
 GLOBAL: int
 

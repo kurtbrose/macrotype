@@ -10,6 +10,25 @@ from types import ModuleType
 from .meta_types import patch_typing
 
 
+def _header_lines(command: str | None) -> list[str]:
+    """Return standard header lines for generated stubs."""
+    if command:
+        return [f"# Generated via: {command}", "# Do not edit by hand"]
+    return []
+
+
+def _guess_module_name(path: Path) -> str | None:
+    """Best-effort guess of the importable module name for *path*."""
+    parts = [path.stem]
+    parent = path.parent
+    while (parent / "__init__.py").exists():
+        parts.append(parent.name)
+        parent = parent.parent
+    if len(parts) > 1:
+        return ".".join(reversed(parts))
+    return None
+
+
 class _TypeCheckingTransformer(ast.NodeTransformer):
     """Rewrite ``if TYPE_CHECKING`` blocks to execute their body."""
 
@@ -86,7 +105,7 @@ def load_module_from_path(
     ``module_name`` controls the name used in :data:`sys.modules` and defaults
     to ``path.stem``.
     """
-    name = module_name or path.stem
+    name = module_name or _guess_module_name(path) or path.stem
 
     if not type_checking:
         spec = importlib.util.spec_from_file_location(name, path)
@@ -129,9 +148,9 @@ def stub_lines(module: ModuleType) -> list[str]:
     return PyiModule.from_module(module).render()
 
 
-def write_stub(dest: Path, lines: list[str]) -> None:
+def write_stub(dest: Path, lines: list[str], command: str | None = None) -> None:
     dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text("\n".join(lines) + "\n")
+    dest.write_text("\n".join(_header_lines(command) + list(lines)) + "\n")
 
 
 def iter_python_files(target: Path) -> list[Path]:
@@ -140,19 +159,21 @@ def iter_python_files(target: Path) -> list[Path]:
     return list(target.rglob("*.py"))
 
 
-def process_file(src: Path, dest: Path | None = None) -> Path:
+def process_file(src: Path, dest: Path | None = None, *, command: str | None = None) -> Path:
     module = load_module_from_path(src)
     lines = stub_lines(module)
     dest = dest or src.with_suffix(".pyi")
-    write_stub(dest, lines)
+    write_stub(dest, lines, command)
     return dest
 
 
-def process_directory(directory: Path, out_dir: Path | None = None) -> list[Path]:
+def process_directory(
+    directory: Path, out_dir: Path | None = None, *, command: str | None = None
+) -> list[Path]:
     outputs = []
     for src in iter_python_files(directory):
         dest = (out_dir / src.with_suffix(".pyi").name) if out_dir else None
-        outputs.append(process_file(src, dest))
+        outputs.append(process_file(src, dest, command=command))
     return outputs
 
 
