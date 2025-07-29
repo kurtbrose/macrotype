@@ -22,6 +22,9 @@ classifiers = [
 [tool.setuptools.packages.find]
 where = ["."]
 
+[tool.setuptools.entry-points."console_scripts"]
+macrotype = "macrotype.cli:main"
+
 [project.scripts]
 macrotype = "macrotype.cli:main"
 
