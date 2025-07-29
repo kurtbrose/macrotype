@@ -26,7 +26,7 @@ where = ["."]
 macrotype = "macrotype.cli:main"
 
 [project.optional-dependencies]
-test = ["mypy", "ruff", "pytest"]
+test = ["mypy", "pyright", "ruff", "pytest"]
 build = ["build", "twine"]
 
 [tool.ruff]
