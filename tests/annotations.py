@@ -297,9 +297,6 @@ class OldGeneric(Generic[T]):
         return self.value
 
 
-
-
-
 class Color(Enum):
     RED = 1
     GREEN = 2
@@ -350,8 +347,6 @@ class SelfFactory:
 @runtime_checkable
 class Runnable(Protocol):
     def run(self) -> int: ...
-
-
 
 
 class Info(TypedDict):

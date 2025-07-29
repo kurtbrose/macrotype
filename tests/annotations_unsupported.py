@@ -75,6 +75,7 @@ AliasNumberLikeList = TypeAliasType(
 )
 AliasBoundU = TypeAliasType("AliasBoundU", list[U], type_params=(U,))
 
+
 # PEP 695 generic class syntax is entirely unsupported by mypy.
 class NewGeneric[T]:
     value: T
@@ -82,13 +83,16 @@ class NewGeneric[T]:
     def get(self) -> T:
         return self.value
 
+
 # Class with explicit bound on type parameter
 class BoundClass[T: int]:
     value: T
 
+
 # Class with constrained type parameter
 class ConstrainedClass[T: (int, str)]:
     value: T
+
 
 # Function using ``TypeVarTuple`` which results in PEP 695 syntax
 # mypy cannot parse ``def as_tuple[*Ts]`` yet
@@ -103,6 +107,7 @@ class Variadic(Generic[*Ts]):
 
     def to_tuple(self) -> Tuple[Unpack[Ts]]:
         return self.args
+
 
 # Wrapper function using ``Concatenate`` with a ``ParamSpec`` parameter. mypy
 # cannot parse the required PEP 695 generic syntax.
@@ -122,6 +127,7 @@ class InitVarExample:
     def __post_init__(self, init_only: int) -> None:
         self.x += init_only
 
+
 # Overloads generated dynamically in a loop are tricky for mypy's resolver.
 for typ in (bytes, bytearray):
 
@@ -140,10 +146,12 @@ def loop_over(x: bytes | bytearray) -> str:
 # implementation, which mypy refuses in stubs.
 EmittedMap = make_literal_map("EmittedMap", {"a": 1, "b": 2})
 
+
 # Function using ``P.args`` and ``P.kwargs`` requires PEP 695 generics
 # which mypy doesn't yet support.
 def use_params(*args: P.args, **kwargs: P.kwargs) -> int:
     return 0
+
 
 # ``TypeVar`` with the ``infer_variance`` parameter from PEP 695 is not yet
 # implemented by mypy.
