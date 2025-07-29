@@ -26,6 +26,7 @@ from typing import (
     Required,
     Self,
     TypeAlias,
+    TypeAliasType,
     TypedDict,
     TypeGuard,
     TypeVar,
@@ -56,6 +57,17 @@ CovariantT = TypeVar("CovariantT", covariant=True)
 ContravariantT = TypeVar("ContravariantT", contravariant=True)
 TDV = TypeVar("TDV")
 UserId = NewType("UserId", int)
+
+# Type aliases created via ``TypeAliasType``
+AliasListT = TypeAliasType("AliasListT", list[T], type_params=(T,))
+AliasFuncP = TypeAliasType("AliasFuncP", Callable[P, int], type_params=(P,))
+AliasTupleTs = TypeAliasType(
+    "AliasTupleTs", tuple[Unpack[Ts]], type_params=(Ts,)
+)
+AliasNumberLikeList = TypeAliasType(
+    "AliasNumberLikeList", list[NumberLike], type_params=(NumberLike,)
+)
+AliasBoundU = TypeAliasType("AliasBoundU", list[U], type_params=(U,))
 
 MyList: TypeAlias = list[int]
 

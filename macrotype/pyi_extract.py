@@ -1143,10 +1143,12 @@ class _ModuleBuilder:
             fmt = format_type(obj.__value__)
             params = []
             for tp in getattr(obj, "__type_params__", ()):  # pragma: no cover - py312
-                fmt_tp = format_type_param(tp)
-                params.append(fmt_tp.text)
-                alias_used = fmt_tp.used
-                self.used_types.update(alias_used)
+                if isinstance(tp, typing.ParamSpec):
+                    params.append(f"**{tp.__name__}")
+                elif isinstance(tp, typing.TypeVarTuple):
+                    params.append(f"*{tp.__name__}")
+                else:
+                    params.append(tp.__name__)
             self._add(
                 PyiAlias(
                     name=name,
