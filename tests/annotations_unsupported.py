@@ -6,7 +6,6 @@ from typing import (
     Callable,
     Concatenate,
     Generic,
-    InitVar,
     NewType,
     ParamSpec,
     Tuple,
@@ -115,16 +114,6 @@ def prepend_one(fn: Callable[Concatenate[int, P], int]) -> Callable[P, int]:
         return fn(1, *args, **kwargs)
 
     return inner
-
-
-# Dataclass example using ``InitVar`` is rejected by mypy.
-@dataclass
-class InitVarExample:
-    x: int
-    init_only: InitVar[int]
-
-    def __post_init__(self, init_only: int) -> None:
-        self.x += init_only
 
 
 # Overloads generated dynamically in a loop are tricky for mypy's resolver.

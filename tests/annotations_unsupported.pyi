@@ -1,6 +1,6 @@
 # Generated via: manual separation of unsupported features
 # These declarations use syntax from PEP 695 that mypy fails to parse.
-from dataclasses import InitVar, dataclass
+from dataclasses import dataclass
 from typing import (
     Callable,
     Concatenate,
@@ -68,11 +68,6 @@ class Variadic[*Ts]:
     def to_tuple(self) -> tuple[Unpack[Ts]]: ...
 
 def prepend_one[**P](fn: Callable[Concatenate[int, P], int]) -> Callable[P, int]: ...
-@dataclass
-class InitVarExample:
-    x: int
-    init_only: InitVar[int]
-    def __post_init__(self, init_only: int) -> None: ...
 
 @overload
 def loop_over(x: bytes) -> str: ...

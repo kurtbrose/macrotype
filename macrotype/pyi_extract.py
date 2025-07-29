@@ -62,6 +62,18 @@ def format_type(type_obj: Any) -> TypeRenderInfo:
         used.add(type_obj)
         return TypeRenderInfo(type_obj.__name__, used)
 
+    if isinstance(type_obj, dataclasses.InitVar):
+        used.add(dataclasses.InitVar)
+        try:
+            inner = type_obj.type
+        except Exception:
+            inner = None
+        if inner is not None:
+            inner_fmt = format_type(inner)
+            used.update(inner_fmt.used)
+            return TypeRenderInfo(f"InitVar[{inner_fmt.text}]", used)
+        return TypeRenderInfo("InitVar", used)
+
     if isinstance(type_obj, typing.ParamSpecArgs):
         base = format_type(type_obj.__origin__)
         used.update(base.used)
@@ -712,8 +724,6 @@ def _class_variables(
     members: list[PyiElement] = []
     used: set[type] = set()
     for name, annotation in resolved.items():
-        if is_dataclass_obj and isinstance(annotation, dataclasses.InitVar):
-            continue
         fmt = format_type(annotation)
         members.append(PyiVariable(name=name, type_str=fmt.text, used_types=fmt.used))
         used.update(fmt.used)
