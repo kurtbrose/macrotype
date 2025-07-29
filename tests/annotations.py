@@ -679,6 +679,13 @@ def special_neg(val: int) -> int:
         case _:
             return -val
 
+# Use overload_for with None to record a non-Literal case
+@overload_for(None)
+def parse_int_or_none(val: str | None) -> int | None:
+    if val is None:
+        return None
+    return int(val)
+
 
 # Class with an abstract method to verify abstract decorators
 class AbstractBase(ABC):

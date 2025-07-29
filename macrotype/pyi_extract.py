@@ -390,8 +390,24 @@ def _unwrap_descriptor(obj: Any) -> Any | None:
         return None
 
 
+def _annotation_for_value(value: Any) -> Any:
+    """Return the narrowest type annotation for *value*."""
+
+    if value is None:
+        return type(None)
+    if isinstance(value, enum.Enum):
+        return typing.Literal[value]
+    if isinstance(value, bool):
+        return typing.Literal[value]
+    if isinstance(value, (int, float, complex, str, bytes)) and not isinstance(value, bool):
+        return typing.Literal[value]
+    if isinstance(value, type):
+        return value
+    return type(value)
+
+
 def _make_literal_overload(fn: Callable, args: tuple, kwargs: dict, result: Any) -> Callable:
-    """Return a function with ``Literal`` annotations bound to ``args`` and ``kwargs``."""
+    """Return a function with specific annotations bound to ``args`` and ``kwargs``."""
 
     new_fn = types.FunctionType(
         fn.__code__,
@@ -406,8 +422,8 @@ def _make_literal_overload(fn: Callable, args: tuple, kwargs: dict, result: Any)
     sig = inspect.signature(fn)
     bound = sig.bind_partial(*args, **kwargs)
     for name, value in bound.arguments.items():
-        new_fn.__annotations__[name] = typing.Literal[value]
-    new_fn.__annotations__["return"] = typing.Literal[result]
+        new_fn.__annotations__[name] = _annotation_for_value(value)
+    new_fn.__annotations__["return"] = _annotation_for_value(result)
     return new_fn
 
 
