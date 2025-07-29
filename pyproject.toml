@@ -37,7 +37,7 @@ exclude = [
     "tests/annotations_13.pyi",
     "tests/annotations.pyi",
     "tests/typechecking.pyi",
-    "stubs",
+    "macrotype/*.pyi",
 ]
 
 [tool.ruff.lint]

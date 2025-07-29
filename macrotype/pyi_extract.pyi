@@ -1,4 +1,4 @@
-# Generated via: macrotype macrotype -o stubs
+# Generated via: macrotype macrotype
 # Do not edit by hand
 from typing import Any, Callable
 from dataclasses import _DataclassParams, dataclass

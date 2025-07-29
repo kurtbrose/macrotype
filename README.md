@@ -48,3 +48,15 @@ In addition to the CLI tool, there are also helpers for generating
 dynamic types.  See `macrotype.meta_types`.  These are intended
 for you to import to enable dynamic programming patterns which
 would be unthinkable without `macrotype`.
+
+## Dogfooding
+
+The `macrotype` project uses the CLI on itself.  Running
+
+```bash
+python -m macrotype macrotype
+```
+
+regenerates the stub files for the package in place.  A CI job ensures that
+the checked in `.pyi` files are always in sync with the result of this
+command.
