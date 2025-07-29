@@ -60,3 +60,14 @@ python -m macrotype macrotype
 regenerates the stub files for the package in place.  A CI job ensures that
 the checked in `.pyi` files are always in sync with the result of this
 command.
+
+## Documentation
+
+Full documentation is available on [Read the Docs](https://macrotype.readthedocs.io/).
+To build the documentation locally, install the project with the `doc` optional
+dependency:
+
+```bash
+pip install .[doc]
+sphinx-build docs docs/_build
+```
