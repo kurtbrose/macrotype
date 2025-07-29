@@ -10,8 +10,8 @@ from typing import (
     Annotated,
     Any,
     Callable,
-    Concatenate,
     ClassVar,
+    Concatenate,
     Final,
     Generic,
     Literal,
@@ -594,6 +594,7 @@ EmittedMap = make_literal_map("EmittedMap", {"a": 1, "b": 2})
 # Used to verify import path canonicalization across Python versions
 def path_passthrough(p: Path) -> Path:
     return p
+
 
 # Generic function using ``TypeVarTuple``
 def as_tuple(*args: Unpack[Ts]) -> tuple[Unpack[Ts]]:

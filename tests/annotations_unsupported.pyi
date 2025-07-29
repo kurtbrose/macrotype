@@ -2,7 +2,6 @@
 # These declarations use syntax from PEP 695 that mypy fails to parse.
 from typing import (
     Callable,
-    Concatenate,
     NewType,
     ParamSpec,
     TypeVar,
