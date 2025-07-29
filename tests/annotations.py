@@ -235,7 +235,6 @@ def make_wrapper(t: type):
 
 
 GeneratedInt = make_wrapper(int)
-GeneratedPattern = make_wrapper(re.Pattern[str])
 
 
 from typing import overload
@@ -591,7 +590,6 @@ def make_emitter(name: str):
 
 
 emitted_a = make_emitter("emitted_a")
-emitted_b = make_emitter("emitted_b")
 
 
 # Test emit_as decorator for classes
