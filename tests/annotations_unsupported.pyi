@@ -2,10 +2,8 @@
 # These declarations use syntax from PEP 695 that mypy fails to parse.
 from dataclasses import InitVar, dataclass
 from typing import (
-    Any,
     Callable,
     Concatenate,
-    Literal,
     NewType,
     ParamSpec,
     TypeAliasType,

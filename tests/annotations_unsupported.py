@@ -19,8 +19,6 @@ from typing import (
     overload,
 )
 
-from macrotype.meta_types import make_literal_map
-
 T = TypeVar("T")
 P = ParamSpec("P")
 Ts = TypeVarTuple("Ts")
