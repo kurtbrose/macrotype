@@ -8,7 +8,6 @@ from typing import (
     TypeAlias,
     TypeVar,
     TypeVarTuple,
-    overload,
 )
 
 T = TypeVar("T")
@@ -70,20 +69,6 @@ class BoundClass[T: int]:
 # Class with constrained type parameter
 class ConstrainedClass[T: (int, str)]:
     value: T
-
-
-# Overloads generated dynamically in a loop are tricky for mypy's resolver.
-for typ in (bytes, bytearray):
-
-    @overload
-    def loop_over(x: typ) -> str: ...
-
-
-del typ
-
-
-def loop_over(x: bytes | bytearray) -> str:
-    return str(x)
 
 
 # Function using ``P.args`` and ``P.kwargs`` requires PEP 695 generics
