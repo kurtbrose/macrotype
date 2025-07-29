@@ -1,23 +1,24 @@
 # These annotations use syntax standardized in PEP 695 but unsupported by mypy.
 # Each example below includes a comment describing the unsupported feature.
 
+from dataclasses import dataclass
 from typing import (
     Callable,
-    ClassVar,
+    Concatenate,
     Generic,
     InitVar,
     NewType,
     ParamSpec,
-    Concatenate,
     Tuple,
     TypeAlias,
     TypeAliasType,
     TypeVar,
     TypeVarTuple,
     Unpack,
-    overload,
     final,
+    overload,
 )
+
 from macrotype.meta_types import make_literal_map
 
 T = TypeVar("T")

@@ -1,22 +1,20 @@
 # Generated via: manual separation of unsupported features
 # These declarations use syntax from PEP 695 that mypy fails to parse.
+from dataclasses import InitVar, dataclass
 from typing import (
     Any,
     Callable,
-    ClassVar,
+    Concatenate,
     Literal,
+    NewType,
+    ParamSpec,
     TypeAliasType,
     TypeVar,
     TypeVarTuple,
-    ParamSpec,
     Unpack,
-    NewType,
-    Tuple,
     final,
     overload,
-    Concatenate,
 )
-from dataclasses import dataclass, InitVar
 
 T = TypeVar("T")
 P = ParamSpec("P")

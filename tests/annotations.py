@@ -2,7 +2,7 @@ import collections.abc as cabc
 import functools
 import math
 import re
-from dataclasses import InitVar, dataclass
+from dataclasses import dataclass
 from enum import Enum, IntEnum, IntFlag
 from functools import cached_property
 from pathlib import Path
@@ -11,7 +11,6 @@ from typing import (
     Any,
     Callable,
     ClassVar,
-    Concatenate,
     Final,
     Generic,
     Literal,
@@ -26,9 +25,7 @@ from typing import (
     Protocol,
     Required,
     Self,
-    Tuple,
     TypeAlias,
-    TypeAliasType,
     TypedDict,
     TypeGuard,
     TypeVar,
@@ -43,7 +40,6 @@ from typing import (
 from macrotype.meta_types import (
     emit_as,
     get_caller_module,
-    make_literal_map,
     overload,
     set_module,
 )
