@@ -1,4 +1,4 @@
-# Generated via: macrotype macrotype -o stubs
+# Generated via: macrotype macrotype
 # Do not edit by hand
 def _stdout_write(lines: list[str], command: str | None) -> None: ...
 
