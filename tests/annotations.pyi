@@ -1,6 +1,6 @@
 # Generated via: macrotype tests/annotations.py -o -
 # Do not edit by hand
-from typing import Annotated, Any, Callable, ClassVar, Final, Literal, LiteralString, NamedTuple, Never, NewType, NoReturn, NotRequired, ParamSpec, Protocol, Required, Self, TypeGuard, TypeVar, TypeVarTuple, TypedDict, Unpack, final, overload, override, runtime_checkable
+from typing import Annotated, Any, Callable, ClassVar, Concatenate, Final, Literal, LiteralString, NamedTuple, Never, NewType, NoReturn, NotRequired, ParamSpec, Protocol, Required, Self, TypeGuard, TypeVar, TypeVarTuple, TypedDict, Unpack, final, overload, override, runtime_checkable
 from collections.abc import AsyncIterator, Iterator, Sequence
 from dataclasses import InitVar, dataclass
 from enum import Enum, IntEnum, IntFlag
@@ -334,6 +334,14 @@ class EmittedMap:
     def __getitem__(self, key: Literal['b']) -> Literal[2]: ...
 
 def path_passthrough(p: Path) -> Path: ...
+
+def as_tuple[*Ts](*args: Unpack[Ts]) -> tuple[Unpack[Ts]]: ...
+
+class Variadic[*Ts]:
+    def __init__(self, *args: Unpack[Ts]) -> None: ...
+    def to_tuple(self) -> tuple[Unpack[Ts]]: ...
+
+def prepend_one[**P](fn: Callable[Concatenate[int, P], int]) -> Callable[P, int]: ...
 
 GLOBAL: int
 

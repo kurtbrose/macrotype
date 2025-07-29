@@ -10,6 +10,7 @@ from typing import (
     Annotated,
     Any,
     Callable,
+    Concatenate,
     ClassVar,
     Final,
     Generic,
@@ -593,3 +594,24 @@ EmittedMap = make_literal_map("EmittedMap", {"a": 1, "b": 2})
 # Used to verify import path canonicalization across Python versions
 def path_passthrough(p: Path) -> Path:
     return p
+
+# Generic function using ``TypeVarTuple``
+def as_tuple(*args: Unpack[Ts]) -> tuple[Unpack[Ts]]:
+    return tuple(args)
+
+
+# Class with variadic type parameters
+class Variadic(Generic[*Ts]):
+    def __init__(self, *args: Unpack[Ts]) -> None:
+        self.args = tuple(args)
+
+    def to_tuple(self) -> tuple[Unpack[Ts]]:
+        return self.args
+
+
+# Wrapper function using ``Concatenate`` with a ``ParamSpec`` parameter
+def prepend_one(fn: Callable[Concatenate[int, P], int]) -> Callable[P, int]:
+    def inner(*args: P.args, **kwargs: P.kwargs) -> int:
+        return fn(1, *args, **kwargs)
+
+    return inner
