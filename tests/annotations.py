@@ -601,6 +601,19 @@ def path_passthrough(p: Path) -> Path:
     return p
 
 
+for typ in (bytearray, bytes):
+
+    @overload
+    def loop_over(x: typ) -> str: ...
+
+
+del typ
+
+
+def loop_over(x: bytes | bytearray) -> str:
+    return str(x)
+
+
 # Generic function using ``TypeVarTuple``
 def as_tuple(*args: Unpack[Ts]) -> tuple[Unpack[Ts]]:
     return tuple(args)

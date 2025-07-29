@@ -28,7 +28,8 @@ def get_overloads(func: Callable) -> list[Callable]:
     qualname = getattr(f, "__overload_name__", getattr(f, "__qualname_override__", f.__qualname__))
     ours = list(_OVERLOAD_REGISTRY[f.__module__][qualname])
     orig = list(_ORIG_GET_OVERLOADS(f))
-    return ours + [ov for ov in orig if ov not in ours]
+    all_ovs = ours + [ov for ov in orig if ov not in ours]
+    return all_ovs
 
 
 def clear_registry() -> None:

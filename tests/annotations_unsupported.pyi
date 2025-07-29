@@ -7,7 +7,6 @@ from typing import (
     TypeVar,
     TypeVarTuple,
     Unpack,
-    overload,
 )
 
 T = TypeVar("T")
@@ -49,11 +48,6 @@ class BoundClass[T: int]:
 class ConstrainedClass[T: (int, str)]:
     value: T
 
-@overload
-def loop_over(x: bytes) -> str: ...
-@overload
-def loop_over(x: bytearray) -> str: ...
-def loop_over(x: bytes | bytearray) -> str: ...
 def use_params(*args: P.args, **kwargs: P.kwargs) -> int: ...
 
 InferredT = TypeVar("InferredT", infer_variance=True)
