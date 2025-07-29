@@ -1,5 +1,8 @@
+import io
+import re
 import subprocess
 import sys
+import tokenize
 from pathlib import Path
 
 import pytest
@@ -86,3 +89,18 @@ def test_module_alias(tmp_path) -> None:
         set_module(pathlib.Path, original)
 
     assert any(line == "from pathlib import Path" for line in lines)
+
+
+def test_pyi_comments_match_source() -> None:
+    src = Path(__file__).with_name("annotations.py")
+    pyi = Path(__file__).with_name("annotations.pyi")
+    pattern = re.compile(r"#\s*(?:type:|pyright:|mypy:|pyre-|pyre:)")
+
+    def _grab(text: str) -> list[str]:
+        return [
+            tok_str
+            for tok_type, tok_str, *_ in tokenize.generate_tokens(io.StringIO(text).readline)
+            if tok_type == tokenize.COMMENT and pattern.match(tok_str)
+        ]
+
+    assert _grab(src.read_text()) == _grab(pyi.read_text())

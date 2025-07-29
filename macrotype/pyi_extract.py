@@ -44,6 +44,7 @@ class PyiNamedElement(PyiElement):
 
     name: str
     used_types: set[type] = field(default_factory=set, kw_only=True)
+    line: int | None = field(default=None, kw_only=True)
 
 
 @dataclass
@@ -1140,7 +1141,7 @@ class PyiClass(PyiNamedElement):
 class _ModuleBuilder:
     """Helper for building :class:`PyiModule` objects."""
 
-    def __init__(self, mod: ModuleType) -> None:
+    def __init__(self, mod: ModuleType, line_map: dict[str, int] | None = None) -> None:
         self.mod = mod
         self.mod_name = mod.__name__
         self.globals = vars(mod)
@@ -1154,6 +1155,7 @@ class _ModuleBuilder:
         self.body: list[PyiElement] = []
         self.used_types: set[type] = set()
         self.handled_names: set[str] = set()
+        self.line_map = line_map or {}
 
     # -- helpers -----------------------------------------------------
     def _add(self, item: PyiElement) -> None:
@@ -1169,7 +1171,14 @@ class _ModuleBuilder:
                 fmt = format_type(obj)
                 fmt_text = fmt.text
                 alias_used = fmt.used
-            self._add(PyiAlias(name=name, value=fmt_text, used_types=alias_used))
+            self._add(
+                PyiAlias(
+                    name=name,
+                    value=fmt_text,
+                    used_types=alias_used,
+                    line=self.line_map.get(name),
+                )
+            )
             return True
 
         if isinstance(obj, typing.TypeAliasType):
@@ -1194,6 +1203,7 @@ class _ModuleBuilder:
                     keyword="type",
                     type_params=params,
                     used_types=fmt.used,
+                    line=self.line_map.get(name),
                 )
             )
             self.used_types.update(fmt.used)
@@ -1206,21 +1216,46 @@ class _ModuleBuilder:
             annotation = self.resolved_ann.get(name)
             if annotation is not None:
                 fmt = format_type(annotation)
-                self._add(PyiVariable(name=name, type_str=fmt.text, used_types=fmt.used))
+                self._add(
+                    PyiVariable(
+                        name=name,
+                        type_str=fmt.text,
+                        used_types=fmt.used,
+                        line=self.line_map.get(name),
+                    )
+                )
             elif isinstance(obj, (int, str, float, bool)):
-                self._add(PyiVariable.from_assignment(name, obj))
+                var = PyiVariable.from_assignment(name, obj)
+                var.line = self.line_map.get(name)
+                self._add(var)
             self.handled_names.add(name)
             return True
         if obj.__module__ != self.mod_name:
             if annotation is not None:
                 fmt = format_type(annotation)
-                self._add(PyiVariable(name=name, type_str=fmt.text, used_types=fmt.used))
+                self._add(
+                    PyiVariable(
+                        name=name,
+                        type_str=fmt.text,
+                        used_types=fmt.used,
+                        line=self.line_map.get(name),
+                    )
+                )
             elif isinstance(obj, (int, str, float, bool)):
-                self._add(PyiVariable.from_assignment(name, obj))
+                var = PyiVariable.from_assignment(name, obj)
+                var.line = self.line_map.get(name)
+                self._add(var)
             else:
                 alias_name = getattr(obj, "__name__", None)
                 if alias_name and alias_name != name:
-                    self._add(PyiAlias(name=name, value=alias_name, used_types={obj}))
+                    self._add(
+                        PyiAlias(
+                            name=name,
+                            value=alias_name,
+                            used_types={obj},
+                            line=self.line_map.get(name),
+                        )
+                    )
             self.handled_names.add(name)
             return True
         return False
@@ -1234,9 +1269,18 @@ class _ModuleBuilder:
             annotation = self.resolved_ann.get(name)
             if annotation is not None:
                 fmt = format_type(annotation)
-                self._add(PyiVariable(name=name, type_str=fmt.text, used_types=fmt.used))
+                self._add(
+                    PyiVariable(
+                        name=name,
+                        type_str=fmt.text,
+                        used_types=fmt.used,
+                        line=self.line_map.get(name),
+                    )
+                )
             else:
-                self._add(PyiVariable.from_assignment(name, obj))
+                var = PyiVariable.from_assignment(name, obj)
+                var.line = self.line_map.get(name)
+                self._add(var)
             return True
 
         canonical = getattr(fn_obj, "__qualname_override__", name)
@@ -1252,6 +1296,7 @@ class _ModuleBuilder:
                 )
                 if func.name != canonical:
                     func.name = canonical
+                func.line = self.line_map.get(name)
                 self._add(func)
         else:
             func = PyiFunction.from_function(
@@ -1262,6 +1307,7 @@ class _ModuleBuilder:
             )
             if func.name != canonical:
                 func.name = canonical
+            func.line = self.line_map.get(name)
             self._add(func)
         return True
 
@@ -1269,6 +1315,7 @@ class _ModuleBuilder:
         if not inspect.isclass(obj):
             return False
         cls_obj = PyiClass.from_class(obj)
+        cls_obj.line = self.line_map.get(name)
         canonical = getattr(obj, "__qualname_override__", name)
         if cls_obj.name != canonical:
             cls_obj.name = canonical
@@ -1287,6 +1334,7 @@ class _ModuleBuilder:
                     name=name,
                     value=f"NewType('{name}', {base_fmt.text})",
                     used_types=alias_used,
+                    line=self.line_map.get(name),
                 )
             )
             self.used_types.update(alias_used)
@@ -1315,14 +1363,23 @@ class _ModuleBuilder:
                     value = f"ParamSpec({', '.join(args)})"
                 else:
                     value = f"{alias_type.__name__}('{obj.__name__}')"
-                self._add(PyiAlias(name=name, value=value, used_types=alias_used))
+                self._add(
+                    PyiAlias(
+                        name=name,
+                        value=value,
+                        used_types=alias_used,
+                        line=self.line_map.get(name),
+                    )
+                )
                 self.used_types.update(alias_used)
                 return True
         return False
 
     def _handle_constant(self, name: str, obj: Any) -> bool:
         if isinstance(obj, (int, str, float, bool)):
-            self._add(PyiVariable.from_assignment(name, obj))
+            var = PyiVariable.from_assignment(name, obj)
+            var.line = self.line_map.get(name)
+            self._add(var)
             return True
         return False
 
@@ -1365,7 +1422,14 @@ class _ModuleBuilder:
                 if annotation is typing.TypeAlias:
                     continue
                 fmt = format_type(annotation)
-                self._add(PyiVariable(name=name, type_str=fmt.text, used_types=fmt.used))
+                self._add(
+                    PyiVariable(
+                        name=name,
+                        type_str=fmt.text,
+                        used_types=fmt.used,
+                        line=self.line_map.get(name),
+                    )
+                )
 
     def _imports(self) -> list[str]:
         typing_names = sorted(
@@ -1393,31 +1457,52 @@ class _ModuleBuilder:
             lines.append(f"from {modname} import {', '.join(sorted(names))}")
         return lines
 
-    def build(self) -> "PyiModule":
+    def build(
+        self,
+        *,
+        header_comments: list[str] | None = None,
+        comments: dict[int, str] | None = None,
+    ) -> "PyiModule":
         for name, obj in self.globals.items():
             self._process_object(name, obj)
 
         self._remaining_annotations()
         import_lines = self._imports()
-        return PyiModule(imports=import_lines, body=self.body)
+        return PyiModule(
+            imports=import_lines,
+            body=self.body,
+            headers=header_comments or [],
+            comments=comments or {},
+        )
 
 
 @dataclass
 class PyiModule:
     imports: list[str] = field(default_factory=list)
     body: list[PyiElement] = field(default_factory=list)
+    headers: list[str] = field(default_factory=list)
+    comments: dict[int, str] = field(default_factory=dict)
 
     def render(self, indent: int = 0) -> list[str]:
-        lines = list(self.imports)
-        if lines:
+        lines: list[str] = []
+        if self.headers:
+            lines.extend(self.headers)
+        lines.extend(self.imports)
+        if self.imports:
             lines.append("")
         for item in self.body:
-            lines.extend(item.render(indent))
+            item_lines = item.render(indent)
+            comment = self.comments.get(getattr(item, "line", -1))
+            if comment:
+                item_lines[0] = f"{item_lines[0]}  {comment}"
+            lines.extend(item_lines)
             lines.append("")
         return lines[:-1] if lines and lines[-1] == "" else lines
 
     @classmethod
     def from_module(cls, mod: ModuleType) -> PyiModule:
         """Create a :class:`PyiModule` from a live module object."""
-
-        return _ModuleBuilder(mod).build()
+        comments = getattr(mod, "__macrotype_comments__", {})
+        header = getattr(mod, "__macrotype_header_pragmas__", [])
+        line_map = getattr(mod, "__macrotype_line_map__", {})
+        return _ModuleBuilder(mod, line_map).build(header_comments=header, comments=comments)
