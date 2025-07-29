@@ -2,7 +2,7 @@
 # Do not edit by hand
 from typing import Annotated, Any, Callable, ClassVar, Final, Literal, LiteralString, NamedTuple, Never, NewType, NoReturn, NotRequired, ParamSpec, Protocol, Required, Self, TypeGuard, TypeVar, TypeVarTuple, TypedDict, Unpack, final, overload, override, runtime_checkable
 from collections.abc import AsyncIterator, Iterator, Sequence
-from dataclasses import dataclass
+from dataclasses import InitVar, dataclass
 from enum import Enum, IntEnum, IntFlag
 from functools import cached_property
 from math import sin
@@ -165,6 +165,12 @@ class NoAutoEq:
 @dataclass(order=True, match_args=False, slots=True, weakref_slot=True)
 class OptionDataclass:
     value: int
+
+@dataclass
+class InitVarExample:
+    x: int
+    init_only: InitVar[int]
+    def __post_init__(self, init_only: int) -> None: ...
 
 @dataclass
 class Outer:

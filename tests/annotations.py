@@ -2,7 +2,7 @@ import collections.abc as cabc
 import functools
 import math
 import re
-from dataclasses import dataclass
+from dataclasses import InitVar, dataclass
 from enum import Enum, IntEnum, IntFlag
 from functools import cached_property
 from pathlib import Path
@@ -272,6 +272,15 @@ class OptionDataclass:
 
 
 # Edge case: dataclasses.InitVar fields should not appear in stubs
+@dataclass
+class InitVarExample:
+    x: int
+    init_only: InitVar[int]
+
+    def __post_init__(self, init_only: int) -> None:
+        self.x += init_only
+
+
 @dataclass
 class Outer:
     x: int
