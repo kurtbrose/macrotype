@@ -501,6 +501,7 @@ class HasFinalMethod:
 def final_func(x: int) -> int:
     return x
 
+
 # Function with pragma comment should retain comment in stub
 def pragma_func(x: int) -> int:  # pyright: ignore
     return x

@@ -1505,6 +1505,4 @@ class PyiModule:
         comments = getattr(mod, "__macrotype_comments__", {})
         header = getattr(mod, "__macrotype_header_pragmas__", [])
         line_map = getattr(mod, "__macrotype_line_map__", {})
-        return _ModuleBuilder(mod, line_map).build(
-            header_comments=header, comments=comments
-        )
+        return _ModuleBuilder(mod, line_map).build(header_comments=header, comments=comments)

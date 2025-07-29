@@ -1,9 +1,9 @@
-import subprocess
-import sys
-from pathlib import Path
 import io
 import re
+import subprocess
+import sys
 import tokenize
+from pathlib import Path
 
 import pytest
 
