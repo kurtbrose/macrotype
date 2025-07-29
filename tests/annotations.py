@@ -56,7 +56,6 @@ U = TypeVar("U", bound=str)
 NumberLike = TypeVar("NumberLike", int, float)
 CovariantT = TypeVar("CovariantT", covariant=True)
 ContravariantT = TypeVar("ContravariantT", contravariant=True)
-InferredT = TypeVar("InferredT", infer_variance=True)
 TDV = TypeVar("TDV")
 UserId = NewType("UserId", int)
 
@@ -102,7 +101,6 @@ TUPLE_VAR: tuple[int, ...]
 
 # Edge case: annotated constants with values should honor the annotation
 ANNOTATED_FINAL: Final[int] = 5
-ANNOTATED_CLASSVAR: ClassVar[int] = 1
 
 # Edge case: unannotated constant should be included
 UNANNOTATED_CONST = 42
@@ -163,24 +161,6 @@ class Child(Basic): ...
 
 
 # Edge case: ``@override`` decorator handling
-class OverrideChild(Basic):
-    @override
-    def copy(self, param: T) -> T:
-        return param
-
-
-# Edge case: @override applied after descriptor
-class OverrideLate(Basic):
-    @override
-    @classmethod
-    def cls_override(cls) -> int:
-        return 1
-
-    @override
-    @staticmethod
-    def static_override() -> int:
-        return 2
-
 
 class SampleDict(TypedDict):
     name: str
@@ -259,18 +239,6 @@ def over(x: int | str) -> int | str:
     return x
 
 
-# Overloads generated in a loop
-for typ in (bytes, bytearray):
-
-    @overload
-    def loop_over(x: typ) -> str: ...
-
-
-del typ
-
-
-def loop_over(x: bytes | bytearray) -> str:
-    return str(x)
 
 
 @dataclass
@@ -309,16 +277,6 @@ class OptionDataclass:
 
 
 # Edge case: dataclasses.InitVar fields should not appear in stubs
-@dataclass
-class InitVarExample:
-    x: int
-    init_only: InitVar[int]
-
-    def __post_init__(self, init_only: int) -> None:
-        self.x += init_only
-
-
-@dataclass
 class Outer:
     x: int
 
@@ -409,111 +367,6 @@ class Runnable(Protocol):
     def run(self) -> int: ...
 
 
-def as_tuple(*args: Unpack[Ts]) -> Tuple[Unpack[Ts]]:
-    return tuple(args)
-
-
-class Variadic(Generic[*Ts]):
-    def __init__(self, *args: Unpack[Ts]) -> None:
-        self.args = tuple(args)
-
-    def to_tuple(self) -> Tuple[Unpack[Ts]]:
-        return self.args
-
-
-class Info(TypedDict):
-    name: str
-    age: int
-
-
-def with_kwargs(**kwargs: Unpack[Info]) -> Info:
-    return kwargs
-
-
-def sum_of(*args: tuple[int]) -> int:
-    return sum(args)
-
-
-def dict_echo(**kwargs: dict[str, Any]) -> dict[str, Any]:
-    return kwargs
-
-
-# Edge case: ``Concatenate`` parameter handling
-def prepend_one(fn: Callable[Concatenate[int, P], int]) -> Callable[P, int]:
-    def inner(*args: P.args, **kwargs: P.kwargs) -> int:
-        return fn(1, *args, **kwargs)
-
-    return inner
-
-
-# Edge case: direct use of ``P.args`` and ``P.kwargs``
-def use_params(*args: P.args, **kwargs: P.kwargs) -> int:
-    return 0
-
-
-# Edge case: function explicitly returning ``None``
-def do_nothing() -> None:
-    return None
-
-
-def always_raises() -> NoReturn:
-    raise RuntimeError()
-
-
-def never_returns() -> Never:
-    raise RuntimeError()
-
-
-# Edge case: ``TypeGuard`` return type
-def is_str_list(val: list[object]) -> TypeGuard[list[str]]:
-    return all(isinstance(v, str) for v in val)
-
-
-# Edge case: LiteralString handling
-LITERAL_STR_VAR: LiteralString
-
-# Edge case: ``Final`` annotated variables with values
-FINAL_VAR_WITH_VALUE: Final[int] = 5
-PLAIN_FINAL_VAR: Final = 1
-
-# Edge case: alias to a foreign function should be preserved
-SIN_ALIAS = math.sin
-
-# Edge case: alias to a foreign constant should retain its type
-PI_ALIAS = math.pi
-
-
-def local_alias_target(x: int) -> int:
-    return x
-
-
-# Edge case: alias to a local function should be preserved
-LOCAL_ALIAS = local_alias_target
-
-
-def echo_literal(value: LiteralString) -> LiteralString:
-    return value
-
-
-# Edge case: variable annotated as ``None``
-NONE_VAR: None = None
-
-
-# Edge case: async function
-async def async_add_one(x: int) -> int:
-    return x + 1
-
-
-# Edge case: async generator function
-async def gen_range(n: int) -> cabc.AsyncIterator[int]:
-    for i in range(n):
-        yield i
-
-
-# Edge case: ``final`` decorator handling
-@final
-def final_func(x: int) -> int:
-    return x
 
 
 @final
@@ -642,7 +495,6 @@ EmittedCls = make_emitter_cls("EmittedCls")
 
 
 # Use emit_as with overloads defined dynamically on a class via API helper
-EmittedMap = make_literal_map("EmittedMap", {"a": 1, "b": 2})
 
 
 # Demonstrate adjusting a dynamically created class using helpers

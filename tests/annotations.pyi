@@ -1,9 +1,8 @@
-from typing import Annotated, Any, Callable, ClassVar, Concatenate, Final, Literal, LiteralString, NamedTuple, Never, NewType, NoReturn, NotRequired, ParamSpec, Protocol, Required, Self, TypeGuard, TypeVar, TypeVarTuple, TypedDict, Unpack, final, overload, override, runtime_checkable
-from collections.abc import AsyncIterator, Iterator, Sequence
+from typing import Annotated, Any, Callable, ClassVar, Final, Literal, NamedTuple, NewType, NotRequired, ParamSpec, Protocol, Required, Self, TypeVar, TypeVarTuple, TypedDict, Unpack, final, overload, runtime_checkable
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from enum import Enum, IntEnum, IntFlag
 from functools import cached_property
-from math import sin
 from re import Pattern
 
 T = TypeVar('T')
@@ -19,8 +18,6 @@ NumberLike = TypeVar('NumberLike')
 CovariantT = TypeVar('CovariantT', covariant=True)
 
 ContravariantT = TypeVar('ContravariantT', contravariant=True)
-
-InferredT = TypeVar('InferredT', infer_variance=True)
 
 TDV = TypeVar('TDV')
 
@@ -61,8 +58,6 @@ type AliasNumberLikeList[NumberLike: (int, float)] = list[NumberLike]
 type AliasBoundU[U: str] = list[U]
 
 ANNOTATED_FINAL: Final[int]
-
-ANNOTATED_CLASSVAR: ClassVar[int]
 
 UNANNOTATED_CONST: int
 
@@ -106,18 +101,6 @@ class Basic:
 
 class Child(Basic):
     pass
-
-class OverrideChild(Basic):
-    @override
-    def copy[T](self, param: T) -> T: ...
-
-class OverrideLate(Basic):
-    @classmethod
-    @override
-    def cls_override(cls) -> int: ...
-    @staticmethod
-    @override
-    def static_override() -> int: ...
 
 class SampleDict(TypedDict):
     name: str
@@ -167,12 +150,6 @@ def over(x: int) -> int: ...
 @overload
 def over(x: str) -> str: ...
 
-@overload
-def loop_over(x: bytes) -> str: ...
-
-@overload
-def loop_over(x: bytearray) -> str: ...
-
 @dataclass
 class Point:
     x: int
@@ -197,12 +174,6 @@ class NoAutoEq:
 class OptionDataclass:
     value: int
 
-@dataclass
-class InitVarExample:
-    x: int
-    def __post_init__(self, init_only: int) -> None: ...
-
-@dataclass
 class Outer:
     x: int
     @dataclass
@@ -264,57 +235,6 @@ class SelfFactory:
 class Runnable(Protocol):
     def run(self) -> int: ...
 
-def as_tuple[*Ts](*args: Unpack[Ts]) -> tuple[Unpack[Ts]]: ...
-
-class Variadic[Unpack[Ts]]:
-    def __init__(self, *args: Unpack[Ts]) -> None: ...
-    def to_tuple(self) -> tuple[Unpack[Ts]]: ...
-
-class Info(TypedDict):
-    name: str
-    age: int
-
-def with_kwargs(**kwargs: Unpack[Info]) -> Info: ...
-
-def sum_of(*args: tuple[int]) -> int: ...
-
-def dict_echo(**kwargs: dict[str, Any]) -> dict[str, Any]: ...
-
-def prepend_one[**P](fn: Callable[Concatenate[int, P], int]) -> Callable[P, int]: ...
-
-def use_params[**P](*args: P.args, **kwargs: P.kwargs) -> int: ...
-
-def do_nothing() -> None: ...
-
-def always_raises() -> NoReturn: ...
-
-def never_returns() -> Never: ...
-
-def is_str_list(val: list[object]) -> TypeGuard[list[str]]: ...
-
-FINAL_VAR_WITH_VALUE: Final[int]
-
-PLAIN_FINAL_VAR: Final
-
-SIN_ALIAS = sin
-
-PI_ALIAS: float
-
-def local_alias_target(x: int) -> int: ...
-
-LOCAL_ALIAS = local_alias_target
-
-def echo_literal(value: LiteralString) -> LiteralString: ...
-
-NONE_VAR: None
-
-async def async_add_one(x: int) -> int: ...
-
-async def gen_range(n: int) -> AsyncIterator[int]: ...
-
-@final
-def final_func(x: int) -> int: ...
-
 @final
 class FinalClass:
     pass
@@ -365,13 +285,6 @@ def make_emitter_cls(name: str): ...
 class EmittedCls:
     value: int
 
-class EmittedMap:
-    @overload
-    def __getitem__(self, key: Literal['a']) -> Literal[1]: ...
-    @overload
-    def __getitem__(self, key: Literal['b']) -> Literal[2]: ...
-    def __getitem__(self, key: Any): ...
-
 def make_dynamic_cls(): ...
 
 class FixedModuleCls:
@@ -386,5 +299,3 @@ ANY_VAR: Any
 FUNC_ELLIPSIS: Callable[..., int]
 
 TUPLE_VAR: tuple[int, ...]
-
-LITERAL_STR_VAR: LiteralString

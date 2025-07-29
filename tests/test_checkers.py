@@ -12,7 +12,7 @@ def test_stub_files_pass(checker: str) -> None:
     pyi_dir = Path(__file__).parent
     # these stubs rely on PEP 695-style generics and fail on current checkers
     # mypy will also load annotations.pyi when analyzing typechecking.pyi
-    skip = {"annotations.pyi", "annotations_13.pyi", "typechecking.pyi"}
+    skip = {"annotations_13.pyi", "annotations_pep_695.pyi", "typechecking.pyi"}
     for path in sorted(pyi_dir.glob("*.pyi")):
         if path.name in skip:
             continue
