@@ -3,15 +3,11 @@
 
 from typing import (
     Callable,
-    Concatenate,
-    Generic,
     NewType,
     ParamSpec,
-    Tuple,
     TypeAlias,
     TypeVar,
     TypeVarTuple,
-    Unpack,
     final,
     overload,
 )
@@ -75,30 +71,6 @@ class BoundClass[T: int]:
 # Class with constrained type parameter
 class ConstrainedClass[T: (int, str)]:
     value: T
-
-
-# Function using ``TypeVarTuple`` which results in PEP 695 syntax
-# mypy cannot parse ``def as_tuple[*Ts]`` yet
-def as_tuple(*args: Unpack[Ts]) -> Tuple[Unpack[Ts]]:
-    return tuple(args)
-
-
-# Class with ``TypeVarTuple`` parameter list which mypy doesn't support
-class Variadic(Generic[*Ts]):
-    def __init__(self, *args: Unpack[Ts]) -> None:
-        self.args = tuple(args)
-
-    def to_tuple(self) -> Tuple[Unpack[Ts]]:
-        return self.args
-
-
-# Wrapper function using ``Concatenate`` with a ``ParamSpec`` parameter. mypy
-# cannot parse the required PEP 695 generic syntax.
-def prepend_one(fn: Callable[Concatenate[int, P], int]) -> Callable[P, int]:
-    def inner(*args: P.args, **kwargs: P.kwargs) -> int:
-        return fn(1, *args, **kwargs)
-
-    return inner
 
 
 # Overloads generated dynamically in a loop are tricky for mypy's resolver.

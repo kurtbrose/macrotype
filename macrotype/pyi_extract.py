@@ -648,7 +648,20 @@ def _namedtuple_bases(klass: type, type_params: list[str]) -> tuple[list[str], s
         if get_origin(b) is typing.Generic:
             if not type_params:
                 for param in get_args(b):
-                    fmt = format_type(param)
+                    inner = param
+                    if get_origin(param) is typing.Unpack:
+                        inner = get_args(param)[0]
+                    if isinstance(
+                        inner,
+                        (
+                            typing.TypeVar,
+                            typing.ParamSpec,
+                            typing.TypeVarTuple,
+                        ),
+                    ):
+                        fmt = format_type_param(inner)
+                    else:
+                        fmt = format_type(param)
                     type_params.append(fmt.text)
                     used.update(fmt.used)
     return bases, used
@@ -681,7 +694,20 @@ def _normal_class_bases(klass: type, type_params: list[str]) -> tuple[list[str],
         if get_origin(b) is typing.Generic:
             if not type_params:
                 for param in get_args(b):
-                    fmt = format_type(param)
+                    inner = param
+                    if get_origin(param) is typing.Unpack:
+                        inner = get_args(param)[0]
+                    if isinstance(
+                        inner,
+                        (
+                            typing.TypeVar,
+                            typing.ParamSpec,
+                            typing.TypeVarTuple,
+                        ),
+                    ):
+                        fmt = format_type_param(inner)
+                    else:
+                        fmt = format_type(param)
                     type_params.append(fmt.text)
                     used.update(fmt.used)
             continue
