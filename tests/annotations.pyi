@@ -30,8 +30,6 @@ UserId = NewType('UserId', int)
 
 type AliasListT[T] = list[T]
 
-type AliasFuncP[**P] = Callable[P, int]
-
 type AliasTupleTs[*Ts] = tuple[Unpack[Ts]]
 
 type AliasNumberLikeList[NumberLike] = list[NumberLike]
