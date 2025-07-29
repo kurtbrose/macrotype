@@ -11,7 +11,6 @@ NumberLike = TypeVar("NumberLike")
 UserId = NewType("UserId", int)
 
 
-
 # Function using ``P.args`` and ``P.kwargs`` requires PEP 695 generics
 # which mypy doesn't yet support.
 def use_params(*args: P.args, **kwargs: P.kwargs) -> int:
