@@ -147,10 +147,6 @@ class SubTD(BaseTD):
 class GenericBox[TDV](TypedDict):
     item: TDV
 
-class GenericClass[T]:
-    value: T
-    def get(self) -> T: ...
-
 class Slotted:
     x: int
     y: str
