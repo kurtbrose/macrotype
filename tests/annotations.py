@@ -2,6 +2,7 @@ import collections.abc as cabc
 import functools
 import math
 import re
+from abc import ABC, abstractmethod
 from dataclasses import InitVar, dataclass
 from enum import Enum, IntEnum, IntFlag
 from functools import cached_property
@@ -662,3 +663,9 @@ def prepend_one(fn: Callable[Concatenate[int, P], int]) -> Callable[P, int]:
         return fn(1, *args, **kwargs)
 
     return inner
+
+
+# Class with an abstract method to verify abstract decorators
+class AbstractBase(ABC):
+    @abstractmethod
+    def do_something(self) -> int: ...

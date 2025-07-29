@@ -2,6 +2,7 @@ from __future__ import annotations
 
 """Utilities for building ``.pyi`` objects from live Python modules."""
 
+import abc
 import dataclasses
 import enum
 import functools
@@ -588,6 +589,9 @@ def _collect_decorators(
     if getattr(fn, "__override__", False):
         decos.append("override")
         used.add(getattr(typing, "override"))
+    if getattr(fn, "__isabstractmethod__", False):
+        decos.append("abstractmethod")
+        used.add(abc.abstractmethod)
     if "overload" in decos:
         used.add(typing.overload)
     return decos, used
@@ -854,7 +858,7 @@ def _descriptor_members(
     for attr_type, (func_attr, deco) in _ATTR_DECORATORS.items():
         if isinstance(unwrapped, attr_type):
             fn_obj = getattr(unwrapped, func_attr)
-            for flag in ("__final__", "__override__"):
+            for flag in ("__final__", "__override__", "__isabstractmethod__"):
                 if getattr(attr, flag, False) and not getattr(fn_obj, flag, False):
                     setattr(fn_obj, flag, True)
             func = PyiFunction.from_function(

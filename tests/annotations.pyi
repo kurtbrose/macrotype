@@ -1,6 +1,7 @@
 # Generated via: macrotype tests/annotations.py -o -
 # Do not edit by hand
 from typing import Annotated, Any, Callable, ClassVar, Concatenate, Final, Literal, LiteralString, NamedTuple, Never, NewType, NoReturn, NotRequired, ParamSpec, Protocol, Required, Self, TypeGuard, TypeVar, TypeVarTuple, TypedDict, Unpack, final, overload, override, runtime_checkable
+from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Iterator, Sequence
 from dataclasses import InitVar, dataclass
 from enum import Enum, IntEnum, IntFlag
@@ -380,6 +381,10 @@ class Variadic[*Ts]:
     def to_tuple(self) -> tuple[Unpack[Ts]]: ...
 
 def prepend_one[**P](fn: Callable[Concatenate[int, P], int]) -> Callable[P, int]: ...
+
+class AbstractBase(ABC):
+    @abstractmethod
+    def do_something(self) -> int: ...
 
 GLOBAL: int
 
