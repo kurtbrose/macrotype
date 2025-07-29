@@ -64,3 +64,10 @@ command.
 ## Documentation
 
 Full documentation is available on [Read the Docs](https://macrotype.readthedocs.io/).
+To build the documentation locally, install the project with the `doc` optional
+dependency:
+
+```bash
+pip install .[doc]
+sphinx-build docs docs/_build
+```
