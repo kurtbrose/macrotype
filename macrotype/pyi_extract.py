@@ -24,8 +24,6 @@ _MODULE_ALIASES: dict[str, str] = {
 
 from .meta_types import get_overloads as _get_overloads
 
-# === Base Class ===
-
 
 class PyiElement:
     """Abstract representation of an element in a ``.pyi`` file."""
@@ -45,9 +43,6 @@ class PyiNamedElement(PyiElement):
 
     name: str
     used_types: set[type] = field(default_factory=set, kw_only=True)
-
-
-# === Helpers ===
 
 
 @dataclass
@@ -445,9 +440,6 @@ def _dataclass_decorator(klass: type) -> tuple[str, set[type]] | None:
     return deco, {dataclasses.dataclass}
 
 
-# === Variable ===
-
-
 @dataclass
 class PyiVariable(PyiNamedElement):
     type_str: str
@@ -464,9 +456,6 @@ class PyiVariable(PyiNamedElement):
         else:
             type_name = type(value).__name__
         return cls(name=name, type_str=type_name)
-
-
-# === Alias ===
 
 
 @dataclass
@@ -916,9 +905,6 @@ def _class_methods(
     return members, used
 
 
-# === Function ===
-
-
 @dataclass
 class PyiFunction(PyiNamedElement):
     args: list[tuple[str, str | None]]
@@ -992,9 +978,6 @@ class PyiFunction(PyiNamedElement):
             used_types=used_types,
             is_async=is_async,
         )
-
-
-# === Class ===
 
 
 @dataclass
@@ -1108,9 +1091,6 @@ class PyiClass(PyiNamedElement):
             decorators=decorators,
             used_types=used_types,
         )
-
-
-# === Module ===
 
 
 class _ModuleBuilder:
@@ -1388,12 +1368,3 @@ class PyiModule:
         """Create a :class:`PyiModule` from a live module object."""
 
         return _ModuleBuilder(mod).build()
-
-
-# === Demo Smoke Test ===
-
-
-def _demo():
-    mod = PyiModule.from_module(inspect.getmodule(_demo))
-    for line in mod.render():
-        print(line)
