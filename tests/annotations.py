@@ -2,7 +2,7 @@ import collections.abc as cabc
 import functools
 import math
 import re
-from dataclasses import dataclass, InitVar
+from dataclasses import InitVar, dataclass
 from enum import Enum, IntEnum, IntFlag
 from functools import cached_property
 from pathlib import Path

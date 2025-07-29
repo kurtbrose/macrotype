@@ -1,6 +1,5 @@
 # Generated via: manual separation of unsupported features
 # These declarations use syntax from PEP 695 that mypy fails to parse.
-from dataclasses import dataclass
 from typing import (
     Callable,
     Concatenate,
