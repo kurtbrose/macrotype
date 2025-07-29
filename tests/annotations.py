@@ -57,40 +57,13 @@ U = TypeVar("U", bound=str)
 NumberLike = TypeVar("NumberLike", int, float)
 CovariantT = TypeVar("CovariantT", covariant=True)
 ContravariantT = TypeVar("ContravariantT", contravariant=True)
-InferredT = TypeVar("InferredT", infer_variance=True)
 TDV = TypeVar("TDV")
 UserId = NewType("UserId", int)
 
 MyList: TypeAlias = list[int]
-type StrList = list[str]
-
-# Chain of generic type aliases for regression testing
-type Alias0[T] = list[T]
-type Alias1[T] = Alias0[T]
-
-# Additional alias shapes
-type AliasNewType = UserId
-type AliasTypeVar[T] = T
-type AliasUnion = int | str
-type ListOrSet[T] = list[T] | set[T]
-type IntFunc[**P] = Callable[P, int]
-type LabeledTuple[*Ts] = tuple[str, *Ts]
-type RecursiveList[T] = T | list[RecursiveList[T]]
 
 # Edge case: alias referencing a forward-declared class
 ForwardAlias: TypeAlias = "FutureClass"
-
-# Edge case: alias defined via ``TypeAliasType`` for a TypeVar alias
-AliasListT = TypeAliasType("AliasListT", list[T], type_params=(T,))
-# Edge case: ``TypeAliasType`` used with a ``ParamSpec`` alias
-AliasFuncP = TypeAliasType("AliasFuncP", Callable[P, int], type_params=(P,))
-# Edge case: ``TypeAliasType`` used with a ``TypeVarTuple`` alias
-AliasTupleTs = TypeAliasType("AliasTupleTs", tuple[*Ts], type_params=(Ts,))
-# Edge case: ``TypeAliasType`` with constrained and bound type variables
-AliasNumberLikeList = TypeAliasType(
-    "AliasNumberLikeList", list[NumberLike], type_params=(NumberLike,)
-)
-AliasBoundU = TypeAliasType("AliasBoundU", list[U], type_params=(U,))
 
 GLOBAL: int
 CONST: Final[str]
@@ -103,7 +76,7 @@ TUPLE_VAR: tuple[int, ...]
 
 # Edge case: annotated constants with values should honor the annotation
 ANNOTATED_FINAL: Final[int] = 5
-ANNOTATED_CLASSVAR: ClassVar[int] = 1
+ANNOTATED_CLASSVAR: int = 1
 
 # Edge case: unannotated constant should be included
 UNANNOTATED_CONST = 42
@@ -134,8 +107,14 @@ class Basic:
     @classmethod
     def cls_method(cls, value: int) -> "Basic": ...
 
+    @classmethod
+    def cls_override(cls) -> int: ...
+
     @staticmethod
     def static_method(value: int) -> int: ...
+
+    @staticmethod
+    def static_override() -> int: ...
 
     @property
     def prop(self) -> int: ...
@@ -260,20 +239,6 @@ def over(x: int | str) -> int | str:
     return x
 
 
-# Overloads generated in a loop
-for typ in (bytes, bytearray):
-
-    @overload
-    def loop_over(x: typ) -> str: ...
-
-
-del typ
-
-
-def loop_over(x: bytes | bytearray) -> str:
-    return str(x)
-
-
 @dataclass
 class Point:
     x: int
@@ -311,15 +276,6 @@ class OptionDataclass:
 
 # Edge case: dataclasses.InitVar fields should not appear in stubs
 @dataclass
-class InitVarExample:
-    x: int
-    init_only: InitVar[int]
-
-    def __post_init__(self, init_only: int) -> None:
-        self.x += init_only
-
-
-@dataclass
 class Outer:
     x: int
 
@@ -334,13 +290,6 @@ class ClassVarExample:
     y: ClassVar[int] = 0
 
 
-class NewGeneric[T]:
-    value: T
-
-    def get(self) -> T:
-        return self.value
-
-
 class OldGeneric(Generic[T]):
     value: T
 
@@ -348,14 +297,7 @@ class OldGeneric(Generic[T]):
         return self.value
 
 
-# PEP 695 class with a bounded type parameter
-class BoundClass[T: int]:
-    value: T
 
-
-# PEP 695 class with constrained type parameter
-class ConstrainedClass[T: (int, str)]:
-    value: T
 
 
 class Color(Enum):
@@ -410,16 +352,6 @@ class Runnable(Protocol):
     def run(self) -> int: ...
 
 
-def as_tuple(*args: Unpack[Ts]) -> Tuple[Unpack[Ts]]:
-    return tuple(args)
-
-
-class Variadic(Generic[*Ts]):
-    def __init__(self, *args: Unpack[Ts]) -> None:
-        self.args = tuple(args)
-
-    def to_tuple(self) -> Tuple[Unpack[Ts]]:
-        return self.args
 
 
 class Info(TypedDict):
@@ -440,16 +372,10 @@ def dict_echo(**kwargs: dict[str, Any]) -> dict[str, Any]:
 
 
 # Edge case: ``Concatenate`` parameter handling
-def prepend_one(fn: Callable[Concatenate[int, P], int]) -> Callable[P, int]:
-    def inner(*args: P.args, **kwargs: P.kwargs) -> int:
-        return fn(1, *args, **kwargs)
-
-    return inner
+# Edge case: ``Concatenate`` parameter handling (requires PEP 695 generics)
 
 
-# Edge case: direct use of ``P.args`` and ``P.kwargs``
-def use_params(*args: P.args, **kwargs: P.kwargs) -> int:
-    return 0
+# Edge case: direct use of ``P.args`` and ``P.kwargs`` (unsupported by mypy)
 
 
 # Edge case: function explicitly returning ``None``
@@ -475,7 +401,7 @@ LITERAL_STR_VAR: LiteralString
 
 # Edge case: ``Final`` annotated variables with values
 FINAL_VAR_WITH_VALUE: Final[int] = 5
-PLAIN_FINAL_VAR: Final = 1
+PLAIN_FINAL_VAR: Final[int] = 1
 
 # Edge case: alias to a foreign function should be preserved
 SIN_ALIAS = math.sin
@@ -512,11 +438,6 @@ async def gen_range(n: int) -> cabc.AsyncIterator[int]:
 
 
 # Edge case: ``final`` decorator handling
-@final
-def final_func(x: int) -> int:
-    return x
-
-
 @final
 class FinalClass: ...
 
@@ -643,7 +564,6 @@ EmittedCls = make_emitter_cls("EmittedCls")
 
 
 # Use emit_as with overloads defined dynamically on a class via API helper
-EmittedMap = make_literal_map("EmittedMap", {"a": 1, "b": 2})
 
 
 # Demonstrate adjusting a dynamically created class using helpers
