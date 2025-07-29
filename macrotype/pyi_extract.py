@@ -790,7 +790,7 @@ def _function_members(
             )
             members.append(func)
             used.update(func.used_types)
-    if not getattr(fn, "__pyi_skip__", False):
+    else:
         func = PyiFunction.from_function(
             fn,
             exclude_params=class_params,
