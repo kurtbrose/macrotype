@@ -143,8 +143,6 @@ def loop_over(x: bytes | bytearray) -> str:
     return str(x)
 
 
-
-
 # Function using ``P.args`` and ``P.kwargs`` requires PEP 695 generics
 # which mypy doesn't yet support.
 def use_params(*args: P.args, **kwargs: P.kwargs) -> int:

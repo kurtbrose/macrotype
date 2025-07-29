@@ -570,6 +570,7 @@ FixedModuleCls = make_dynamic_cls()
 # Dynamic class built using ``make_literal_map`` for typed lookup
 EmittedMap = make_literal_map("EmittedMap", {"a": 1, "b": 2})
 
+
 # Used to verify import path canonicalization across Python versions
 def path_passthrough(p: Path) -> Path:
     return p
