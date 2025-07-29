@@ -415,7 +415,11 @@ def dict_echo(**kwargs: dict[str, Any]) -> dict[str, Any]:
 # Edge case: ``Concatenate`` parameter handling (requires PEP 695 generics)
 
 
-# Edge case: direct use of ``P.args`` and ``P.kwargs`` (unsupported by mypy)
+# Edge case: direct use of ``P.args`` and ``P.kwargs``
+
+
+def use_params(func: Callable[P, int], *args: P.args, **kwargs: P.kwargs) -> int:
+    return func(*args, **kwargs)
 
 
 # Edge case: function explicitly returning ``None``
