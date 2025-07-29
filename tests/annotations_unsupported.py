@@ -95,5 +95,3 @@ def use_params(*args: P.args, **kwargs: P.kwargs) -> int:
 # ``TypeVar`` with the ``infer_variance`` parameter from PEP 695 is not yet
 # implemented by mypy.
 InferredT = TypeVar("InferredT", infer_variance=True)
-
-
