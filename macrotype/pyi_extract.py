@@ -575,12 +575,14 @@ def _collect_type_params(
     return tp_strings, used
 
 
-def _collect_decorators(decorators: list[str] | None, fn: Callable) -> tuple[list[str], set[type]]:
+def _collect_decorators(
+    decorators: list[str] | None, fn: Callable, *, skip_final: bool = False
+) -> tuple[list[str], set[type]]:
     """Return decorator strings and used types for ``fn``."""
 
     decos = list(decorators or [])
     used: set[type] = set()
-    if getattr(fn, "__final__", False):
+    if getattr(fn, "__final__", False) and not skip_final:
         decos.append("final")
         used.add(typing.final)
     if getattr(fn, "__override__", False):
@@ -978,6 +980,7 @@ class PyiFunction(PyiNamedElement):
         decorators: list[str] | None = None,
         exclude_params: set[str] | None = None,
         *,
+        skip_final: bool = False,
         globalns: dict[str, Any] | None = None,
         localns: dict[str, Any] | None = None,
     ) -> PyiFunction:
@@ -1001,7 +1004,7 @@ class PyiFunction(PyiNamedElement):
         tp_strings, tp_used = _collect_type_params(fn, hints, exclude_params)
         used_types.update(tp_used)
 
-        decorators, dec_used = _collect_decorators(decorators, fn)
+        decorators, dec_used = _collect_decorators(decorators, fn, skip_final=skip_final)
         used_types.update(dec_used)
 
         is_async = inspect.iscoroutinefunction(fn) or inspect.isasyncgenfunction(fn)
@@ -1239,6 +1242,7 @@ class _ModuleBuilder:
                 func = PyiFunction.from_function(
                     ov,
                     decorators=["overload"],
+                    skip_final=True,
                     globalns=self.globals,
                     localns=self.globals,
                 )
@@ -1248,6 +1252,7 @@ class _ModuleBuilder:
         else:
             func = PyiFunction.from_function(
                 fn_obj,
+                skip_final=True,
                 globalns=self.globals,
                 localns=self.globals,
             )

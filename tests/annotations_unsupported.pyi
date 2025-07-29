@@ -7,7 +7,6 @@ from typing import (
     TypeVar,
     TypeVarTuple,
     Unpack,
-    final,
     overload,
 )
 
@@ -58,6 +57,3 @@ def loop_over(x: bytes | bytearray) -> str: ...
 def use_params(*args: P.args, **kwargs: P.kwargs) -> int: ...
 
 InferredT = TypeVar("InferredT", infer_variance=True)
-
-@final
-def final_func(x: int) -> int: ...

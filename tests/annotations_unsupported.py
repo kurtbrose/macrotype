@@ -8,7 +8,6 @@ from typing import (
     TypeAlias,
     TypeVar,
     TypeVarTuple,
-    final,
     overload,
 )
 
@@ -96,10 +95,3 @@ def use_params(*args: P.args, **kwargs: P.kwargs) -> int:
 # ``TypeVar`` with the ``infer_variance`` parameter from PEP 695 is not yet
 # implemented by mypy.
 InferredT = TypeVar("InferredT", infer_variance=True)
-
-
-# ``@final`` decorator on a module-level function is flagged as an error by
-# mypy even though it's valid Python.
-@final
-def final_func(x: int) -> int:
-    return x
