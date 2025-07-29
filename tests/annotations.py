@@ -436,8 +436,7 @@ def is_str_list(val: list[object]) -> TypeGuard[list[str]]:
 # Edge case: LiteralString handling
 LITERAL_STR_VAR: LiteralString
 
-# Edge case: ``Final`` annotated variables with values
-FINAL_VAR_WITH_VALUE: Final[int] = 5
+# Edge case: ``Final`` annotated variable with a value
 PLAIN_FINAL_VAR: Final[int] = 1
 
 # Edge case: alias to a foreign function should be preserved
