@@ -213,13 +213,6 @@ class GenericBox(TypedDict, Generic[TDV]):
     item: TDV
 
 
-class GenericClass(Generic[T]):
-    value: T
-
-    def get(self) -> T:
-        return self.value
-
-
 class Slotted:
     __slots__ = ("x", "y")
     x: int
