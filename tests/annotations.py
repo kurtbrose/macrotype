@@ -73,6 +73,18 @@ MyList: TypeAlias = list[int]
 # Edge case: alias referencing a forward-declared class
 ForwardAlias: TypeAlias = "FutureClass"
 
+# PEP 695 ``type`` statements
+type StrList = list[str]
+type Alias0[T] = list[T]
+type Alias1[T] = Alias0[T]
+type AliasNewType = UserId
+type AliasTypeVar[T] = T
+type AliasUnion = int | str
+type ListOrSet[T] = list[T] | set[T]
+type IntFunc[**P] = Callable[P, int]
+type LabeledTuple[*Ts] = tuple[str, *Ts]
+type RecursiveList[T] = T | list[RecursiveList[T]]
+
 GLOBAL: int
 CONST: Final[str]
 # Variable typed ``Any`` to ensure explicit Any is preserved
@@ -312,6 +324,22 @@ class OldGeneric(Generic[T]):
 
     def get(self) -> T:
         return self.value
+
+
+# PEP 695 generic class syntax
+class NewGeneric[T]:
+    value: T
+
+    def get(self) -> T:
+        return self.value
+
+
+class BoundClass[T: int]:
+    value: T
+
+
+class ConstrainedClass[T: (int, str)]:
+    value: T
 
 
 class Color(Enum):

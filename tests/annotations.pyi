@@ -41,6 +41,26 @@ MyList = list[int]
 
 ForwardAlias = FutureClass
 
+type StrList = list[str]
+
+type Alias0[T] = list[T]
+
+type Alias1[T] = Alias0[T]
+
+type AliasNewType = UserId
+
+type AliasTypeVar[T] = T
+
+type AliasUnion = int | str
+
+type ListOrSet[T] = list[T] | set[T]
+
+type IntFunc[**P] = Callable[P, int]
+
+type LabeledTuple[*Ts] = tuple[str, Unpack[Ts]]
+
+type RecursiveList[T] = T | list[RecursiveList[T]]
+
 ANNOTATED_FINAL: Final[int]
 
 ANNOTATED_CLASSVAR: int
@@ -197,6 +217,16 @@ class ClassVarExample:
 class OldGeneric[T]:
     value: T
     def get(self) -> T: ...
+
+class NewGeneric[T]:
+    value: T
+    def get(self) -> T: ...
+
+class BoundClass[T: int]:
+    value: T
+
+class ConstrainedClass[T: (int, str)]:
+    value: T
 
 class Color(Enum):
     RED = 1
