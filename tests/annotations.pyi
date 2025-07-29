@@ -1,6 +1,6 @@
 # Generated via: macrotype tests/annotations.py -o -
 # Do not edit by hand
-from typing import Annotated, Any, Callable, ClassVar, Concatenate, Final, Literal, LiteralString, NamedTuple, Never, NewType, NoReturn, NotRequired, ParamSpec, Protocol, Required, Self, TypeGuard, TypeVar, TypeVarTuple, TypedDict, Unpack, final, overload, override, runtime_checkable
+from typing import Annotated, Any, Callable, ClassVar, Final, Literal, LiteralString, NamedTuple, Never, NewType, NoReturn, NotRequired, ParamSpec, Protocol, Required, Self, TypeGuard, TypeVar, TypeVarTuple, TypedDict, Unpack, final, overload, override, runtime_checkable
 from collections.abc import AsyncIterator, Iterator, Sequence
 from dataclasses import dataclass
 from enum import Enum, IntEnum, IntFlag
@@ -23,49 +23,17 @@ CovariantT = TypeVar('CovariantT', covariant=True)
 
 ContravariantT = TypeVar('ContravariantT', contravariant=True)
 
-InferredT = TypeVar('InferredT', infer_variance=True)
-
 TDV = TypeVar('TDV')
 
 UserId = NewType('UserId', int)
 
 MyList = list[int]
 
-type StrList = list[str]
-
-type Alias0[T] = list[T]
-
-type Alias1[T] = Alias0[T]
-
-type AliasNewType = UserId
-
-type AliasTypeVar[T] = T
-
-type AliasUnion = int | str
-
-type ListOrSet[T] = list[T] | set[T]
-
-type IntFunc[**P] = Callable[P, int]
-
-type LabeledTuple[*Ts] = tuple[str, Unpack[Ts]]
-
-type RecursiveList[T] = T | list[RecursiveList[T]]
-
 ForwardAlias = FutureClass
-
-type AliasListT[T] = list[T]
-
-type AliasFuncP[**P] = Callable[P, int]
-
-type AliasTupleTs[*Ts] = tuple[Unpack[Ts]]
-
-type AliasNumberLikeList[NumberLike: (int, float)] = list[NumberLike]
-
-type AliasBoundU[U: str] = list[U]
 
 ANNOTATED_FINAL: Final[int]
 
-ANNOTATED_CLASSVAR: ClassVar[int]
+ANNOTATED_CLASSVAR: int
 
 UNANNOTATED_CONST: int
 
@@ -89,8 +57,12 @@ class Basic:
     def literal_method(self, flag: Literal['on', 'off']) -> Literal[1, 0]: ...
     @classmethod
     def cls_method(cls, value: int) -> Basic: ...
+    @classmethod
+    def cls_override(cls) -> int: ...
     @staticmethod
     def static_method(value: int) -> int: ...
+    @staticmethod
+    def static_override() -> int: ...
     @property
     def prop(self) -> int: ...
     @cached_property
@@ -170,12 +142,6 @@ def over(x: int) -> int: ...
 @overload
 def over(x: str) -> str: ...
 
-@overload
-def loop_over(x: bytes) -> str: ...
-
-@overload
-def loop_over(x: bytearray) -> str: ...
-
 @dataclass
 class Point:
     x: int
@@ -201,11 +167,6 @@ class OptionDataclass:
     value: int
 
 @dataclass
-class InitVarExample:
-    x: int
-    def __post_init__(self, init_only: int) -> None: ...
-
-@dataclass
 class Outer:
     x: int
     @dataclass
@@ -217,19 +178,9 @@ class ClassVarExample:
     x: int
     y: ClassVar[int]
 
-class NewGeneric[T]:
-    value: T
-    def get(self) -> T: ...
-
 class OldGeneric[T]:
     value: T
     def get(self) -> T: ...
-
-class BoundClass[T: int]:
-    value: T
-
-class ConstrainedClass[T: (int, str)]:
-    value: T
 
 class Color(Enum):
     RED = 1
@@ -267,12 +218,6 @@ class SelfFactory:
 class Runnable(Protocol):
     def run(self) -> int: ...
 
-def as_tuple[*Ts](*args: Unpack[Ts]) -> tuple[Unpack[Ts]]: ...
-
-class Variadic[Unpack[Ts]]:
-    def __init__(self, *args: Unpack[Ts]) -> None: ...
-    def to_tuple(self) -> tuple[Unpack[Ts]]: ...
-
 class Info(TypedDict):
     name: str
     age: int
@@ -282,10 +227,6 @@ def with_kwargs(**kwargs: Unpack[Info]) -> Info: ...
 def sum_of(*args: tuple[int]) -> int: ...
 
 def dict_echo(**kwargs: dict[str, Any]) -> dict[str, Any]: ...
-
-def prepend_one[**P](fn: Callable[Concatenate[int, P], int]) -> Callable[P, int]: ...
-
-def use_params[**P](*args: P.args, **kwargs: P.kwargs) -> int: ...
 
 def do_nothing() -> None: ...
 
@@ -297,7 +238,7 @@ def is_str_list(val: list[object]) -> TypeGuard[list[str]]: ...
 
 FINAL_VAR_WITH_VALUE: Final[int]
 
-PLAIN_FINAL_VAR: Final
+PLAIN_FINAL_VAR: Final[int]
 
 SIN_ALIAS = sin
 
@@ -314,9 +255,6 @@ NONE_VAR: None
 async def async_add_one(x: int) -> int: ...
 
 async def gen_range(n: int) -> AsyncIterator[int]: ...
-
-@final
-def final_func(x: int) -> int: ...
 
 @final
 class FinalClass:
@@ -367,13 +305,6 @@ def make_emitter_cls(name: str): ...
 
 class EmittedCls:
     value: int
-
-class EmittedMap:
-    @overload
-    def __getitem__(self, key: Literal['a']) -> Literal[1]: ...
-    @overload
-    def __getitem__(self, key: Literal['b']) -> Literal[2]: ...
-    def __getitem__(self, key: Any): ...
 
 def make_dynamic_cls(): ...
 

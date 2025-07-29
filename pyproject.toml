@@ -26,10 +26,7 @@ where = ["."]
 macrotype = "macrotype.cli:main"
 
 [project.optional-dependencies]
-test = [
-    "mypy",
-    "ruff",
-]
+test = ["mypy", "ruff", "pytest"]
 
 [tool.ruff]
 target-version = "py312"
