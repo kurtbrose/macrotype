@@ -5,7 +5,6 @@ from typing import (
     Concatenate,
     NewType,
     ParamSpec,
-    TypeAliasType,
     TypeVar,
     TypeVarTuple,
     Unpack,
@@ -41,14 +40,6 @@ type IntFunc[**P] = Callable[P, int]
 type LabeledTuple[*Ts] = tuple[str, Unpack[Ts]]
 
 type RecursiveList[T] = T | list[RecursiveList[T]]
-
-AliasListT = TypeAliasType("AliasListT", list[T], type_params=(T,))
-AliasFuncP = TypeAliasType("AliasFuncP", Callable[P, int], type_params=(P,))
-AliasTupleTs = TypeAliasType("AliasTupleTs", tuple[Unpack[Ts]], type_params=(Ts,))
-AliasNumberLikeList = TypeAliasType(
-    "AliasNumberLikeList", list[NumberLike], type_params=(NumberLike,)
-)
-AliasBoundU = TypeAliasType("AliasBoundU", list[U], type_params=(U,))
 
 class NewGeneric[T]:
     value: T

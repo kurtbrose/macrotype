@@ -9,7 +9,6 @@ from typing import (
     ParamSpec,
     Tuple,
     TypeAlias,
-    TypeAliasType,
     TypeVar,
     TypeVarTuple,
     Unpack,
@@ -58,19 +57,6 @@ type LabeledTuple[*Ts] = tuple[str, *Ts]
 # Recursive alias
 # mypy can't handle recursive aliases with PEP 695 syntax
 type RecursiveList[T] = T | list[RecursiveList[T]]
-
-# ``TypeAliasType`` with type parameters is specified in PEP 695.
-# mypy does not yet implement this constructor.
-AliasListT = TypeAliasType("AliasListT", list[T], type_params=(T,))
-# ``ParamSpec`` alias via TypeAliasType
-AliasFuncP = TypeAliasType("AliasFuncP", Callable[P, int], type_params=(P,))
-# ``TypeVarTuple`` alias via TypeAliasType
-AliasTupleTs = TypeAliasType("AliasTupleTs", tuple[*Ts], type_params=(Ts,))
-# Constrained and bound TypeVar aliases via TypeAliasType
-AliasNumberLikeList = TypeAliasType(
-    "AliasNumberLikeList", list[NumberLike], type_params=(NumberLike,)
-)
-AliasBoundU = TypeAliasType("AliasBoundU", list[U], type_params=(U,))
 
 
 # PEP 695 generic class syntax is entirely unsupported by mypy.
