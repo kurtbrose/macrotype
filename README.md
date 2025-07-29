@@ -21,7 +21,9 @@ python code.
 
 `macrotype` is a CLI tool intended to be run before static type checking:
 
-`python -m macrotype your_module`
+```bash
+macrotype your_module
+```
 
 `macrotype` imports your modules under normal python,
 and then generates corresponding `.pyi` files with
