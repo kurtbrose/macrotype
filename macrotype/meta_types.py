@@ -144,6 +144,8 @@ def make_literal_map(name: str, mapping: dict[str | int, str | int]):
         def __getitem__(self, key):
             return mapping[key]
 
+        __getitem__.__pyi_skip__ = True
+
     set_module(LiteralMap, caller_mod)
 
     return LiteralMap
