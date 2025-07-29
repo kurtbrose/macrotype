@@ -460,6 +460,11 @@ class HasFinalMethod:
         pass
 
 
+@final
+def final_func(x: int) -> int:
+    return x
+
+
 # Edge case: positional-only and keyword-only parameters
 def pos_only_func(a: int, b: str, /) -> None:
     pass
