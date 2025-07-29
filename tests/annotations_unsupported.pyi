@@ -2,10 +2,8 @@
 # These declarations use syntax from PEP 695 that mypy fails to parse.
 from dataclasses import InitVar, dataclass
 from typing import (
-    Any,
     Callable,
     Concatenate,
-    Literal,
     NewType,
     ParamSpec,
     TypeAliasType,
@@ -81,14 +79,6 @@ def loop_over(x: bytes) -> str: ...
 @overload
 def loop_over(x: bytearray) -> str: ...
 def loop_over(x: bytes | bytearray) -> str: ...
-
-class EmittedMap:
-    @overload
-    def __getitem__(self, key: Literal["a"]) -> Literal[1]: ...
-    @overload
-    def __getitem__(self, key: Literal["b"]) -> Literal[2]: ...
-    def __getitem__(self, key: Any): ...
-
 def use_params(*args: P.args, **kwargs: P.kwargs) -> int: ...
 
 InferredT = TypeVar("InferredT", infer_variance=True)

@@ -40,6 +40,7 @@ from typing import (
 from macrotype.meta_types import (
     emit_as,
     get_caller_module,
+    make_literal_map,
     overload,
     set_module,
 )
@@ -565,6 +566,9 @@ def make_dynamic_cls():
 
 
 FixedModuleCls = make_dynamic_cls()
+
+# Dynamic class built using ``make_literal_map`` for typed lookup
+EmittedMap = make_literal_map("EmittedMap", {"a": 1, "b": 2})
 
 
 # Used to verify import path canonicalization across Python versions

@@ -19,8 +19,6 @@ from typing import (
     overload,
 )
 
-from macrotype.meta_types import make_literal_map
-
 T = TypeVar("T")
 P = ParamSpec("P")
 Ts = TypeVarTuple("Ts")
@@ -141,11 +139,6 @@ del typ
 
 def loop_over(x: bytes | bytearray) -> str:
     return str(x)
-
-
-# Dynamic class built using ``make_literal_map`` introduces overloads and an
-# implementation, which mypy refuses in stubs.
-EmittedMap = make_literal_map("EmittedMap", {"a": 1, "b": 2})
 
 
 # Function using ``P.args`` and ``P.kwargs`` requires PEP 695 generics

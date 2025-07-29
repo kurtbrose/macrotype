@@ -790,14 +790,15 @@ def _function_members(
             )
             members.append(func)
             used.update(func.used_types)
-    func = PyiFunction.from_function(
-        fn,
-        exclude_params=class_params,
-        globalns=globalns,
-        localns=localns,
-    )
-    members.append(func)
-    used.update(func.used_types)
+    else:
+        func = PyiFunction.from_function(
+            fn,
+            exclude_params=class_params,
+            globalns=globalns,
+            localns=localns,
+        )
+        members.append(func)
+        used.update(func.used_types)
     return members, used
 
 
