@@ -17,6 +17,11 @@ _INDENT = "    "
 import collections
 import collections.abc
 
+_MODULE_ALIASES: dict[str, str] = {
+    "pathlib._local": "pathlib",
+    "pathlib._pathlib": "pathlib",
+}
+
 from .meta_types import get_overloads as _get_overloads
 
 # === Base Class ===
@@ -1340,6 +1345,7 @@ class _ModuleBuilder:
         external_imports: dict[str, set[str]] = collections.defaultdict(set)
         for used_type in self.used_types:
             modname = getattr(used_type, "__module__", None)
+            modname = _MODULE_ALIASES.get(modname, modname)
             name = getattr(used_type, "__name__", None)
             if not modname or not name:
                 continue

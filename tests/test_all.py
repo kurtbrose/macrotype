@@ -68,3 +68,21 @@ def test_process_directory(tmp_path, src: str, expected: str) -> None:
     generated = (tmp_path / expected).read_text().splitlines()
     expected_lines = Path(__file__).with_name(expected).read_text().splitlines()[2:]
     assert generated == expected_lines
+
+
+def test_module_alias(tmp_path) -> None:
+    import pathlib
+
+    from macrotype.meta_types import set_module
+
+    original = pathlib.Path.__module__
+    set_module(pathlib.Path, "pathlib._local")
+    try:
+        src_path = Path(__file__).with_name("annotations.py")
+        loaded = load_module_from_path(src_path)
+        module = PyiModule.from_module(loaded)
+        lines = module.render()
+    finally:
+        set_module(pathlib.Path, original)
+
+    assert any(line == "from pathlib import Path" for line in lines)

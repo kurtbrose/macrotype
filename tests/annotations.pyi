@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from enum import Enum, IntEnum, IntFlag
 from functools import cached_property
 from math import sin
+from pathlib import Path
 from re import Pattern
 
 T = TypeVar('T')
@@ -378,6 +379,8 @@ def make_dynamic_cls(): ...
 
 class FixedModuleCls:
     pass
+
+def path_passthrough(p: Path) -> Path: ...
 
 GLOBAL: int
 

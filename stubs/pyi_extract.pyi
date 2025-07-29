@@ -11,6 +11,8 @@ ModuleType = module
 
 _INDENT: str
 
+_MODULE_ALIASES: dict[str, str]
+
 _get_overloads = get_overloads
 
 class PyiElement:
