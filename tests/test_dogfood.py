@@ -32,12 +32,17 @@ def test_cli_default_output_dir(tmp_path: Path) -> None:
     repo_root = STUBS_DIR.parents[1]
     env = dict(os.environ)
     env["PYTHONPATH"] = str(repo_root)
-    subprocess.run([
-        sys.executable,
-        "-m",
-        "macrotype",
-        "pkg",
-    ], cwd=tmp_path, env=env, check=True)
+    subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "macrotype",
+            "pkg",
+        ],
+        cwd=tmp_path,
+        env=env,
+        check=True,
+    )
 
     stub = tmp_path / "__macrotype__" / "pkg" / "mod.pyi"
     expected_lines = [
