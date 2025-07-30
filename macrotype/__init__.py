@@ -28,6 +28,7 @@ from .meta_types import (
     get_overloads,
     make_literal_map,
     overload,
+    overload_for,
     patch_typing,
     set_module,
 )
@@ -54,6 +55,7 @@ __all__ += [
     "set_module",
     "get_caller_module",
     "overload",
+    "overload_for",
     "get_overloads",
     "clear_registry",
     "patch_typing",

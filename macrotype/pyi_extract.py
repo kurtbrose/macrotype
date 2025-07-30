@@ -390,6 +390,44 @@ def _unwrap_descriptor(obj: Any) -> Any | None:
         return None
 
 
+def _annotation_for_value(value: Any) -> Any:
+    """Return the narrowest type annotation for *value*."""
+
+    if value is None:
+        return type(None)
+    if isinstance(value, enum.Enum):
+        return typing.Literal[value]
+    if isinstance(value, bool):
+        return typing.Literal[value]
+    if isinstance(value, (int, float, complex, str, bytes)) and not isinstance(value, bool):
+        return typing.Literal[value]
+    if isinstance(value, type):
+        return value
+    return type(value)
+
+
+def _make_literal_overload(fn: Callable, args: tuple, kwargs: dict, result: Any) -> Callable:
+    """Return a function with specific annotations bound to ``args`` and ``kwargs``."""
+
+    new_fn = types.FunctionType(
+        fn.__code__,
+        fn.__globals__,
+        fn.__name__,
+        fn.__defaults__,
+        fn.__closure__,
+    )
+    new_fn.__dict__.update(getattr(fn, "__dict__", {}))
+    new_fn.__annotations__ = dict(getattr(fn, "__annotations__", {}))
+
+    sig = inspect.signature(fn)
+    bound = sig.bind_partial(*args, **kwargs)
+    bound.apply_defaults()
+    for name, value in bound.arguments.items():
+        new_fn.__annotations__[name] = _annotation_for_value(value)
+    new_fn.__annotations__["return"] = _annotation_for_value(result)
+    return new_fn
+
+
 def _extract_partialmethod(
     pm: functools.partialmethod,
     klass: type,
@@ -822,10 +860,32 @@ def _function_members(
     used: set[type] = set()
 
     ovs = _get_overloads(fn)
-    if ovs:
+    cases = getattr(fn, "__overload_for__", [])
+    if ovs or cases:
         for ov in ovs:
             func = PyiFunction.from_function(
                 ov,
+                decorators=["overload"],
+                exclude_params=class_params,
+                globalns=globalns,
+                localns=localns,
+            )
+            members.append(func)
+            used.update(func.used_types)
+        for args, kwargs, result in cases:
+            case_fn = _make_literal_overload(fn, args, kwargs, result)
+            func = PyiFunction.from_function(
+                case_fn,
+                decorators=["overload"],
+                exclude_params=class_params,
+                globalns=globalns,
+                localns=localns,
+            )
+            members.append(func)
+            used.update(func.used_types)
+        if cases:
+            func = PyiFunction.from_function(
+                fn,
                 decorators=["overload"],
                 exclude_params=class_params,
                 globalns=globalns,
@@ -1285,10 +1345,36 @@ class _ModuleBuilder:
 
         canonical = getattr(fn_obj, "__qualname_override__", name)
         ovs = _get_overloads(fn_obj)
-        if ovs:
+        cases = getattr(fn_obj, "__overload_for__", [])
+        if ovs or cases:
             for ov in ovs:
                 func = PyiFunction.from_function(
                     ov,
+                    decorators=["overload"],
+                    skip_final=True,
+                    globalns=self.globals,
+                    localns=self.globals,
+                )
+                if func.name != canonical:
+                    func.name = canonical
+                func.line = self.line_map.get(name)
+                self._add(func)
+            for args, kwargs, result in cases:
+                case_fn = _make_literal_overload(fn_obj, args, kwargs, result)
+                func = PyiFunction.from_function(
+                    case_fn,
+                    decorators=["overload"],
+                    skip_final=True,
+                    globalns=self.globals,
+                    localns=self.globals,
+                )
+                if func.name != canonical:
+                    func.name = canonical
+                func.line = self.line_map.get(name)
+                self._add(func)
+            if cases:
+                func = PyiFunction.from_function(
+                    fn_obj,
                     decorators=["overload"],
                     skip_final=True,
                     globalns=self.globals,
