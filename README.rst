@@ -58,7 +58,7 @@ Documentation
 -------------
 
 Full documentation is available on `Read the Docs <https://macrotype.readthedocs.io/>`_.
-To build the documentation locally, install the project with the ``doc`` optional
-dependency::
+To build the documentation locally, install the project with the ``doc`` optional dependency::
+
     pip install .[doc]
     sphinx-build docs docs/_build
