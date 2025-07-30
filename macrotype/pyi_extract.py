@@ -421,6 +421,7 @@ def _make_literal_overload(fn: Callable, args: tuple, kwargs: dict, result: Any)
 
     sig = inspect.signature(fn)
     bound = sig.bind_partial(*args, **kwargs)
+    bound.apply_defaults()
     for name, value in bound.arguments.items():
         new_fn.__annotations__[name] = _annotation_for_value(value)
     new_fn.__annotations__["return"] = _annotation_for_value(result)
