@@ -667,6 +667,7 @@ def prepend_one(fn: Callable[Concatenate[int, P], int]) -> Callable[P, int]:
 
     return inner
 
+
 # Demonstrate overload_for decorator generating literal overloads
 @overload_for(0)
 @overload_for(1)
@@ -679,12 +680,14 @@ def special_neg(val: int) -> int:
         case _:
             return -val
 
+
 # Use overload_for with None to record a non-Literal case using kwargs
 @overload_for(val=None)
 def parse_int_or_none(val: str | None) -> int | None:
     if val is None:
         return None
     return int(val)
+
 
 # Default argument example to ensure defaults are applied in overloads
 @overload_for(3)
