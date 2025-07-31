@@ -44,6 +44,21 @@ types.  See ``macrotype.meta_types``.  These are intended for you to import to
 enable dynamic programming patterns which would be unthinkable without
 ``macrotype``.
 
+Type checking
+-------------
+
+Most users will want to run their static type checker through the
+``macrotype.check`` entrypoint.  This wrapper generates stub files and then
+invokes your checker with ``PYTHONPATH`` configured so the generated stubs are
+found.  The console script is installed as ``macrotype-check`` and accepts the
+checker command followed by the paths to stub.  Any additional arguments after
+``--`` are passed through to the checker::
+
+    macrotype-check mypy src/ -- --strict
+
+Stubs are written to ``__macrotype__`` by default; use ``-o`` to choose a
+different directory.
+
 Dogfooding
 ----------
 
