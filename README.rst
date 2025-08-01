@@ -22,7 +22,7 @@ How?
 
 ``macrotype`` is a CLI tool intended to be run before static type checking:
 
-.. code-block:: python
+.. code-block:: bash
 
     macrotype your_module
 
@@ -60,7 +60,7 @@ found.  The console script is installed as ``macrotype-check`` and accepts the
 checker command followed by the paths to stub.  Any additional arguments after
 ``--`` are passed through to the checker:
 
-.. code-block:: python
+.. code-block:: bash
 
     macrotype-check mypy src/ -- --strict
 
@@ -72,7 +72,7 @@ Dogfooding
 
 The ``macrotype`` project uses the CLI on itself.  Running:
 
-.. code-block:: python
+.. code-block:: bash
 
     python -m macrotype macrotype
 
@@ -85,7 +85,7 @@ Documentation
 Full documentation is available on `Read the Docs <https://macrotype.readthedocs.io/>`_.
 To build the documentation locally, install the project with the ``doc`` optional dependency:
 
-.. code-block:: python
+.. code-block:: bash
 
     pip install .[doc]
     sphinx-build docs docs/_build
