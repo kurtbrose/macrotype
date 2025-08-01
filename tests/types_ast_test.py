@@ -12,6 +12,7 @@ from macrotype.types_ast import (
     SetNode,
     TupleNode,
     UnionNode,
+    CallableNode,
     parse_type,
 )
 
@@ -53,6 +54,8 @@ PARSINGS = {
         AtomNode(str),
         UnionNode([AtomNode(int), AtomNode(type(None))]),
     ),
+    typing.Callable[[int, str], bool]: CallableNode([AtomNode(int), AtomNode(str)], AtomNode(bool)),
+    typing.Callable[..., int]: CallableNode(None, AtomNode(int)),
 }
 
 
