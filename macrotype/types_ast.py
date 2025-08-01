@@ -517,3 +517,5 @@ def _reject_special(node: BaseNode) -> None:
         _reject_special(node.inner)
     elif isinstance(node, FinalNode):
         _reject_special(node.inner)
+    elif isinstance(node, (RequiredNode, NotRequiredNode)):
+        _reject_special(node.inner)

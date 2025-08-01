@@ -190,3 +190,10 @@ def test_notrequired_special_form() -> None:
 def test_required_special_form() -> None:
     with pytest.raises(TypeError):
         parse_type_expr(typing.Required[str])
+
+
+def test_nested_required_notrequired() -> None:
+    with pytest.raises(TypeError):
+        parse_type_expr(list[typing.NotRequired[int]])
+    with pytest.raises(TypeError):
+        parse_type_expr(list[typing.Required[int]])
