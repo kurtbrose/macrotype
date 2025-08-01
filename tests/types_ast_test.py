@@ -137,3 +137,17 @@ def test_classvar_special_form() -> None:
 def test_final_special_form() -> None:
     with pytest.raises(TypeError):
         parse_type_expr(typing.Final[int])
+
+
+def test_annotated_nesting() -> None:
+    nested = typing.Annotated[typing.Annotated[int, "a"], "b"]
+    expected = AnnotatedNode(AtomNode(int), ["a", "b"])
+    assert parse_type(nested) == expected
+    assert parse_type_expr(nested) == expected
+
+
+def test_annotated_classvar() -> None:
+    ann = typing.Annotated[typing.ClassVar[int], "x"]
+    assert parse_type(ann) == AnnotatedNode(ClassVarNode(AtomNode(int)), ["x"])
+    with pytest.raises(TypeError):
+        parse_type_expr(ann)

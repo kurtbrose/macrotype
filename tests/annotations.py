@@ -109,6 +109,8 @@ TYPED_LAMBDA: Callable[[int, int], int] = lambda a, b: a + b
 
 # Additional variable using ``Annotated`` to test type parsing
 ANNOTATED_EXTRA: Annotated[str, "extra"] = "x"
+# Nested Annotated usage should merge metadata
+NESTED_ANNOTATED: Annotated[Annotated[int, "a"], "b"] = 3
 
 
 class Basic:
