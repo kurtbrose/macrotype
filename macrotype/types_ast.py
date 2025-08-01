@@ -9,6 +9,7 @@ from typing import (
     Any,
     ClassVar,
     Generic,
+    TypeAliasType,
     TypeVar,
     Union,
     get_args,
@@ -57,9 +58,9 @@ class ContainerNode(Generic[N], BaseNode):
 
 
 # ``NodeLike`` is either a leaf node or another ``ContainerNode`` with the same
-# generic parameter. It uses the PEP 695 ``type`` statement so the parameter is
-# constrained to either ``TypeExprNode`` or ``InClassExprNode``.
-type NodeLike[X: (TypeExprNode, InClassExprNode | TypeExprNode)] = X | ContainerNode[X]
+# generic parameter. It reuses the ``N`` type variable so context flows through
+# nested containers.
+NodeLike = TypeAliasType("NodeLike", N | ContainerNode[N], type_params=(N,))
 
 
 @dataclass(frozen=True)
