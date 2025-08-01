@@ -9,6 +9,7 @@ from macrotype.types_ast import (
     AtomNode,
     CallableNode,
     ClassVarNode,
+    ConcatenateNode,
     DictNode,
     FinalNode,
     FrozenSetNode,
@@ -95,6 +96,12 @@ PARSINGS = {
     Ts: AtomNode(Ts),
     typing.Unpack[Ts]: UnpackNode(AtomNode(Ts)),
     AliasListT: ListNode(AtomNode(T)),
+    typing.Concatenate[int, P]: ConcatenateNode([AtomNode(int), AtomNode(P)]),
+    typing.Callable[P, int]: CallableNode(AtomNode(P), AtomNode(int)),
+    typing.Callable[typing.Concatenate[int, P], int]: CallableNode(
+        ConcatenateNode([AtomNode(int), AtomNode(P)]),
+        AtomNode(int),
+    ),
 }
 
 
