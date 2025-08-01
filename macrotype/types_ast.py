@@ -27,7 +27,9 @@ class AtomNode(TypeNode):
 
     @staticmethod
     def is_atom(type_: Any) -> bool:
-        return isinstance(type_, type) or type_ in (None, Ellipsis, Any)
+        return (
+            isinstance(type_, type) and type_ not in {dict, list, tuple, set, frozenset}
+        ) or type_ in (None, Ellipsis, Any)
 
 
 @dataclass(frozen=True)
@@ -139,11 +141,6 @@ def parse_type(typ: Any) -> TypeNode:
     origin = get_origin(typ)
     args = get_args(typ)
 
-    if origin is None:
-        if AtomNode.is_atom(typ):
-            return AtomNode(typ)
-        raise TypeError(f"Unrecognized type atom: {typ!r}")
-
     node_map: dict[Any, type[TypeNode]] = {
         typing.Literal: LiteralNode,
         dict: DictNode,
@@ -153,6 +150,17 @@ def parse_type(typ: Any) -> TypeNode:
         frozenset: FrozenSetNode,
         Union: UnionNode,
     }
+
+    if origin is None:
+        node_cls = node_map.get(typ)
+        if node_cls is not None:
+            if node_cls is TupleNode:
+                return TupleNode([AtomNode(typing.Any)], variable=True)
+            return node_cls.for_args(())
+        if AtomNode.is_atom(typ):
+            return AtomNode(typ)
+        raise TypeError(f"Unrecognized type atom: {typ!r}")
+
     node_cls = node_map.get(origin)
     if node_cls is not None:
         return node_cls.for_args(args)
