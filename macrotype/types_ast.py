@@ -278,6 +278,38 @@ class FinalNode(Generic[N], ContainerNode[N], SpecialFormNode):
 
 
 @dataclass(frozen=True)
+class RequiredNode(Generic[N], ContainerNode[N], InClassExprNode):
+    """``typing.Required`` wrapper."""
+
+    inner: NodeLike[N]
+
+    def emit(self) -> TypeExpr:
+        return typing.Required[self.inner.emit()]
+
+    @classmethod
+    def for_args(cls, args: tuple[Any, ...]) -> "RequiredNode[N]":
+        if len(args) != 1:
+            raise TypeError(f"Required requires a single argument: {args}")
+        return cls(parse_type(args[0]))
+
+
+@dataclass(frozen=True)
+class NotRequiredNode(Generic[N], ContainerNode[N], InClassExprNode):
+    """``typing.NotRequired`` wrapper."""
+
+    inner: NodeLike[N]
+
+    def emit(self) -> TypeExpr:
+        return typing.NotRequired[self.inner.emit()]
+
+    @classmethod
+    def for_args(cls, args: tuple[Any, ...]) -> "NotRequiredNode[N]":
+        if len(args) != 1:
+            raise TypeError(f"NotRequired requires a single argument: {args}")
+        return cls(parse_type(args[0]))
+
+
+@dataclass(frozen=True)
 class TypeGuardNode(Generic[N], ContainerNode[N], SpecialFormNode):
     """``typing.TypeGuard`` wrapper."""
 
@@ -407,6 +439,8 @@ def parse_type(typ: Any) -> BaseNode:
         typing.Self: SelfNode,
         typing.ClassVar: ClassVarNode,
         typing.Final: FinalNode,
+        typing.Required: RequiredNode,
+        typing.NotRequired: NotRequiredNode,
         Union: UnionNode,
         types.UnionType: UnionNode,
         typing.Unpack: UnpackNode,
