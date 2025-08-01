@@ -62,6 +62,7 @@ PARSINGS = {
     set[int]: SetNode(AtomNode(int)),
     frozenset[str]: FrozenSetNode(AtomNode(str)),
     typing.Union[int, str]: UnionNode([AtomNode(int), AtomNode(str)]),
+    int | str: UnionNode([AtomNode(int), AtomNode(str)]),
     typing.Union[int, str, None]: UnionNode([AtomNode(int), AtomNode(str), AtomNode(type(None))]),
     dict[str, typing.Union[int, None]]: DictNode(
         AtomNode(str),

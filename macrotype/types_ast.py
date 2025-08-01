@@ -3,6 +3,7 @@ from __future__ import annotations
 import collections.abc
 import dataclasses
 import enum
+import types
 import typing
 from dataclasses import dataclass
 from typing import (
@@ -318,6 +319,7 @@ def parse_type(typ: Any) -> BaseNode:
         typing.Annotated: AnnotatedNode,
         typing.Self: SelfNode,
         Union: UnionNode,
+        types.UnionType: UnionNode,
         typing.Unpack: UnpackNode,
     }
 
