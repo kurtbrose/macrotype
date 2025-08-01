@@ -13,6 +13,8 @@ from dataclasses import dataclass, field
 from types import ModuleType
 from typing import Any, Callable, get_args, get_origin, get_type_hints
 
+from .types_ast import AnnotatedNode, parse_type
+
 _INDENT = "    "
 
 import collections
@@ -164,11 +166,12 @@ def format_type(type_obj: Any) -> TypeRenderInfo:
         return TypeRenderInfo("Unpack", used)
 
     if origin is typing.Annotated:
+        node = parse_type(type_obj)
+        assert isinstance(node, AnnotatedNode)
+        base_fmt = format_type(node.base.emit())
         used.add(typing.Annotated)
-        base, *metadata = args
-        base_fmt = format_type(base)
         used.update(base_fmt.used)
-        metadata_str = ", ".join(repr(m) for m in metadata)
+        metadata_str = ", ".join(repr(m) for m in node.metadata)
         return TypeRenderInfo(f"Annotated[{base_fmt.text}, {metadata_str}]", used)
 
     if origin is tuple and len(args) == 2 and args[1] is Ellipsis:
