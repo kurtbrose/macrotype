@@ -17,8 +17,20 @@ class TypeNode:
         raise NotImplementedError(f"{self.__class__.__name__} must implement emit()")
 
 
+class TypeExprNode(TypeNode):
+    """Type expression that is valid in most contexts."""
+
+    pass
+
+
+class SpecialFormNode(TypeNode):
+    """Type expression that is only valid in special contexts."""
+
+    pass
+
+
 @dataclass(frozen=True)
-class AtomNode(TypeNode):
+class AtomNode(TypeExprNode):
     """Leaf nodes such as ``int`` or ``str``."""
 
     type_: Any
@@ -41,7 +53,7 @@ class TypedDictNode(AtomNode):
 
 
 @dataclass(frozen=True)
-class LiteralNode(TypeNode):
+class LiteralNode(TypeExprNode):
     values: list[int | str | bool | enum.Enum | None]
 
     def emit(self) -> TypeExpr:
@@ -59,9 +71,9 @@ class LiteralNode(TypeNode):
 
 
 @dataclass(frozen=True)
-class DictNode(TypeNode):
-    key_type: TypeNode
-    value_type: TypeNode
+class DictNode(TypeExprNode):
+    key_type: TypeExprNode
+    value_type: TypeExprNode
 
     def emit(self) -> TypeExpr:
         return dict[self.key_type.emit(), self.value_type.emit()]
@@ -70,16 +82,16 @@ class DictNode(TypeNode):
     def for_args(cls, args: tuple[Any, ...]) -> "DictNode":
         if len(args) > 2:
             raise TypeError(f"Too many arguments to dict: {args}")
-        key = parse_type(args[0]) if len(args) > 0 else AtomNode(typing.Any)
-        val = parse_type(args[1]) if len(args) > 1 else AtomNode(typing.Any)
+        key = parse_type_expr(args[0]) if len(args) > 0 else AtomNode(typing.Any)
+        val = parse_type_expr(args[1]) if len(args) > 1 else AtomNode(typing.Any)
         return cls(key_type=key, value_type=val)
 
 
 @dataclass(frozen=True)
-class ContainerNode(TypeNode):
+class ContainerNode(TypeExprNode):
     """Base class for simple container types like ``list`` or ``set``."""
 
-    element_type: TypeNode
+    element_type: TypeExprNode
     container_type: ClassVar[type]
 
     def emit(self) -> TypeExpr:
@@ -89,7 +101,7 @@ class ContainerNode(TypeNode):
     def for_args(cls, args: tuple[Any, ...]) -> "ContainerNode":
         if len(args) > 1:
             raise TypeError(f"Too many arguments to {cls.container_type.__name__}: {args}")
-        elem = parse_type(args[0]) if args else AtomNode(typing.Any)
+        elem = parse_type_expr(args[0]) if args else AtomNode(typing.Any)
         return cls(elem)
 
 
@@ -99,8 +111,8 @@ class ListNode(ContainerNode):
 
 
 @dataclass(frozen=True)
-class TupleNode(TypeNode):
-    items: list[TypeNode]
+class TupleNode(TypeExprNode):
+    items: list[TypeExprNode]
     variable: bool = False
 
     def emit(self) -> TypeExpr:
@@ -118,7 +130,7 @@ class TupleNode(TypeNode):
                 args = args[:-1]
             if Ellipsis in args:
                 raise TypeError("Ellipsis only allowed in final position of tuple[]")
-        return cls([parse_type(arg) for arg in args], variable=variable)
+        return cls([parse_type_expr(arg) for arg in args], variable=variable)
 
 
 @dataclass(frozen=True)
@@ -132,8 +144,8 @@ class FrozenSetNode(ContainerNode):
 
 
 @dataclass(frozen=True)
-class AnnotatedNode(TypeNode):
-    base: TypeNode
+class AnnotatedNode(TypeExprNode):
+    base: TypeExprNode
     metadata: list[Any]
 
     def emit(self) -> TypeExpr:
@@ -143,14 +155,14 @@ class AnnotatedNode(TypeNode):
     def for_args(cls, args: tuple[Any, ...]) -> "AnnotatedNode":
         if not args:
             raise TypeError("Annotated requires a base type")
-        base = parse_type(args[0])
+        base = parse_type_expr(args[0])
         return cls(base, list(args[1:]))
 
 
 @dataclass(frozen=True)
-class CallableNode(TypeNode):
-    args: list[TypeNode] | None
-    return_type: TypeNode
+class CallableNode(TypeExprNode):
+    args: list[TypeExprNode] | None
+    return_type: TypeExprNode
 
     def emit(self) -> TypeExpr:
         if self.args is None:
@@ -164,26 +176,26 @@ class CallableNode(TypeNode):
         if len(args) != 2:
             raise TypeError(f"Callable arguments invalid: {args}")
         arg_list, ret = args
-        ret_node = parse_type(ret)
+        ret_node = parse_type_expr(ret)
         if arg_list is Ellipsis:
             return cls(args=None, return_type=ret_node)
-        return cls([parse_type(a) for a in arg_list], return_type=ret_node)
+        return cls([parse_type_expr(a) for a in arg_list], return_type=ret_node)
 
 
 @dataclass(frozen=True)
-class UnionNode(TypeNode):
-    options: list[TypeNode]
+class UnionNode(TypeExprNode):
+    options: list[TypeExprNode]
 
     def emit(self) -> TypeExpr:
         return Union[tuple(opt.emit() for opt in self.options)]
 
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> "UnionNode":
-        return cls([parse_type(arg) for arg in args])
+        return cls([parse_type_expr(arg) for arg in args])
 
 
 @dataclass(frozen=True)
-class UnpackNode(TypeNode):
+class UnpackNode(SpecialFormNode):
     """``typing.Unpack`` wrapper."""
 
     target: TupleNode | TypedDictNode
@@ -197,7 +209,7 @@ class UnpackNode(TypeNode):
             raise TypeError(f"Unpack requires a single argument: {args}")
 
         target_raw = args[0]
-        target_node = parse_type(target_raw)
+        target_node = parse_type_expr(target_raw)
 
         if isinstance(target_node, TupleNode):
             return cls(target_node)
@@ -208,7 +220,7 @@ class UnpackNode(TypeNode):
         raise TypeError(f"Invalid target for Unpack: {target_raw!r}")
 
 
-def parse_type(typ: Any) -> TypeNode:
+def parse_type(typ: Any) -> TypeExprNode | SpecialFormNode:
     """Parse *typ* into a :class:`TypeNode`."""
 
     origin = get_origin(typ)
@@ -244,3 +256,12 @@ def parse_type(typ: Any) -> TypeNode:
         return node_cls.for_args(args)
 
     raise NotImplementedError(f"Unsupported type origin: {origin!r} with args {args!r}")
+
+
+def parse_type_expr(typ: Any) -> TypeExprNode:
+    """Parse *typ* ensuring it is a :class:`TypeExprNode`."""
+
+    node = parse_type(typ)
+    if isinstance(node, SpecialFormNode):
+        raise TypeError(f"Special form not allowed in this context: {typ!r}")
+    return node
