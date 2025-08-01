@@ -3,7 +3,7 @@ from __future__ import annotations
 import enum
 import typing
 from dataclasses import dataclass
-from typing import Any, Union, get_args, get_origin
+from typing import Any, ClassVar, Union, get_args, get_origin
 
 TypeExpr = Any
 
@@ -66,6 +66,62 @@ class DictNode(TypeNode):
 
 
 @dataclass(frozen=True)
+class ContainerNode(TypeNode):
+    """Base class for simple container types like ``list`` or ``set``."""
+
+    element_type: TypeNode
+    container_type: ClassVar[type]
+
+    def emit(self) -> TypeExpr:
+        return self.container_type[self.element_type.emit()]
+
+    @classmethod
+    def for_args(cls, args: tuple[Any, ...]) -> "ContainerNode":
+        if len(args) > 1:
+            raise TypeError(f"Too many arguments to {cls.container_type.__name__}: {args}")
+        elem = parse_type(args[0]) if args else AtomNode(typing.Any)
+        return cls(elem)
+
+
+@dataclass(frozen=True)
+class ListNode(ContainerNode):
+    container_type: ClassVar[type] = list
+
+
+@dataclass(frozen=True)
+class TupleNode(TypeNode):
+    items: list[TypeNode]
+    variable: bool = False
+
+    def emit(self) -> TypeExpr:
+        args = tuple(item.emit() for item in self.items)
+        if self.variable:
+            args += (Ellipsis,)
+        return tuple[args]
+
+    @classmethod
+    def for_args(cls, args: tuple[Any, ...]) -> "TupleNode":
+        variable = False
+        if args:
+            if args[-1] is Ellipsis:
+                variable = True
+                args = args[:-1]
+            if Ellipsis in args:
+                raise TypeError("Ellipsis only allowed in final position of tuple[]")
+        return cls([parse_type(arg) for arg in args], variable=variable)
+
+
+@dataclass(frozen=True)
+class SetNode(ContainerNode):
+    container_type: ClassVar[type] = set
+
+
+@dataclass(frozen=True)
+class FrozenSetNode(ContainerNode):
+    container_type: ClassVar[type] = frozenset
+
+
+@dataclass(frozen=True)
 class UnionNode(TypeNode):
     options: list[TypeNode]
 
@@ -88,11 +144,17 @@ def parse_type(typ: Any) -> TypeNode:
             return AtomNode(typ)
         raise TypeError(f"Unrecognized type atom: {typ!r}")
 
-    if origin is typing.Literal:
-        return LiteralNode.for_args(args)
-    if origin is dict:
-        return DictNode.for_args(args)
-    if origin is Union:
-        return UnionNode.for_args(args)
+    node_map: dict[Any, type[TypeNode]] = {
+        typing.Literal: LiteralNode,
+        dict: DictNode,
+        list: ListNode,
+        tuple: TupleNode,
+        set: SetNode,
+        frozenset: FrozenSetNode,
+        Union: UnionNode,
+    }
+    node_cls = node_map.get(origin)
+    if node_cls is not None:
+        return node_cls.for_args(args)
 
     raise NotImplementedError(f"Unsupported type origin: {origin!r} with args {args!r}")
