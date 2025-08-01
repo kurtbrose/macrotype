@@ -13,7 +13,26 @@ from dataclasses import dataclass, field
 from types import ModuleType
 from typing import Any, Callable, get_args, get_origin, get_type_hints
 
-from .types_ast import AnnotatedNode, parse_type
+from .types_ast import (
+    AnnotatedNode,
+    AtomNode,
+    CallableNode,
+    ClassVarNode,
+    ConcatenateNode,
+    DictNode,
+    FinalNode,
+    FrozenSetNode,
+    InitVarNode,
+    ListNode,
+    NotRequiredNode,
+    RequiredNode,
+    SetNode,
+    TupleNode,
+    TypeGuardNode,
+    UnionNode,
+    UnpackNode,
+    parse_type,
+)
 
 _INDENT = "    "
 
@@ -252,23 +271,83 @@ def format_type_param(tp: Any) -> TypeRenderInfo:
 def find_typevars(type_obj: Any) -> set[str]:
     """Return a set of type variable names referenced by ``type_obj``."""
 
-    found = set()
-    if isinstance(type_obj, typing.TypeVar):
-        found.add(type_obj.__name__)
-    elif isinstance(type_obj, typing.ParamSpec):
-        found.add(f"**{type_obj.__name__}")
-    elif isinstance(type_obj, typing.ParamSpecArgs):
-        found.add(f"**{type_obj.__origin__.__name__}")
-    elif isinstance(type_obj, typing.ParamSpecKwargs):
-        found.add(f"**{type_obj.__origin__.__name__}")
-    elif isinstance(type_obj, typing.TypeVarTuple):
-        found.add(f"*{type_obj.__name__}")
-    elif hasattr(type_obj, "__parameters__"):
-        for param in type_obj.__parameters__:
-            found.update(find_typevars(param))
-    elif hasattr(type_obj, "__args__"):
-        for arg in type_obj.__args__:
-            found.update(find_typevars(arg))
+    def _collect(node: Any) -> None:
+        if isinstance(node, AtomNode):
+            typ = node.type_
+            if isinstance(typ, typing.TypeVar):
+                found.add(typ.__name__)
+            elif isinstance(typ, typing.ParamSpec):
+                found.add(f"**{typ.__name__}")
+            elif isinstance(typ, typing.ParamSpecArgs):
+                found.add(f"**{typ.__origin__.__name__}")
+            elif isinstance(typ, typing.ParamSpecKwargs):
+                found.add(f"**{typ.__origin__.__name__}")
+            elif isinstance(typ, typing.TypeVarTuple):
+                found.add(f"*{typ.__name__}")
+        elif isinstance(node, DictNode):
+            _collect(node.key)
+            _collect(node.value)
+        elif isinstance(node, (ListNode, SetNode, FrozenSetNode)):
+            _collect(node.element)
+        elif isinstance(node, TupleNode):
+            for item in node.items:
+                _collect(item)
+        elif isinstance(node, CallableNode):
+            if node.args is not None:
+                if isinstance(node.args, list):
+                    for arg in node.args:
+                        _collect(arg)
+                else:
+                    _collect(node.args)
+            _collect(node.return_type)
+        elif isinstance(node, ConcatenateNode):
+            for part in node.parts:
+                _collect(part)
+        elif isinstance(node, UnionNode):
+            for opt in node.options:
+                _collect(opt)
+        elif isinstance(node, AnnotatedNode):
+            _collect(node.base)
+        elif isinstance(node, UnpackNode):
+            _collect(node.target)
+        elif isinstance(node, TypeGuardNode):
+            _collect(node.target)
+        elif isinstance(node, InitVarNode):
+            _collect(node.inner)
+        elif isinstance(node, ClassVarNode):
+            _collect(node.inner)
+        elif isinstance(node, FinalNode):
+            _collect(node.inner)
+        elif isinstance(node, (RequiredNode, NotRequiredNode)):
+            _collect(node.inner)
+
+    def _fallback(t: Any) -> set[str]:
+        collected: set[str] = set()
+        if isinstance(t, typing.TypeVar):
+            collected.add(t.__name__)
+        elif isinstance(t, typing.ParamSpec):
+            collected.add(f"**{t.__name__}")
+        elif isinstance(t, typing.ParamSpecArgs):
+            collected.add(f"**{t.__origin__.__name__}")
+        elif isinstance(t, typing.ParamSpecKwargs):
+            collected.add(f"**{t.__origin__.__name__}")
+        elif isinstance(t, typing.TypeVarTuple):
+            collected.add(f"*{t.__name__}")
+        elif hasattr(t, "__parameters__"):
+            for p in t.__parameters__:
+                collected.update(_fallback(p))
+        elif hasattr(t, "__args__"):
+            for a in t.__args__:
+                collected.update(_fallback(a))
+        return collected
+
+    try:
+        node = parse_type(type_obj)
+    except Exception:
+        return _fallback(type_obj)
+
+    found: set[str] = set()
+    _collect(node)
     return found
 
 

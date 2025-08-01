@@ -183,12 +183,14 @@ class TupleNode(Generic[*Ctx], ContainerNode[typing.Union[*Ctx]]):
         return tuple[args]
 
     @classmethod
-    def for_args(cls, args: tuple[Any, ...]) -> "TupleNode[*Ctx]":
+    def for_args(cls, args: tuple[Any, ...]) -> "TupleNode[N]":
         if Ellipsis in args:
-            if args[-1] is not Ellipsis or args.count(Ellipsis) != 1:
-                raise TypeError("tuple[T, ...] must place Ellipsis at the end")
-            return cls(tuple(parse_type(arg) for arg in args[:-1]), True)
-        return cls(tuple(parse_type(arg) for arg in args), False)
+            if args[-1] is not Ellipsis or len(args) < 2:
+                raise TypeError(
+                    "tuple[T, ...] must have one or more arguments with Ellipsis in final position"
+                )
+            return cls(items=[parse_type(arg) for arg in args[:-1]], variable=True)
+        return cls(items=[parse_type(arg) for arg in args], variable=False)
 
 
 @dataclass(frozen=True)
