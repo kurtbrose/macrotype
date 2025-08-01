@@ -6,10 +6,8 @@ from .pyi_extract import (
     PyiFunction,
     PyiModule,
     PyiVariable,
-    TypeRenderInfo,
-    find_typevars,
-    format_type,
 )
+from .types_ast import TypeRenderInfo, find_typevars, format_type
 
 __all__ = [
     "PyiElement",
