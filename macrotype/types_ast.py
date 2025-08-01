@@ -472,34 +472,39 @@ class UnpackNode(SpecialFormNode):
         raise TypeError(f"Invalid target for Unpack: {target_raw!r}")
 
 
+def _parse_no_origin_type(typ: Any) -> BaseNode:
+    if isinstance(typ, (typing.TypeVar, typing.ParamSpec, typing.TypeVarTuple)):
+        return VarNode(typ)
+    if isinstance(typ, TypeAliasType):
+        return parse_type(typ.__value__)
+    node_cls = BaseNode._registry.get(typ)
+    if node_cls is not None:
+        if node_cls is TupleNode:
+            return TupleNode((AtomNode(typing.Any),), True)
+        return node_cls.for_args(())
+    if isinstance(typ, typing._TypedDictMeta):
+        return TypedDictNode(typ)
+    if isinstance(typ, dataclasses.InitVar):
+        return InitVarNode.for_args((typ.type,))
+    if AtomNode.is_atom(typ):
+        return AtomNode(typ)
+    raise TypeError(f"Unrecognized type atom: {typ!r}")
+
+
+def _parse_origin_type(origin: Any, args: tuple[Any, ...]) -> BaseNode:
+    node_cls = BaseNode._registry.get(origin)
+    if node_cls is not None:
+        return node_cls.for_args(args)
+    raise NotImplementedError(f"Unsupported type origin: {origin!r} with args {args!r}")
+
+
 def parse_type(typ: Any) -> BaseNode:
     """Parse *typ* into a :class:`BaseNode`."""
 
     origin = get_origin(typ)
-    args = get_args(typ)
-
     if origin is None:
-        if isinstance(typ, (typing.TypeVar, typing.ParamSpec, typing.TypeVarTuple)):
-            return VarNode(typ)
-        if isinstance(typ, TypeAliasType):
-            return parse_type(typ.__value__)
-        node_cls = BaseNode._registry.get(typ)
-        if node_cls is not None:
-            if node_cls is TupleNode:
-                return TupleNode((AtomNode(typing.Any),), True)
-            return node_cls.for_args(())
-        if isinstance(typ, typing._TypedDictMeta):
-            return TypedDictNode(typ)
-        if isinstance(typ, dataclasses.InitVar):
-            return InitVarNode.for_args((typ.type,))
-        if AtomNode.is_atom(typ):
-            return AtomNode(typ)
-        raise TypeError(f"Unrecognized type atom: {typ!r}")
-    node_cls = BaseNode._registry.get(origin)
-    if node_cls is not None:
-        return node_cls.for_args(args)
-
-    raise NotImplementedError(f"Unsupported type origin: {origin!r} with args {args!r}")
+        return _parse_no_origin_type(typ)
+    return _parse_origin_type(origin, get_args(typ))
 
 
 def parse_type_expr(typ: Any) -> TypeExprNode:
