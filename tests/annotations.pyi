@@ -420,4 +420,8 @@ FUNC_ELLIPSIS: Callable[..., int]
 
 TUPLE_VAR: tuple[int, ...]
 
+SET_VAR: set[int]
+
+FROZENSET_VAR: frozenset[str]
+
 LITERAL_STR_VAR: LiteralString

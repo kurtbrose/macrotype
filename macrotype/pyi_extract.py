@@ -16,6 +16,7 @@ from typing import Any, Callable, get_args, get_origin, get_type_hints
 from .types_ast import (
     AnnotatedNode,
     AtomNode,
+    BaseNode,
     CallableNode,
     ClassVarNode,
     ConcatenateNode,
@@ -76,8 +77,12 @@ class TypeRenderInfo:
     used: set[type]
 
 
-def format_type(type_obj: Any) -> TypeRenderInfo:
-    """Return a ``TypeRenderInfo`` instance for ``type_obj``."""
+def _format_node(node: BaseNode) -> TypeRenderInfo:
+    return format_type(node.emit(), _skip_parse=True)
+
+
+def _format_runtime_type(type_obj: Any) -> TypeRenderInfo:
+    """Return ``TypeRenderInfo`` for *type_obj* using runtime inspection."""
 
     used: set[type] = set()
 
@@ -223,6 +228,21 @@ def format_type(type_obj: Any) -> TypeRenderInfo:
         return TypeRenderInfo(type_obj._name, used)
 
     return TypeRenderInfo(repr(type_obj), used)
+
+
+def format_type(type_obj: Any, *, _skip_parse: bool = False) -> TypeRenderInfo:
+    """Return a ``TypeRenderInfo`` instance for ``type_obj``."""
+    if not _skip_parse:
+        try:
+            node = parse_type(type_obj)
+        except Exception:
+            node = None
+        else:
+            try:
+                return _format_node(node)
+            except NotImplementedError:
+                pass
+    return _format_runtime_type(type_obj)
 
 
 def format_type_param(tp: Any) -> TypeRenderInfo:
