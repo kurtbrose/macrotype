@@ -107,6 +107,9 @@ UNANNOTATED_CONST = 42
 UNTYPED_LAMBDA = lambda x, y: x + y
 TYPED_LAMBDA: Callable[[int, int], int] = lambda a, b: a + b
 
+# Additional variable using ``Annotated`` to test type parsing
+ANNOTATED_EXTRA: Annotated[str, "extra"] = "x"
+
 
 class Basic:
     simple: list[str]
