@@ -1,4 +1,4 @@
-# Generated via: macrotype macrotype -o __macrotype__/macrotype
+# Generated via: macrotype macrotype -o /tmp/tmp.swm0snV22p
 # Do not edit by hand
 from typing import Any, Callable
 from dataclasses import _DataclassParams, dataclass
@@ -6,7 +6,6 @@ from enum import EnumType
 from functools import partialmethod
 from inspect import Signature
 from macrotype.meta_types import get_overloads
-from macrotype.types_ast import BaseNode
 
 ModuleType = module
 
@@ -26,21 +25,6 @@ class PyiNamedElement(PyiElement):
     name: str
     used_types: set[type]
     line: int | None
-
-@dataclass
-class TypeRenderInfo:
-    text: str
-    used: set[type]
-
-def _format_node(node: BaseNode) -> TypeRenderInfo: ...
-
-def _format_runtime_type(type_obj: Any) -> TypeRenderInfo: ...
-
-def format_type(type_obj: Any, *, _skip_parse: bool) -> TypeRenderInfo: ...
-
-def format_type_param(tp: Any) -> TypeRenderInfo: ...
-
-def find_typevars(type_obj: Any) -> set[str]: ...
 
 _DATACLASS_DEFAULTS: dict[str, Any]
 
