@@ -175,6 +175,32 @@ class UnionNode(TypeNode):
         return cls([parse_type(arg) for arg in args])
 
 
+@dataclass(frozen=True)
+class UnpackNode(TypeNode):
+    """``typing.Unpack`` wrapper."""
+
+    target: TypeNode
+
+    def emit(self) -> TypeExpr:
+        return typing.Unpack[self.target.emit()]
+
+    @classmethod
+    def for_args(cls, args: tuple[Any, ...]) -> "UnpackNode":
+        if len(args) != 1:
+            raise TypeError(f"Unpack requires a single argument: {args}")
+
+        target_raw = args[0]
+        target_node = parse_type(target_raw)
+
+        if isinstance(target_node, TupleNode):
+            return cls(target_node)
+
+        if isinstance(target_node, AtomNode) and isinstance(target_raw, typing._TypedDictMeta):
+            return cls(target_node)
+
+        raise TypeError(f"Invalid target for Unpack: {target_raw!r}")
+
+
 def parse_type(typ: Any) -> TypeNode:
     """Parse *typ* into a :class:`TypeNode`."""
 
@@ -191,6 +217,7 @@ def parse_type(typ: Any) -> TypeNode:
         frozenset: FrozenSetNode,
         typing.Annotated: AnnotatedNode,
         Union: UnionNode,
+        typing.Unpack: UnpackNode,
     }
 
     if origin is None:

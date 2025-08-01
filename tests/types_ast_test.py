@@ -14,6 +14,7 @@ from macrotype.types_ast import (
     SetNode,
     TupleNode,
     UnionNode,
+    UnpackNode,
     parse_type,
 )
 
@@ -21,6 +22,10 @@ from macrotype.types_ast import (
 class Color(enum.Enum):
     RED = 1
     BLUE = 2
+
+
+class TD(typing.TypedDict):
+    value: int
 
 
 PARSINGS = {
@@ -58,6 +63,8 @@ PARSINGS = {
     typing.Callable[[int, str], bool]: CallableNode([AtomNode(int), AtomNode(str)], AtomNode(bool)),
     typing.Callable[..., int]: CallableNode(None, AtomNode(int)),
     typing.Annotated[int, "x"]: AnnotatedNode(AtomNode(int), ["x"]),
+    typing.Unpack[tuple[int, str]]: UnpackNode(TupleNode([AtomNode(int), AtomNode(str)])),
+    typing.Unpack[TD]: UnpackNode(AtomNode(TD)),
 }
 
 
@@ -81,3 +88,8 @@ def test_invalid_tuple() -> None:
         parse_type(tuple[..., int])
     with pytest.raises(TypeError):
         parse_type(tuple[int, ..., str])
+
+
+def test_invalid_unpack() -> None:
+    with pytest.raises(TypeError):
+        parse_type(typing.Unpack[list[int]])
