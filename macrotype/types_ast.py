@@ -459,8 +459,11 @@ def _reject_special(node: BaseNode) -> None:
             _reject_special(item)
     elif isinstance(node, CallableNode):
         if node.args is not None:
-            for arg in node.args:
-                _reject_special(arg)
+            if isinstance(node.args, list):
+                for arg in node.args:
+                    _reject_special(arg)
+            else:
+                _reject_special(node.args)
         _reject_special(node.return_type)
     elif isinstance(node, AnnotatedNode):
         _reject_special(node.base)
