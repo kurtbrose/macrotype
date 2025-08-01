@@ -278,6 +278,22 @@ class FinalNode(Generic[N], ContainerNode[N], SpecialFormNode):
 
 
 @dataclass(frozen=True)
+class TypeGuardNode(Generic[N], ContainerNode[N], SpecialFormNode):
+    """``typing.TypeGuard`` wrapper."""
+
+    target: NodeLike[N]
+
+    def emit(self) -> TypeExpr:
+        return typing.TypeGuard[self.target.emit()]
+
+    @classmethod
+    def for_args(cls, args: tuple[Any, ...]) -> "TypeGuardNode[N]":
+        if len(args) != 1:
+            raise TypeError(f"TypeGuard requires a single argument: {args}")
+        return cls(parse_type(args[0]))
+
+
+@dataclass(frozen=True)
 class AnnotatedNode(Generic[N], ContainerNode[N]):
     base: NodeLike[N]
     metadata: list[Any]
@@ -387,6 +403,7 @@ def parse_type(typ: Any) -> BaseNode:
         dataclasses.InitVar: InitVarNode,
         typing.Annotated: AnnotatedNode,
         typing.Concatenate: ConcatenateNode,
+        typing.TypeGuard: TypeGuardNode,
         typing.Self: SelfNode,
         typing.ClassVar: ClassVarNode,
         typing.Final: FinalNode,
@@ -454,6 +471,8 @@ def _reject_special(node: BaseNode) -> None:
         for part in node.parts:
             _reject_special(part)
     elif isinstance(node, UnpackNode):
+        _reject_special(node.target)
+    elif isinstance(node, TypeGuardNode):
         _reject_special(node.target)
     elif isinstance(node, InitVarNode):
         _reject_special(node.inner)

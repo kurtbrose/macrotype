@@ -20,6 +20,7 @@ from macrotype.types_ast import (
     SetNode,
     TupleNode,
     TypedDictNode,
+    TypeGuardNode,
     UnionNode,
     UnpackNode,
     parse_type,
@@ -91,6 +92,7 @@ PARSINGS = {
     typing.NoReturn: AtomNode(typing.NoReturn),
     typing.Never: AtomNode(typing.Never),
     typing.LiteralString: AtomNode(typing.LiteralString),
+    typing.TypeGuard[int]: TypeGuardNode(AtomNode(int)),
     T: AtomNode(T),
     P: AtomNode(P),
     Ts: AtomNode(Ts),
@@ -155,6 +157,11 @@ def test_classvar_special_form() -> None:
 def test_final_special_form() -> None:
     with pytest.raises(TypeError):
         parse_type_expr(typing.Final[int])
+
+
+def test_typeguard_special_form() -> None:
+    with pytest.raises(TypeError):
+        parse_type_expr(typing.TypeGuard[int])
 
 
 def test_annotated_nesting() -> None:
