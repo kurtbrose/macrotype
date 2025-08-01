@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import enum
 import typing
+import collections.abc
 from dataclasses import dataclass
 from typing import Any, ClassVar, Union, get_args, get_origin
 
@@ -122,6 +123,29 @@ class SetNode(ContainerNode):
 class FrozenSetNode(ContainerNode):
     container_type: ClassVar[type] = frozenset
 
+@dataclass(frozen=True)
+class CallableNode(TypeNode):
+    args: list[TypeNode] | None
+    return_type: TypeNode
+
+    def emit(self) -> TypeExpr:
+        if self.args is None:
+            return typing.Callable[..., self.return_type.emit()]
+        return typing.Callable[[a.emit() for a in self.args], self.return_type.emit()]
+
+    @classmethod
+    def for_args(cls, args: tuple[Any, ...]) -> "CallableNode":
+        if not args:
+            return cls(args=None, return_type=AtomNode(typing.Any))
+        if len(args) != 2:
+            raise TypeError(f"Callable arguments invalid: {args}")
+        arg_list, ret = args
+        ret_node = parse_type(ret)
+        if arg_list is Ellipsis:
+            return cls(args=None, return_type=ret_node)
+        return cls([parse_type(a) for a in arg_list], return_type=ret_node)
+
+
 
 @dataclass(frozen=True)
 class UnionNode(TypeNode):
@@ -146,6 +170,7 @@ def parse_type(typ: Any) -> TypeNode:
         dict: DictNode,
         list: ListNode,
         tuple: TupleNode,
+        collections.abc.Callable: CallableNode,
         set: SetNode,
         frozenset: FrozenSetNode,
         Union: UnionNode,
