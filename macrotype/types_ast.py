@@ -5,12 +5,20 @@ import dataclasses
 import enum
 import typing
 from dataclasses import dataclass
-from typing import Any, ClassVar, Union, get_args, get_origin
+from typing import (
+    Any,
+    ClassVar,
+    Generic,
+    TypeVar,
+    Union,
+    get_args,
+    get_origin,
+)
 
 TypeExpr = Any
 
 
-class TypeNode:
+class BaseNode:
     """Base class for parsed type nodes."""
 
     def emit(self) -> TypeExpr:
@@ -18,16 +26,40 @@ class TypeNode:
         raise NotImplementedError(f"{self.__class__.__name__} must implement emit()")
 
 
-class TypeExprNode(TypeNode):
+class TypeExprNode(BaseNode):
     """Type expression that is valid in most contexts."""
 
     pass
 
 
-class SpecialFormNode(TypeNode):
+class InClassExprNode(BaseNode):
+    """Type expression valid only inside class bodies."""
+
+    pass
+
+
+class SpecialFormNode(BaseNode):
     """Type expression that is only valid in special contexts."""
 
     pass
+
+
+# ``N`` is used by container nodes and aliases to propagate their typing
+# context. It can either be the general ``TypeExprNode`` or the superset
+# ``InClassExprNode | TypeExprNode`` representing class-body contexts.
+N = TypeVar("N", TypeExprNode, InClassExprNode | TypeExprNode)
+
+
+class ContainerNode(Generic[N], BaseNode):
+    """Base class for container nodes."""
+
+    pass
+
+
+# ``NodeLike`` is either a leaf node or another ``ContainerNode`` with the same
+# generic parameter. It uses the PEP 695 ``type`` statement so the parameter is
+# constrained to either ``TypeExprNode`` or ``InClassExprNode``.
+type NodeLike[X: (TypeExprNode, InClassExprNode | TypeExprNode)] = X | ContainerNode[X]
 
 
 @dataclass(frozen=True)
@@ -72,48 +104,41 @@ class LiteralNode(TypeExprNode):
 
 
 @dataclass(frozen=True)
-class DictNode(TypeExprNode):
-    key_type: TypeExprNode
-    value_type: TypeExprNode
+class DictNode(Generic[N], ContainerNode[N]):
+    key: NodeLike[N]
+    value: NodeLike[N]
 
     def emit(self) -> TypeExpr:
-        return dict[self.key_type.emit(), self.value_type.emit()]
+        return dict[self.key.emit(), self.value.emit()]
 
     @classmethod
-    def for_args(cls, args: tuple[Any, ...]) -> "DictNode":
+    def for_args(cls, args: tuple[Any, ...]) -> "DictNode[N]":
         if len(args) > 2:
             raise TypeError(f"Too many arguments to dict: {args}")
-        key = parse_type_expr(args[0]) if len(args) > 0 else AtomNode(typing.Any)
-        val = parse_type_expr(args[1]) if len(args) > 1 else AtomNode(typing.Any)
-        return cls(key_type=key, value_type=val)
+        key = parse_type(args[0]) if len(args) > 0 else AtomNode(typing.Any)
+        val = parse_type(args[1]) if len(args) > 1 else AtomNode(typing.Any)
+        return cls(key, val)
 
 
 @dataclass(frozen=True)
-class ContainerNode(TypeExprNode):
-    """Base class for simple container types like ``list`` or ``set``."""
-
-    element_type: TypeExprNode
-    container_type: ClassVar[type]
+class ListNode(Generic[N], ContainerNode[N]):
+    element: NodeLike[N]
+    container_type: ClassVar[type] = list
 
     def emit(self) -> TypeExpr:
-        return self.container_type[self.element_type.emit()]
+        return list[self.element.emit()]
 
     @classmethod
-    def for_args(cls, args: tuple[Any, ...]) -> "ContainerNode":
+    def for_args(cls, args: tuple[Any, ...]) -> "ListNode[N]":
         if len(args) > 1:
-            raise TypeError(f"Too many arguments to {cls.container_type.__name__}: {args}")
-        elem = parse_type_expr(args[0]) if args else AtomNode(typing.Any)
+            raise TypeError(f"Too many arguments to list: {args}")
+        elem = parse_type(args[0]) if args else AtomNode(typing.Any)
         return cls(elem)
 
 
 @dataclass(frozen=True)
-class ListNode(ContainerNode):
-    container_type: ClassVar[type] = list
-
-
-@dataclass(frozen=True)
-class TupleNode(TypeExprNode):
-    items: list[TypeExprNode]
+class TupleNode(Generic[N], ContainerNode[N]):
+    items: list[NodeLike[N]]
     variable: bool = False
 
     def emit(self) -> TypeExpr:
@@ -123,7 +148,7 @@ class TupleNode(TypeExprNode):
         return tuple[args]
 
     @classmethod
-    def for_args(cls, args: tuple[Any, ...]) -> "TupleNode":
+    def for_args(cls, args: tuple[Any, ...]) -> "TupleNode[N]":
         variable = False
         if args:
             if args[-1] is Ellipsis:
@@ -131,17 +156,39 @@ class TupleNode(TypeExprNode):
                 args = args[:-1]
             if Ellipsis in args:
                 raise TypeError("Ellipsis only allowed in final position of tuple[]")
-        return cls([parse_type_expr(arg) for arg in args], variable=variable)
+        return cls([parse_type(arg) for arg in args], variable=variable)
 
 
 @dataclass(frozen=True)
-class SetNode(ContainerNode):
+class SetNode(Generic[N], ContainerNode[N]):
+    element: NodeLike[N]
     container_type: ClassVar[type] = set
 
+    def emit(self) -> TypeExpr:
+        return set[self.element.emit()]
+
+    @classmethod
+    def for_args(cls, args: tuple[Any, ...]) -> "SetNode[N]":
+        if len(args) > 1:
+            raise TypeError(f"Too many arguments to set: {args}")
+        elem = parse_type(args[0]) if args else AtomNode(typing.Any)
+        return cls(elem)
+
 
 @dataclass(frozen=True)
-class FrozenSetNode(ContainerNode):
+class FrozenSetNode(Generic[N], ContainerNode[N]):
+    element: NodeLike[N]
     container_type: ClassVar[type] = frozenset
+
+    def emit(self) -> TypeExpr:
+        return frozenset[self.element.emit()]
+
+    @classmethod
+    def for_args(cls, args: tuple[Any, ...]) -> "FrozenSetNode[N]":
+        if len(args) > 1:
+            raise TypeError(f"Too many arguments to frozenset: {args}")
+        elem = parse_type(args[0]) if args else AtomNode(typing.Any)
+        return cls(elem)
 
 
 @dataclass(frozen=True)
@@ -162,7 +209,7 @@ class InitVarNode(SpecialFormNode):
 
 
 @dataclass(frozen=True)
-class SelfNode(TypeExprNode):
+class SelfNode(InClassExprNode):
     """``typing.Self`` leaf node."""
 
     def emit(self) -> TypeExpr:
@@ -176,25 +223,25 @@ class SelfNode(TypeExprNode):
 
 
 @dataclass(frozen=True)
-class AnnotatedNode(TypeExprNode):
-    base: TypeExprNode
+class AnnotatedNode(Generic[N], ContainerNode[N]):
+    base: NodeLike[N]
     metadata: list[Any]
 
     def emit(self) -> TypeExpr:
         return typing.Annotated[self.base.emit(), *self.metadata]
 
     @classmethod
-    def for_args(cls, args: tuple[Any, ...]) -> "AnnotatedNode":
+    def for_args(cls, args: tuple[Any, ...]) -> "AnnotatedNode[N]":
         if not args:
             raise TypeError("Annotated requires a base type")
-        base = parse_type_expr(args[0])
+        base = parse_type(args[0])
         return cls(base, list(args[1:]))
 
 
 @dataclass(frozen=True)
-class CallableNode(TypeExprNode):
-    args: list[TypeExprNode] | None
-    return_type: TypeExprNode
+class CallableNode(Generic[N], ContainerNode[N]):
+    args: list[NodeLike[N]] | None
+    return_type: NodeLike[N]
 
     def emit(self) -> TypeExpr:
         if self.args is None:
@@ -202,28 +249,28 @@ class CallableNode(TypeExprNode):
         return typing.Callable[[a.emit() for a in self.args], self.return_type.emit()]
 
     @classmethod
-    def for_args(cls, args: tuple[Any, ...]) -> "CallableNode":
+    def for_args(cls, args: tuple[Any, ...]) -> "CallableNode[N]":
         if not args:
             return cls(args=None, return_type=AtomNode(typing.Any))
         if len(args) != 2:
             raise TypeError(f"Callable arguments invalid: {args}")
         arg_list, ret = args
-        ret_node = parse_type_expr(ret)
+        ret_node = parse_type(ret)
         if arg_list is Ellipsis:
             return cls(args=None, return_type=ret_node)
-        return cls([parse_type_expr(a) for a in arg_list], return_type=ret_node)
+        return cls([parse_type(a) for a in arg_list], return_type=ret_node)
 
 
 @dataclass(frozen=True)
-class UnionNode(TypeExprNode):
-    options: list[TypeExprNode]
+class UnionNode(Generic[N], ContainerNode[N]):
+    options: list[NodeLike[N]]
 
     def emit(self) -> TypeExpr:
         return Union[tuple(opt.emit() for opt in self.options)]
 
     @classmethod
-    def for_args(cls, args: tuple[Any, ...]) -> "UnionNode":
-        return cls([parse_type_expr(arg) for arg in args])
+    def for_args(cls, args: tuple[Any, ...]) -> "UnionNode[N]":
+        return cls([parse_type(arg) for arg in args])
 
 
 @dataclass(frozen=True)
@@ -252,13 +299,13 @@ class UnpackNode(SpecialFormNode):
         raise TypeError(f"Invalid target for Unpack: {target_raw!r}")
 
 
-def parse_type(typ: Any) -> TypeExprNode | SpecialFormNode:
-    """Parse *typ* into a :class:`TypeNode`."""
+def parse_type(typ: Any) -> BaseNode:
+    """Parse *typ* into a :class:`BaseNode`."""
 
     origin = get_origin(typ)
     args = get_args(typ)
 
-    node_map: dict[Any, type[TypeNode]] = {
+    node_map: dict[Any, type[BaseNode]] = {
         typing.Literal: LiteralNode,
         dict: DictNode,
         list: ListNode,
@@ -298,6 +345,35 @@ def parse_type_expr(typ: Any) -> TypeExprNode:
     """Parse *typ* ensuring it is a :class:`TypeExprNode`."""
 
     node = parse_type(typ)
-    if isinstance(node, SpecialFormNode):
-        raise TypeError(f"Special form not allowed in this context: {typ!r}")
-    return node
+    _reject_special(node)
+    return typing.cast(TypeExprNode, node)
+
+
+def _reject_special(node: BaseNode) -> None:
+    """Recursively reject special-form or in-class nodes."""
+
+    if isinstance(node, (SpecialFormNode, InClassExprNode)):
+        raise TypeError("Special form not allowed in this context")
+
+    if isinstance(node, (ListNode, SetNode, FrozenSetNode)):
+        _reject_special(node.element)
+    elif isinstance(node, DictNode):
+        _reject_special(node.key)
+        _reject_special(node.value)
+    elif isinstance(node, TupleNode):
+        for item in node.items:
+            _reject_special(item)
+    elif isinstance(node, CallableNode):
+        if node.args is not None:
+            for arg in node.args:
+                _reject_special(arg)
+        _reject_special(node.return_type)
+    elif isinstance(node, AnnotatedNode):
+        _reject_special(node.base)
+    elif isinstance(node, UnionNode):
+        for opt in node.options:
+            _reject_special(opt)
+    elif isinstance(node, UnpackNode):
+        _reject_special(node.target)
+    elif isinstance(node, InitVarNode):
+        _reject_special(node.inner)

@@ -50,6 +50,8 @@ PARSINGS = {
     dict[int, typing.Any]: DictNode(AtomNode(int), AtomNode(typing.Any)),
     list[()]: ListNode(AtomNode(typing.Any)),
     list[int]: ListNode(AtomNode(int)),
+    list[list[int]]: ListNode(ListNode(AtomNode(int))),
+    dict[str, list[int]]: DictNode(AtomNode(str), ListNode(AtomNode(int))),
     tuple[()]: TupleNode([]),
     tuple[int, str]: TupleNode([AtomNode(int), AtomNode(str)]),
     tuple[int, ...]: TupleNode([AtomNode(int)], variable=True),
@@ -112,3 +114,8 @@ def test_invalid_initvar() -> None:
 def test_initvar_special_form() -> None:
     with pytest.raises(TypeError):
         parse_type_expr(dataclasses.InitVar[int])
+
+
+def test_self_in_expr() -> None:
+    with pytest.raises(TypeError):
+        parse_type_expr(list[typing.Self])
