@@ -162,6 +162,20 @@ class InitVarNode(SpecialFormNode):
 
 
 @dataclass(frozen=True)
+class SelfNode(TypeExprNode):
+    """``typing.Self`` leaf node."""
+
+    def emit(self) -> TypeExpr:
+        return typing.Self
+
+    @classmethod
+    def for_args(cls, args: tuple[Any, ...]) -> "SelfNode":
+        if args:
+            raise TypeError(f"Self takes no arguments: {args}")
+        return cls()
+
+
+@dataclass(frozen=True)
 class AnnotatedNode(TypeExprNode):
     base: TypeExprNode
     metadata: list[Any]
@@ -254,6 +268,7 @@ def parse_type(typ: Any) -> TypeExprNode | SpecialFormNode:
         frozenset: FrozenSetNode,
         dataclasses.InitVar: InitVarNode,
         typing.Annotated: AnnotatedNode,
+        typing.Self: SelfNode,
         Union: UnionNode,
         typing.Unpack: UnpackNode,
     }
