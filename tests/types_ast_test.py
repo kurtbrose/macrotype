@@ -16,6 +16,8 @@ from macrotype.types_ast import (
     InitVarNode,
     ListNode,
     LiteralNode,
+    NotRequiredNode,
+    RequiredNode,
     SelfNode,
     SetNode,
     TupleNode,
@@ -93,6 +95,8 @@ PARSINGS = {
     typing.Never: AtomNode(typing.Never),
     typing.LiteralString: AtomNode(typing.LiteralString),
     typing.TypeGuard[int]: TypeGuardNode(AtomNode(int)),
+    typing.NotRequired[int]: NotRequiredNode(AtomNode(int)),
+    typing.Required[str]: RequiredNode(AtomNode(str)),
     T: AtomNode(T),
     P: AtomNode(P),
     Ts: AtomNode(Ts),
@@ -176,3 +180,13 @@ def test_annotated_classvar() -> None:
     assert parse_type(ann) == AnnotatedNode(ClassVarNode(AtomNode(int)), ["x"])
     with pytest.raises(TypeError):
         parse_type_expr(ann)
+
+
+def test_notrequired_special_form() -> None:
+    with pytest.raises(TypeError):
+        parse_type_expr(typing.NotRequired[int])
+
+
+def test_required_special_form() -> None:
+    with pytest.raises(TypeError):
+        parse_type_expr(typing.Required[str])
