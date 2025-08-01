@@ -1,3 +1,4 @@
+import dataclasses
 import enum
 import typing
 
@@ -9,6 +10,7 @@ from macrotype.types_ast import (
     CallableNode,
     DictNode,
     FrozenSetNode,
+    InitVarNode,
     ListNode,
     LiteralNode,
     SetNode,
@@ -17,6 +19,7 @@ from macrotype.types_ast import (
     UnionNode,
     UnpackNode,
     parse_type,
+    parse_type_expr,
 )
 
 
@@ -64,6 +67,8 @@ PARSINGS = {
     typing.Callable[[int, str], bool]: CallableNode([AtomNode(int), AtomNode(str)], AtomNode(bool)),
     typing.Callable[..., int]: CallableNode(None, AtomNode(int)),
     typing.Annotated[int, "x"]: AnnotatedNode(AtomNode(int), ["x"]),
+    dataclasses.InitVar: InitVarNode(AtomNode(typing.Any)),
+    dataclasses.InitVar[int]: InitVarNode(AtomNode(int)),
     typing.Unpack[tuple[int, str]]: UnpackNode(TupleNode([AtomNode(int), AtomNode(str)])),
     typing.Unpack[TD]: UnpackNode(TypedDictNode(TD)),
     TD: TypedDictNode(TD),
@@ -95,3 +100,13 @@ def test_invalid_tuple() -> None:
 def test_invalid_unpack() -> None:
     with pytest.raises(TypeError):
         parse_type(typing.Unpack[list[int]])
+
+
+def test_invalid_initvar() -> None:
+    with pytest.raises(TypeError):
+        parse_type(dataclasses.InitVar[int, str])
+
+
+def test_initvar_special_form() -> None:
+    with pytest.raises(TypeError):
+        parse_type_expr(dataclasses.InitVar[int])
