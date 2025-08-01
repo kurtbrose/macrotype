@@ -12,6 +12,7 @@ from typing import (
     Generic,
     TypeAliasType,
     TypeVar,
+    TypeVarTuple,
     Union,
     get_args,
     get_origin,
@@ -50,6 +51,14 @@ class SpecialFormNode(BaseNode):
 # context. It can either be the general ``TypeExprNode`` or the superset
 # ``InClassExprNode | TypeExprNode`` representing class-body contexts.
 N = TypeVar("N", TypeExprNode, InClassExprNode | TypeExprNode)
+
+# ``K`` and ``V`` are used for ``DictNode`` to track key and value contexts
+K = TypeVar("K", TypeExprNode, InClassExprNode | TypeExprNode)
+V = TypeVar("V", TypeExprNode, InClassExprNode | TypeExprNode)
+
+# ``Ctx`` is used with variadic containers such as ``UnionNode`` and ``TupleNode``.
+# Each element corresponds to one argument's context.
+Ctx = TypeVarTuple("Ctx")
 
 
 class ContainerNode(Generic[N], BaseNode):
@@ -125,15 +134,15 @@ class LiteralNode(TypeExprNode):
 
 
 @dataclass(frozen=True)
-class DictNode(Generic[N], ContainerNode[N]):
-    key: NodeLike[N]
-    value: NodeLike[N]
+class DictNode(Generic[K, V], ContainerNode[typing.Union[K, V]]):
+    key: NodeLike[K]
+    value: NodeLike[V]
 
     def emit(self) -> TypeExpr:
         return dict[self.key.emit(), self.value.emit()]
 
     @classmethod
-    def for_args(cls, args: tuple[Any, ...]) -> "DictNode[N]":
+    def for_args(cls, args: tuple[Any, ...]) -> "DictNode[K, V]":
         if len(args) > 2:
             raise TypeError(f"Too many arguments to dict: {args}")
         key = parse_type(args[0]) if len(args) > 0 else AtomNode(typing.Any)
@@ -158,8 +167,13 @@ class ListNode(Generic[N], ContainerNode[N]):
 
 
 @dataclass(frozen=True)
-class TupleNode(Generic[N], ContainerNode[N]):
-    items: list[NodeLike[N]]
+class TupleNode(Generic[*Ctx], ContainerNode[typing.Union[*Ctx]]):
+    """
+    ``tuple[T1, T2, …]`` is class-specific if any element type is. For the
+    variadic form ``tuple[T, …]`` we can treat it as ``TupleNode[T]``.
+    """
+
+    items: tuple[BaseNode, ...]
     variable: bool = False
 
     def emit(self) -> TypeExpr:
@@ -380,15 +394,18 @@ class CallableNode(Generic[N], ContainerNode[N]):
 
 
 @dataclass(frozen=True)
-class UnionNode(Generic[N], ContainerNode[N]):
-    options: list[NodeLike[N]]
+class UnionNode(Generic[*Ctx], ContainerNode[typing.Union[*Ctx]]):
+    """A ``typing.Union`` wrapper that is class-specific iff *any* arm is."""
+
+    # The concrete nodes that correspond to each context in ``*Ctx``.
+    options: tuple[BaseNode, ...]
 
     def emit(self) -> TypeExpr:
         return Union[tuple(opt.emit() for opt in self.options)]
 
     @classmethod
-    def for_args(cls, args: tuple[Any, ...]) -> "UnionNode[N]":
-        return cls([parse_type(arg) for arg in args])
+    def for_args(cls, args: tuple[Any, ...]) -> "UnionNode[*Ctx]":
+        return cls(tuple(parse_type(arg) for arg in args))
 
 
 @dataclass(frozen=True)
@@ -451,7 +468,7 @@ def parse_type(typ: Any) -> BaseNode:
         node_cls = node_map.get(typ)
         if node_cls is not None:
             if node_cls is TupleNode:
-                return TupleNode([AtomNode(typing.Any)], variable=True)
+                return TupleNode((AtomNode(typing.Any),), True)
             return node_cls.for_args(())
         if isinstance(typ, typing._TypedDictMeta):
             return TypedDictNode(typ)
