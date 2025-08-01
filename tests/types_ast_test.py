@@ -35,6 +35,12 @@ class TD(typing.TypedDict):
     value: int
 
 
+T = typing.TypeVar("T")
+P = typing.ParamSpec("P")
+Ts = typing.TypeVarTuple("Ts")
+AliasListT = typing.TypeAliasType("AliasListT", list[T], type_params=(T,))
+
+
 PARSINGS = {
     int: AtomNode(int),
     str: AtomNode(str),
@@ -84,6 +90,11 @@ PARSINGS = {
     typing.NoReturn: AtomNode(typing.NoReturn),
     typing.Never: AtomNode(typing.Never),
     typing.LiteralString: AtomNode(typing.LiteralString),
+    T: AtomNode(T),
+    P: AtomNode(P),
+    Ts: AtomNode(Ts),
+    typing.Unpack[Ts]: UnpackNode(AtomNode(Ts)),
+    AliasListT: ListNode(AtomNode(T)),
 }
 
 

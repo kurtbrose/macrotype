@@ -75,9 +75,7 @@ class AtomNode(TypeExprNode):
 
     @staticmethod
     def is_atom(type_: Any) -> bool:
-        return (
-            isinstance(type_, type) and type_ not in {dict, list, tuple, set, frozenset}
-        ) or type_ in (
+        atomic_specials = (
             None,
             Ellipsis,
             Any,
@@ -85,6 +83,20 @@ class AtomNode(TypeExprNode):
             typing.Never,
             typing.LiteralString,
         )
+        if isinstance(type_, type) and type_ not in {dict, list, tuple, set, frozenset}:
+            return True
+        if isinstance(
+            type_,
+            (
+                typing.TypeVar,
+                typing.ParamSpec,
+                typing.TypeVarTuple,
+                typing.ParamSpecArgs,
+                typing.ParamSpecKwargs,
+            ),
+        ):
+            return True
+        return type_ in atomic_specials
 
 
 @dataclass(frozen=True)
@@ -320,7 +332,7 @@ class UnionNode(Generic[N], ContainerNode[N]):
 class UnpackNode(SpecialFormNode):
     """``typing.Unpack`` wrapper."""
 
-    target: TupleNode | TypedDictNode
+    target: TupleNode | TypedDictNode | AtomNode
 
     def emit(self) -> TypeExpr:
         return typing.Unpack[self.target.emit()]
@@ -333,10 +345,10 @@ class UnpackNode(SpecialFormNode):
         target_raw = args[0]
         target_node = parse_type_expr(target_raw)
 
-        if isinstance(target_node, TupleNode):
+        if isinstance(target_node, (TupleNode, TypedDictNode)):
             return cls(target_node)
 
-        if isinstance(target_node, TypedDictNode):
+        if isinstance(target_node, AtomNode) and isinstance(target_node.type_, typing.TypeVarTuple):
             return cls(target_node)
 
         raise TypeError(f"Invalid target for Unpack: {target_raw!r}")
@@ -367,6 +379,8 @@ def parse_type(typ: Any) -> BaseNode:
     }
 
     if origin is None:
+        if isinstance(typ, TypeAliasType):
+            return parse_type(typ.__value__)
         node_cls = node_map.get(typ)
         if node_cls is not None:
             if node_cls is TupleNode:
