@@ -189,8 +189,8 @@ class TupleNode(Generic[*Ctx], ContainerNode[typing.Union[*Ctx]]):
                 raise TypeError(
                     "tuple[T, ...] must have one or more arguments with Ellipsis in final position"
                 )
-            return cls(items=[parse_type(arg) for arg in args[:-1]], variable=True)
-        return cls(items=[parse_type(arg) for arg in args], variable=False)
+            return cls(items=tuple(parse_type(arg) for arg in args[:-1]), variable=True)
+        return cls(items=tuple(parse_type(arg) for arg in args), variable=False)
 
 
 @dataclass(frozen=True)

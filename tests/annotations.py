@@ -370,6 +370,11 @@ class NamedPoint(NamedTuple):
     y: int
 
 
+# NamedTuple with variadic type parameters to test Generic parsing
+class VarNamedTuple(NamedTuple, Generic[*Ts]):
+    items: tuple[Unpack[Ts]]
+
+
 def use_tuple(tp: tuple[int, ...]) -> tuple[int, ...]:
     return tp
 

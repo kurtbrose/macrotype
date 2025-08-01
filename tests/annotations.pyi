@@ -247,6 +247,9 @@ class NamedPoint(NamedTuple):
     x: int
     y: int
 
+class VarNamedTuple[*Ts](NamedTuple):
+    items: tuple[Unpack[Ts]]
+
 def use_tuple(tp: tuple[int, ...]) -> tuple[int, ...]: ...
 
 class SelfExample:
