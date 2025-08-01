@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import collections.abc
+import dataclasses
 import enum
 import typing
 from dataclasses import dataclass
@@ -144,6 +145,23 @@ class FrozenSetNode(ContainerNode):
 
 
 @dataclass(frozen=True)
+class InitVarNode(SpecialFormNode):
+    """``dataclasses.InitVar`` wrapper."""
+
+    inner: TypeExprNode
+
+    def emit(self) -> TypeExpr:
+        return dataclasses.InitVar[self.inner.emit()]
+
+    @classmethod
+    def for_args(cls, args: tuple[Any, ...]) -> "InitVarNode":
+        if len(args) > 1:
+            raise TypeError(f"InitVar takes at most one argument: {args}")
+        inner = parse_type_expr(args[0]) if args else AtomNode(typing.Any)
+        return cls(inner)
+
+
+@dataclass(frozen=True)
 class AnnotatedNode(TypeExprNode):
     base: TypeExprNode
     metadata: list[Any]
@@ -234,6 +252,7 @@ def parse_type(typ: Any) -> TypeExprNode | SpecialFormNode:
         collections.abc.Callable: CallableNode,
         set: SetNode,
         frozenset: FrozenSetNode,
+        dataclasses.InitVar: InitVarNode,
         typing.Annotated: AnnotatedNode,
         Union: UnionNode,
         typing.Unpack: UnpackNode,
@@ -247,6 +266,8 @@ def parse_type(typ: Any) -> TypeExprNode | SpecialFormNode:
             return node_cls.for_args(())
         if isinstance(typ, typing._TypedDictMeta):
             return TypedDictNode(typ)
+        if isinstance(typ, dataclasses.InitVar):
+            return InitVarNode.for_args((typ.type,))
         if AtomNode.is_atom(typ):
             return AtomNode(typ)
         raise TypeError(f"Unrecognized type atom: {typ!r}")
