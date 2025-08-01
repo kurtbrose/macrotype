@@ -1266,9 +1266,7 @@ class _ModuleBuilder:
         if canonical in self.handled_names and id(obj) not in self.seen:
             raise ValueError(f"duplicate emit name: {canonical}")
 
-        if self._handle_alias(name, obj):
-            return
-        if self._handle_foreign_variable(name, obj):
+        if self._handle_alias(name, obj) or self._handle_foreign_variable(name, obj):
             return
         if id(obj) in self.seen:
             orig = self.seen[id(obj)]
@@ -1279,15 +1277,15 @@ class _ModuleBuilder:
         self.seen[id(obj)] = canonical
         self.handled_names.add(canonical)
 
-        if self._handle_function(canonical, obj):
-            return
-        if self._handle_class(canonical, obj):
-            return
-        if self._handle_newtype(canonical, obj):
-            return
-        if self._handle_alias_types(canonical, obj):
-            return
-        self._handle_constant(canonical, obj)
+        for handler in (
+            self._handle_function,
+            self._handle_class,
+            self._handle_newtype,
+            self._handle_alias_types,
+            self._handle_constant,
+        ):
+            if handler(canonical, obj):
+                return
 
     def _remaining_annotations(self) -> None:
         for name, annotation in self.resolved_ann.items():
