@@ -24,6 +24,17 @@ TypeExpr = Any
 class BaseNode:
     """Base class for parsed type nodes."""
 
+    # Registry mapping handled typing "things" to node classes
+    _registry: ClassVar[dict[Any, type["BaseNode"]]] = {}
+
+    # Entries this node class handles; subclasses should override
+    handles: ClassVar[tuple[Any, ...]] = ()
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        super().__init_subclass__(**kwargs)
+        for item in getattr(cls, "handles", ()):  # register handled items
+            BaseNode._registry[item] = cls
+
     def emit(self) -> TypeExpr:
         """Return the Python type expression represented by this node."""
         raise NotImplementedError(f"{self.__class__.__name__} must implement emit()")
@@ -117,6 +128,7 @@ class TypedDictNode(AtomNode):
 
 @dataclass(frozen=True)
 class LiteralNode(TypeExprNode):
+    handles: ClassVar[tuple[Any, ...]] = (typing.Literal,)
     values: list[int | str | bool | enum.Enum | None]
 
     def emit(self) -> TypeExpr:
@@ -135,6 +147,7 @@ class LiteralNode(TypeExprNode):
 
 @dataclass(frozen=True)
 class DictNode(Generic[K, V], ContainerNode[typing.Union[K, V]]):
+    handles: ClassVar[tuple[Any, ...]] = (dict,)
     key: NodeLike[K]
     value: NodeLike[V]
 
@@ -152,6 +165,7 @@ class DictNode(Generic[K, V], ContainerNode[typing.Union[K, V]]):
 
 @dataclass(frozen=True)
 class ListNode(Generic[N], ContainerNode[N]):
+    handles: ClassVar[tuple[Any, ...]] = (list,)
     element: NodeLike[N]
     container_type: ClassVar[type] = list
 
@@ -168,6 +182,7 @@ class ListNode(Generic[N], ContainerNode[N]):
 
 @dataclass(frozen=True)
 class TupleNode(Generic[*Ctx], ContainerNode[typing.Union[*Ctx]]):
+    handles: ClassVar[tuple[Any, ...]] = (tuple,)
     """
     ``tuple[T1, T2, …]`` is class-specific if any element type is. For the
     variadic form ``tuple[T, …]`` we can treat it as ``TupleNode[T]``.
@@ -195,6 +210,7 @@ class TupleNode(Generic[*Ctx], ContainerNode[typing.Union[*Ctx]]):
 
 @dataclass(frozen=True)
 class SetNode(Generic[N], ContainerNode[N]):
+    handles: ClassVar[tuple[Any, ...]] = (set,)
     element: NodeLike[N]
     container_type: ClassVar[type] = set
 
@@ -211,6 +227,7 @@ class SetNode(Generic[N], ContainerNode[N]):
 
 @dataclass(frozen=True)
 class FrozenSetNode(Generic[N], ContainerNode[N]):
+    handles: ClassVar[tuple[Any, ...]] = (frozenset,)
     element: NodeLike[N]
     container_type: ClassVar[type] = frozenset
 
@@ -227,6 +244,7 @@ class FrozenSetNode(Generic[N], ContainerNode[N]):
 
 @dataclass(frozen=True)
 class InitVarNode(SpecialFormNode):
+    handles: ClassVar[tuple[Any, ...]] = (dataclasses.InitVar,)
     """``dataclasses.InitVar`` wrapper."""
 
     inner: TypeExprNode
@@ -244,6 +262,7 @@ class InitVarNode(SpecialFormNode):
 
 @dataclass(frozen=True)
 class SelfNode(InClassExprNode):
+    handles: ClassVar[tuple[Any, ...]] = (typing.Self,)
     """``typing.Self`` leaf node."""
 
     def emit(self) -> TypeExpr:
@@ -258,6 +277,7 @@ class SelfNode(InClassExprNode):
 
 @dataclass(frozen=True)
 class ClassVarNode(Generic[N], ContainerNode[N], InClassExprNode):
+    handles: ClassVar[tuple[Any, ...]] = (typing.ClassVar,)
     """``typing.ClassVar`` wrapper."""
 
     inner: NodeLike[N]
@@ -275,6 +295,7 @@ class ClassVarNode(Generic[N], ContainerNode[N], InClassExprNode):
 
 @dataclass(frozen=True)
 class FinalNode(Generic[N], ContainerNode[N], SpecialFormNode):
+    handles: ClassVar[tuple[Any, ...]] = (typing.Final,)
     """``typing.Final`` wrapper."""
 
     inner: NodeLike[N]
@@ -292,6 +313,7 @@ class FinalNode(Generic[N], ContainerNode[N], SpecialFormNode):
 
 @dataclass(frozen=True)
 class RequiredNode(Generic[N], ContainerNode[N], InClassExprNode):
+    handles: ClassVar[tuple[Any, ...]] = (typing.Required,)
     """``typing.Required`` wrapper."""
 
     inner: NodeLike[N]
@@ -308,6 +330,7 @@ class RequiredNode(Generic[N], ContainerNode[N], InClassExprNode):
 
 @dataclass(frozen=True)
 class NotRequiredNode(Generic[N], ContainerNode[N], InClassExprNode):
+    handles: ClassVar[tuple[Any, ...]] = (typing.NotRequired,)
     """``typing.NotRequired`` wrapper."""
 
     inner: NodeLike[N]
@@ -324,6 +347,7 @@ class NotRequiredNode(Generic[N], ContainerNode[N], InClassExprNode):
 
 @dataclass(frozen=True)
 class TypeGuardNode(Generic[N], ContainerNode[N], SpecialFormNode):
+    handles: ClassVar[tuple[Any, ...]] = (typing.TypeGuard,)
     """``typing.TypeGuard`` wrapper."""
 
     target: NodeLike[N]
@@ -340,6 +364,7 @@ class TypeGuardNode(Generic[N], ContainerNode[N], SpecialFormNode):
 
 @dataclass(frozen=True)
 class AnnotatedNode(Generic[N], ContainerNode[N]):
+    handles: ClassVar[tuple[Any, ...]] = (typing.Annotated,)
     base: NodeLike[N]
     metadata: list[Any]
 
@@ -356,6 +381,7 @@ class AnnotatedNode(Generic[N], ContainerNode[N]):
 
 @dataclass(frozen=True)
 class ConcatenateNode(Generic[N], ContainerNode[N]):
+    handles: ClassVar[tuple[Any, ...]] = (typing.Concatenate,)
     parts: list[NodeLike[N]]
 
     def emit(self) -> TypeExpr:
@@ -368,6 +394,7 @@ class ConcatenateNode(Generic[N], ContainerNode[N]):
 
 @dataclass(frozen=True)
 class CallableNode(Generic[N], ContainerNode[N]):
+    handles: ClassVar[tuple[Any, ...]] = (collections.abc.Callable,)
     args: NodeLike[N] | list[NodeLike[N]] | None
     return_type: NodeLike[N]
 
@@ -395,6 +422,7 @@ class CallableNode(Generic[N], ContainerNode[N]):
 
 @dataclass(frozen=True)
 class UnionNode(Generic[*Ctx], ContainerNode[typing.Union[*Ctx]]):
+    handles: ClassVar[tuple[Any, ...]] = (Union, types.UnionType)
     """A ``typing.Union`` wrapper that is class-specific iff *any* arm is."""
 
     # The concrete nodes that correspond to each context in ``*Ctx``.
@@ -410,6 +438,7 @@ class UnionNode(Generic[*Ctx], ContainerNode[typing.Union[*Ctx]]):
 
 @dataclass(frozen=True)
 class UnpackNode(SpecialFormNode):
+    handles: ClassVar[tuple[Any, ...]] = (typing.Unpack,)
     """``typing.Unpack`` wrapper."""
 
     target: TupleNode | TypedDictNode | AtomNode
@@ -440,32 +469,10 @@ def parse_type(typ: Any) -> BaseNode:
     origin = get_origin(typ)
     args = get_args(typ)
 
-    node_map: dict[Any, type[BaseNode]] = {
-        typing.Literal: LiteralNode,
-        dict: DictNode,
-        list: ListNode,
-        tuple: TupleNode,
-        collections.abc.Callable: CallableNode,
-        set: SetNode,
-        frozenset: FrozenSetNode,
-        dataclasses.InitVar: InitVarNode,
-        typing.Annotated: AnnotatedNode,
-        typing.Concatenate: ConcatenateNode,
-        typing.TypeGuard: TypeGuardNode,
-        typing.Self: SelfNode,
-        typing.ClassVar: ClassVarNode,
-        typing.Final: FinalNode,
-        typing.Required: RequiredNode,
-        typing.NotRequired: NotRequiredNode,
-        Union: UnionNode,
-        types.UnionType: UnionNode,
-        typing.Unpack: UnpackNode,
-    }
-
     if origin is None:
         if isinstance(typ, TypeAliasType):
             return parse_type(typ.__value__)
-        node_cls = node_map.get(typ)
+        node_cls = BaseNode._registry.get(typ)
         if node_cls is not None:
             if node_cls is TupleNode:
                 return TupleNode((AtomNode(typing.Any),), True)
@@ -477,8 +484,7 @@ def parse_type(typ: Any) -> BaseNode:
         if AtomNode.is_atom(typ):
             return AtomNode(typ)
         raise TypeError(f"Unrecognized type atom: {typ!r}")
-
-    node_cls = node_map.get(origin)
+    node_cls = BaseNode._registry.get(origin)
     if node_cls is not None:
         return node_cls.for_args(args)
 
