@@ -516,42 +516,15 @@ def _reject_special(node: BaseNode) -> None:
     if isinstance(node, (SpecialFormNode, InClassExprNode)):
         raise TypeError("Special form not allowed in this context")
 
-    if isinstance(node, (ListNode, SetNode, FrozenSetNode)):
-        _reject_special(node.element)
-    elif isinstance(node, DictNode):
-        _reject_special(node.key)
-        _reject_special(node.value)
-    elif isinstance(node, TupleNode):
-        for item in node.items:
-            _reject_special(item)
-    elif isinstance(node, CallableNode):
-        if node.args is not None:
-            if isinstance(node.args, list):
-                for arg in node.args:
-                    _reject_special(arg)
-            else:
-                _reject_special(node.args)
-        _reject_special(node.return_type)
-    elif isinstance(node, AnnotatedNode):
-        _reject_special(node.base)
-    elif isinstance(node, UnionNode):
-        for opt in node.options:
-            _reject_special(opt)
-    elif isinstance(node, ConcatenateNode):
-        for part in node.parts:
-            _reject_special(part)
-    elif isinstance(node, UnpackNode):
-        _reject_special(node.target)
-    elif isinstance(node, TypeGuardNode):
-        _reject_special(node.target)
-    elif isinstance(node, InitVarNode):
-        _reject_special(node.inner)
-    elif isinstance(node, ClassVarNode):
-        _reject_special(node.inner)
-    elif isinstance(node, FinalNode):
-        _reject_special(node.inner)
-    elif isinstance(node, (RequiredNode, NotRequiredNode)):
-        _reject_special(node.inner)
+    if dataclasses.is_dataclass(node):
+        for field in dataclasses.fields(node):
+            value = getattr(node, field.name)
+            if isinstance(value, BaseNode):
+                _reject_special(value)
+            elif isinstance(value, (list, tuple)):
+                for item in value:
+                    if isinstance(item, BaseNode):
+                        _reject_special(item)
 
 
 @dataclass
@@ -792,42 +765,16 @@ def find_typevars(type_obj: Any) -> set[str]:
                 found.add(f"**{typ.__origin__.__name__}")
             elif isinstance(typ, typing.ParamSpecKwargs):
                 found.add(f"**{typ.__origin__.__name__}")
-        elif isinstance(node, DictNode):
-            _collect(node.key)
-            _collect(node.value)
-        elif isinstance(node, (ListNode, SetNode, FrozenSetNode)):
-            _collect(node.element)
-        elif isinstance(node, TupleNode):
-            for item in node.items:
-                _collect(item)
-        elif isinstance(node, CallableNode):
-            if node.args is not None:
-                if isinstance(node.args, list):
-                    for arg in node.args:
-                        _collect(arg)
-                else:
-                    _collect(node.args)
-            _collect(node.return_type)
-        elif isinstance(node, ConcatenateNode):
-            for part in node.parts:
-                _collect(part)
-        elif isinstance(node, UnionNode):
-            for opt in node.options:
-                _collect(opt)
-        elif isinstance(node, AnnotatedNode):
-            _collect(node.base)
-        elif isinstance(node, UnpackNode):
-            _collect(node.target)
-        elif isinstance(node, TypeGuardNode):
-            _collect(node.target)
-        elif isinstance(node, InitVarNode):
-            _collect(node.inner)
-        elif isinstance(node, ClassVarNode):
-            _collect(node.inner)
-        elif isinstance(node, FinalNode):
-            _collect(node.inner)
-        elif isinstance(node, (RequiredNode, NotRequiredNode)):
-            _collect(node.inner)
+        else:
+            if dataclasses.is_dataclass(node):
+                for field in dataclasses.fields(node):
+                    value = getattr(node, field.name)
+                    if isinstance(value, BaseNode):
+                        _collect(value)
+                    elif isinstance(value, (list, tuple)):
+                        for item in value:
+                            if isinstance(item, BaseNode):
+                                _collect(item)
 
     def _fallback(t: Any) -> set[str]:
         collected: set[str] = set()
