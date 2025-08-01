@@ -4,7 +4,9 @@ import typing
 import pytest
 
 from macrotype.types_ast import (
+    AnnotatedNode,
     AtomNode,
+    CallableNode,
     DictNode,
     FrozenSetNode,
     ListNode,
@@ -12,7 +14,6 @@ from macrotype.types_ast import (
     SetNode,
     TupleNode,
     UnionNode,
-    CallableNode,
     parse_type,
 )
 
@@ -56,6 +57,7 @@ PARSINGS = {
     ),
     typing.Callable[[int, str], bool]: CallableNode([AtomNode(int), AtomNode(str)], AtomNode(bool)),
     typing.Callable[..., int]: CallableNode(None, AtomNode(int)),
+    typing.Annotated[int, "x"]: AnnotatedNode(AtomNode(int), ["x"]),
 }
 
 

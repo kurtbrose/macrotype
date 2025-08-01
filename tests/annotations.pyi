@@ -71,6 +71,8 @@ UNTYPED_LAMBDA: function
 
 TYPED_LAMBDA: Callable[[int, int], int]
 
+ANNOTATED_EXTRA: Annotated[str, 'extra']
+
 class Basic:
     simple: list[str]
     mapping: dict[str, int]

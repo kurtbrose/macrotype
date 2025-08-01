@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import collections.abc
 import enum
 import typing
-import collections.abc
 from dataclasses import dataclass
 from typing import Any, ClassVar, Union, get_args, get_origin
 
@@ -123,6 +123,23 @@ class SetNode(ContainerNode):
 class FrozenSetNode(ContainerNode):
     container_type: ClassVar[type] = frozenset
 
+
+@dataclass(frozen=True)
+class AnnotatedNode(TypeNode):
+    base: TypeNode
+    metadata: list[Any]
+
+    def emit(self) -> TypeExpr:
+        return typing.Annotated[self.base.emit(), *self.metadata]
+
+    @classmethod
+    def for_args(cls, args: tuple[Any, ...]) -> "AnnotatedNode":
+        if not args:
+            raise TypeError("Annotated requires a base type")
+        base = parse_type(args[0])
+        return cls(base, list(args[1:]))
+
+
 @dataclass(frozen=True)
 class CallableNode(TypeNode):
     args: list[TypeNode] | None
@@ -144,7 +161,6 @@ class CallableNode(TypeNode):
         if arg_list is Ellipsis:
             return cls(args=None, return_type=ret_node)
         return cls([parse_type(a) for a in arg_list], return_type=ret_node)
-
 
 
 @dataclass(frozen=True)
@@ -173,6 +189,7 @@ def parse_type(typ: Any) -> TypeNode:
         collections.abc.Callable: CallableNode,
         set: SetNode,
         frozenset: FrozenSetNode,
+        typing.Annotated: AnnotatedNode,
         Union: UnionNode,
     }
 
