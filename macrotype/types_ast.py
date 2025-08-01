@@ -77,7 +77,14 @@ class AtomNode(TypeExprNode):
     def is_atom(type_: Any) -> bool:
         return (
             isinstance(type_, type) and type_ not in {dict, list, tuple, set, frozenset}
-        ) or type_ in (None, Ellipsis, Any)
+        ) or type_ in (
+            None,
+            Ellipsis,
+            Any,
+            typing.NoReturn,
+            typing.Never,
+            typing.LiteralString,
+        )
 
 
 @dataclass(frozen=True)
@@ -225,6 +232,40 @@ class SelfNode(InClassExprNode):
 
 
 @dataclass(frozen=True)
+class ClassVarNode(Generic[N], ContainerNode[N], InClassExprNode):
+    """``typing.ClassVar`` wrapper."""
+
+    inner: NodeLike[N]
+
+    def emit(self) -> TypeExpr:
+        return typing.ClassVar[self.inner.emit()]
+
+    @classmethod
+    def for_args(cls, args: tuple[Any, ...]) -> "ClassVarNode[N]":
+        if len(args) > 1:
+            raise TypeError(f"ClassVar takes at most one argument: {args}")
+        inner = parse_type(args[0]) if args else AtomNode(typing.Any)
+        return cls(inner)
+
+
+@dataclass(frozen=True)
+class FinalNode(Generic[N], ContainerNode[N], SpecialFormNode):
+    """``typing.Final`` wrapper."""
+
+    inner: NodeLike[N]
+
+    def emit(self) -> TypeExpr:
+        return typing.Final[self.inner.emit()]
+
+    @classmethod
+    def for_args(cls, args: tuple[Any, ...]) -> "FinalNode[N]":
+        if len(args) > 1:
+            raise TypeError(f"Final takes at most one argument: {args}")
+        inner = parse_type(args[0]) if args else AtomNode(typing.Any)
+        return cls(inner)
+
+
+@dataclass(frozen=True)
 class AnnotatedNode(Generic[N], ContainerNode[N]):
     base: NodeLike[N]
     metadata: list[Any]
@@ -318,6 +359,8 @@ def parse_type(typ: Any) -> BaseNode:
         dataclasses.InitVar: InitVarNode,
         typing.Annotated: AnnotatedNode,
         typing.Self: SelfNode,
+        typing.ClassVar: ClassVarNode,
+        typing.Final: FinalNode,
         Union: UnionNode,
         types.UnionType: UnionNode,
         typing.Unpack: UnpackNode,
@@ -379,4 +422,8 @@ def _reject_special(node: BaseNode) -> None:
     elif isinstance(node, UnpackNode):
         _reject_special(node.target)
     elif isinstance(node, InitVarNode):
+        _reject_special(node.inner)
+    elif isinstance(node, ClassVarNode):
+        _reject_special(node.inner)
+    elif isinstance(node, FinalNode):
         _reject_special(node.inner)
