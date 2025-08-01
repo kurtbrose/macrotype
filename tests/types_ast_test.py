@@ -1,0 +1,48 @@
+import enum
+import typing
+
+import pytest
+
+from macrotype.types_ast import AtomNode, DictNode, LiteralNode, UnionNode, parse_type
+
+
+class Color(enum.Enum):
+    RED = 1
+    BLUE = 2
+
+
+PARSINGS = {
+    int: AtomNode(int),
+    str: AtomNode(str),
+    None: AtomNode(None),
+    typing.Any: AtomNode(typing.Any),
+    typing.Literal[1, "x", True, None]: LiteralNode([1, "x", True, None]),
+    typing.Literal[Color.RED]: LiteralNode([Color.RED]),
+    dict[()]: DictNode(AtomNode(typing.Any), AtomNode(typing.Any)),
+    dict[int, str]: DictNode(AtomNode(int), AtomNode(str)),
+    dict[int, typing.Any]: DictNode(AtomNode(int), AtomNode(typing.Any)),
+    typing.Union[int, str]: UnionNode([AtomNode(int), AtomNode(str)]),
+    typing.Union[int, str, None]: UnionNode(
+        [AtomNode(int), AtomNode(str), AtomNode(type(None))]
+    ),
+    dict[str, typing.Union[int, None]]: DictNode(
+        AtomNode(str),
+        UnionNode([AtomNode(int), AtomNode(type(None))]),
+    ),
+}
+
+
+def test_parsing_roundtrip() -> None:
+    actual = {t: parse_type(t) for t in PARSINGS}
+    assert actual == PARSINGS
+
+
+def test_invalid_literal() -> None:
+    with pytest.raises(TypeError):
+        parse_type(typing.Literal[object()])
+
+
+def test_unsupported_origin() -> None:
+    with pytest.raises(NotImplementedError):
+        parse_type(list[int])
+
