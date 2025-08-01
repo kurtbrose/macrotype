@@ -8,7 +8,9 @@ from macrotype.types_ast import (
     AnnotatedNode,
     AtomNode,
     CallableNode,
+    ClassVarNode,
     DictNode,
+    FinalNode,
     FrozenSetNode,
     InitVarNode,
     ListNode,
@@ -77,6 +79,11 @@ PARSINGS = {
     typing.Unpack[tuple[int, str]]: UnpackNode(TupleNode([AtomNode(int), AtomNode(str)])),
     typing.Unpack[TD]: UnpackNode(TypedDictNode(TD)),
     TD: TypedDictNode(TD),
+    typing.ClassVar[int]: ClassVarNode(AtomNode(int)),
+    typing.Final[int]: FinalNode(AtomNode(int)),
+    typing.NoReturn: AtomNode(typing.NoReturn),
+    typing.Never: AtomNode(typing.Never),
+    typing.LiteralString: AtomNode(typing.LiteralString),
 }
 
 
@@ -120,3 +127,13 @@ def test_initvar_special_form() -> None:
 def test_self_in_expr() -> None:
     with pytest.raises(TypeError):
         parse_type_expr(list[typing.Self])
+
+
+def test_classvar_special_form() -> None:
+    with pytest.raises(TypeError):
+        parse_type_expr(typing.ClassVar[int])
+
+
+def test_final_special_form() -> None:
+    with pytest.raises(TypeError):
+        parse_type_expr(typing.Final[int])
