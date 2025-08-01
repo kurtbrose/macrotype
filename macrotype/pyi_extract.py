@@ -775,18 +775,32 @@ def _namedtuple_bases(klass: type, type_params: list[str]) -> tuple[list[str], s
         if get_origin(b) is typing.Generic:
             if not type_params:
                 for param in get_args(b):
-                    inner = param
-                    if get_origin(param) is typing.Unpack:
-                        inner = get_args(param)[0]
-                    if isinstance(
-                        inner,
+                    try:
+                        node = parse_type(param)
+                    except Exception:
+                        node = None
+                    if isinstance(node, UnpackNode):
+                        target = node.target
+                        if isinstance(target, AtomNode) and isinstance(
+                            target.type_,
+                            (
+                                typing.TypeVar,
+                                typing.ParamSpec,
+                                typing.TypeVarTuple,
+                            ),
+                        ):
+                            fmt = format_type_param(target.type_)
+                        else:
+                            fmt = format_type(param)
+                    elif isinstance(
+                        param,
                         (
                             typing.TypeVar,
                             typing.ParamSpec,
                             typing.TypeVarTuple,
                         ),
                     ):
-                        fmt = format_type_param(inner)
+                        fmt = format_type_param(param)
                     else:
                         fmt = format_type(param)
                     type_params.append(fmt.text)
@@ -821,18 +835,32 @@ def _normal_class_bases(klass: type, type_params: list[str]) -> tuple[list[str],
         if get_origin(b) is typing.Generic:
             if not type_params:
                 for param in get_args(b):
-                    inner = param
-                    if get_origin(param) is typing.Unpack:
-                        inner = get_args(param)[0]
-                    if isinstance(
-                        inner,
+                    try:
+                        node = parse_type(param)
+                    except Exception:
+                        node = None
+                    if isinstance(node, UnpackNode):
+                        target = node.target
+                        if isinstance(target, AtomNode) and isinstance(
+                            target.type_,
+                            (
+                                typing.TypeVar,
+                                typing.ParamSpec,
+                                typing.TypeVarTuple,
+                            ),
+                        ):
+                            fmt = format_type_param(target.type_)
+                        else:
+                            fmt = format_type(param)
+                    elif isinstance(
+                        param,
                         (
                             typing.TypeVar,
                             typing.ParamSpec,
                             typing.TypeVarTuple,
                         ),
                     ):
-                        fmt = format_type_param(inner)
+                        fmt = format_type_param(param)
                     else:
                         fmt = format_type(param)
                     type_params.append(fmt.text)
