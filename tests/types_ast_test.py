@@ -13,6 +13,7 @@ from macrotype.types_ast import (
     LiteralNode,
     SetNode,
     TupleNode,
+    TypedDictNode,
     UnionNode,
     UnpackNode,
     parse_type,
@@ -64,7 +65,8 @@ PARSINGS = {
     typing.Callable[..., int]: CallableNode(None, AtomNode(int)),
     typing.Annotated[int, "x"]: AnnotatedNode(AtomNode(int), ["x"]),
     typing.Unpack[tuple[int, str]]: UnpackNode(TupleNode([AtomNode(int), AtomNode(str)])),
-    typing.Unpack[TD]: UnpackNode(AtomNode(TD)),
+    typing.Unpack[TD]: UnpackNode(TypedDictNode(TD)),
+    TD: TypedDictNode(TD),
 }
 
 

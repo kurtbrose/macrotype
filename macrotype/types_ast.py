@@ -34,6 +34,13 @@ class AtomNode(TypeNode):
 
 
 @dataclass(frozen=True)
+class TypedDictNode(AtomNode):
+    """``TypedDict`` leaf node."""
+
+    type_: typing._TypedDictMeta
+
+
+@dataclass(frozen=True)
 class LiteralNode(TypeNode):
     values: list[int | str | bool | enum.Enum | None]
 
@@ -179,7 +186,7 @@ class UnionNode(TypeNode):
 class UnpackNode(TypeNode):
     """``typing.Unpack`` wrapper."""
 
-    target: TypeNode
+    target: TupleNode | TypedDictNode
 
     def emit(self) -> TypeExpr:
         return typing.Unpack[self.target.emit()]
@@ -195,7 +202,7 @@ class UnpackNode(TypeNode):
         if isinstance(target_node, TupleNode):
             return cls(target_node)
 
-        if isinstance(target_node, AtomNode) and isinstance(target_raw, typing._TypedDictMeta):
+        if isinstance(target_node, TypedDictNode):
             return cls(target_node)
 
         raise TypeError(f"Invalid target for Unpack: {target_raw!r}")
@@ -226,6 +233,8 @@ def parse_type(typ: Any) -> TypeNode:
             if node_cls is TupleNode:
                 return TupleNode([AtomNode(typing.Any)], variable=True)
             return node_cls.for_args(())
+        if isinstance(typ, typing._TypedDictMeta):
+            return TypedDictNode(typ)
         if AtomNode.is_atom(typ):
             return AtomNode(typ)
         raise TypeError(f"Unrecognized type atom: {typ!r}")
