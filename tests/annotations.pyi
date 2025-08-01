@@ -73,6 +73,8 @@ TYPED_LAMBDA: Callable[[int, int], int]
 
 ANNOTATED_EXTRA: Annotated[str, 'extra']
 
+NESTED_ANNOTATED: Annotated[int, 'a', 'b']
+
 class Basic:
     simple: list[str]
     mapping: dict[str, int]
