@@ -169,15 +169,13 @@ class TupleNode(Generic[N], ContainerNode[N]):
         return tuple[args]
 
     @classmethod
-    def for_args(cls, args: tuple[Any, ...]) -> "TupleNode[N]":
-        variable = False
-        if args:
-            if args[-1] is Ellipsis:
-                variable = True
-                args = args[:-1]
-            if Ellipsis in args:
-                raise TypeError("Ellipsis only allowed in final position of tuple[]")
-        return cls([parse_type(arg) for arg in args], variable=variable)
+    def for_args(cls, args: tuple[Any, ...]) -> TupleNode:
+        if Ellipsis in args:
+            if len(args) != 2 or args[1] is not Ellipsis:
+                raise TypeError("tuple[T, ...] must have exactly two arguments, with Ellipsis in second position")
+            return cls(elements=[parse_type(args[0])], is_variadic=True)
+        else:
+            return cls(elements=[parse_type(arg) for arg in args], is_variadic=False)
 
 
 @dataclass(frozen=True)
