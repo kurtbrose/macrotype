@@ -32,6 +32,7 @@ from .types_ast import (
     TypeGuardNode,
     UnionNode,
     UnpackNode,
+    VarNode,
     parse_type,
 )
 
@@ -292,18 +293,20 @@ def find_typevars(type_obj: Any) -> set[str]:
     """Return a set of type variable names referenced by ``type_obj``."""
 
     def _collect(node: Any) -> None:
-        if isinstance(node, AtomNode):
-            typ = node.type_
+        if isinstance(node, VarNode):
+            typ = node.var
             if isinstance(typ, typing.TypeVar):
                 found.add(typ.__name__)
             elif isinstance(typ, typing.ParamSpec):
                 found.add(f"**{typ.__name__}")
-            elif isinstance(typ, typing.ParamSpecArgs):
+            elif isinstance(typ, typing.TypeVarTuple):
+                found.add(f"*{typ.__name__}")
+        elif isinstance(node, AtomNode):
+            typ = node.type_
+            if isinstance(typ, typing.ParamSpecArgs):
                 found.add(f"**{typ.__origin__.__name__}")
             elif isinstance(typ, typing.ParamSpecKwargs):
                 found.add(f"**{typ.__origin__.__name__}")
-            elif isinstance(typ, typing.TypeVarTuple):
-                found.add(f"*{typ.__name__}")
         elif isinstance(node, DictNode):
             _collect(node.key)
             _collect(node.value)
@@ -801,25 +804,11 @@ def _namedtuple_bases(klass: type, type_params: list[str]) -> tuple[list[str], s
                         node = None
                     if isinstance(node, UnpackNode):
                         target = node.target
-                        if isinstance(target, AtomNode) and isinstance(
-                            target.type_,
-                            (
-                                typing.TypeVar,
-                                typing.ParamSpec,
-                                typing.TypeVarTuple,
-                            ),
-                        ):
-                            fmt = format_type_param(target.type_)
+                        if isinstance(target, VarNode):
+                            fmt = format_type_param(target.var)
                         else:
                             fmt = format_type(param)
-                    elif isinstance(
-                        param,
-                        (
-                            typing.TypeVar,
-                            typing.ParamSpec,
-                            typing.TypeVarTuple,
-                        ),
-                    ):
+                    elif isinstance(param, (typing.TypeVar, typing.ParamSpec, typing.TypeVarTuple)):
                         fmt = format_type_param(param)
                     else:
                         fmt = format_type(param)
@@ -861,25 +850,11 @@ def _normal_class_bases(klass: type, type_params: list[str]) -> tuple[list[str],
                         node = None
                     if isinstance(node, UnpackNode):
                         target = node.target
-                        if isinstance(target, AtomNode) and isinstance(
-                            target.type_,
-                            (
-                                typing.TypeVar,
-                                typing.ParamSpec,
-                                typing.TypeVarTuple,
-                            ),
-                        ):
-                            fmt = format_type_param(target.type_)
+                        if isinstance(target, VarNode):
+                            fmt = format_type_param(target.var)
                         else:
                             fmt = format_type(param)
-                    elif isinstance(
-                        param,
-                        (
-                            typing.TypeVar,
-                            typing.ParamSpec,
-                            typing.TypeVarTuple,
-                        ),
-                    ):
+                    elif isinstance(param, (typing.TypeVar, typing.ParamSpec, typing.TypeVarTuple)):
                         fmt = format_type_param(param)
                     else:
                         fmt = format_type(param)
