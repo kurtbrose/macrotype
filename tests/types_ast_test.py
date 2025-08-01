@@ -22,9 +22,7 @@ PARSINGS = {
     dict[int, str]: DictNode(AtomNode(int), AtomNode(str)),
     dict[int, typing.Any]: DictNode(AtomNode(int), AtomNode(typing.Any)),
     typing.Union[int, str]: UnionNode([AtomNode(int), AtomNode(str)]),
-    typing.Union[int, str, None]: UnionNode(
-        [AtomNode(int), AtomNode(str), AtomNode(type(None))]
-    ),
+    typing.Union[int, str, None]: UnionNode([AtomNode(int), AtomNode(str), AtomNode(type(None))]),
     dict[str, typing.Union[int, None]]: DictNode(
         AtomNode(str),
         UnionNode([AtomNode(int), AtomNode(type(None))]),
@@ -45,4 +43,3 @@ def test_invalid_literal() -> None:
 def test_unsupported_origin() -> None:
     with pytest.raises(NotImplementedError):
         parse_type(list[int])
-
