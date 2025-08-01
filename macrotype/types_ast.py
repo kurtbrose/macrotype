@@ -108,15 +108,22 @@ class AtomNode(TypeExprNode):
         if isinstance(
             type_,
             (
-                typing.TypeVar,
-                typing.ParamSpec,
-                typing.TypeVarTuple,
                 typing.ParamSpecArgs,
                 typing.ParamSpecKwargs,
             ),
         ):
             return True
         return type_ in atomic_specials
+
+
+@dataclass(frozen=True)
+class VarNode(TypeExprNode):
+    """Node for ``TypeVar``, ``ParamSpec`` and ``TypeVarTuple``."""
+
+    var: typing.TypeVar | typing.ParamSpec | typing.TypeVarTuple
+
+    def emit(self) -> TypeExpr:
+        return self.var
 
 
 @dataclass(frozen=True)
@@ -441,7 +448,7 @@ class UnpackNode(SpecialFormNode):
     handles: ClassVar[tuple[Any, ...]] = (typing.Unpack,)
     """``typing.Unpack`` wrapper."""
 
-    target: TupleNode | TypedDictNode | AtomNode
+    target: TupleNode | TypedDictNode | AtomNode | VarNode
 
     def emit(self) -> TypeExpr:
         return typing.Unpack[self.target.emit()]
@@ -457,7 +464,7 @@ class UnpackNode(SpecialFormNode):
         if isinstance(target_node, (TupleNode, TypedDictNode)):
             return cls(target_node)
 
-        if isinstance(target_node, AtomNode) and isinstance(target_node.type_, typing.TypeVarTuple):
+        if isinstance(target_node, VarNode) and isinstance(target_node.var, typing.TypeVarTuple):
             return cls(target_node)
 
         raise TypeError(f"Invalid target for Unpack: {target_raw!r}")
@@ -470,6 +477,8 @@ def parse_type(typ: Any) -> BaseNode:
     args = get_args(typ)
 
     if origin is None:
+        if isinstance(typ, (typing.TypeVar, typing.ParamSpec, typing.TypeVarTuple)):
+            return VarNode(typ)
         if isinstance(typ, TypeAliasType):
             return parse_type(typ.__value__)
         node_cls = BaseNode._registry.get(typ)
