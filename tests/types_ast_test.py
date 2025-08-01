@@ -3,7 +3,17 @@ import typing
 
 import pytest
 
-from macrotype.types_ast import AtomNode, DictNode, LiteralNode, UnionNode, parse_type
+from macrotype.types_ast import (
+    AtomNode,
+    DictNode,
+    FrozenSetNode,
+    ListNode,
+    LiteralNode,
+    SetNode,
+    TupleNode,
+    UnionNode,
+    parse_type,
+)
 
 
 class Color(enum.Enum):
@@ -21,6 +31,17 @@ PARSINGS = {
     dict[()]: DictNode(AtomNode(typing.Any), AtomNode(typing.Any)),
     dict[int, str]: DictNode(AtomNode(int), AtomNode(str)),
     dict[int, typing.Any]: DictNode(AtomNode(int), AtomNode(typing.Any)),
+    list[()]: ListNode(AtomNode(typing.Any)),
+    list[int]: ListNode(AtomNode(int)),
+    tuple[()]: TupleNode([]),
+    tuple[int, str]: TupleNode([AtomNode(int), AtomNode(str)]),
+    tuple[int, ...]: TupleNode([AtomNode(int)], variable=True),
+    tuple[int, str, ...]: TupleNode(
+        [AtomNode(int), AtomNode(str)],
+        variable=True,
+    ),
+    set[int]: SetNode(AtomNode(int)),
+    frozenset[str]: FrozenSetNode(AtomNode(str)),
     typing.Union[int, str]: UnionNode([AtomNode(int), AtomNode(str)]),
     typing.Union[int, str, None]: UnionNode([AtomNode(int), AtomNode(str), AtomNode(type(None))]),
     dict[str, typing.Union[int, None]]: DictNode(
@@ -42,4 +63,11 @@ def test_invalid_literal() -> None:
 
 def test_unsupported_origin() -> None:
     with pytest.raises(NotImplementedError):
-        parse_type(list[int])
+        parse_type(typing.Deque[int])
+
+
+def test_invalid_tuple() -> None:
+    with pytest.raises(TypeError):
+        parse_type(tuple[..., int])
+    with pytest.raises(TypeError):
+        parse_type(tuple[int, ..., str])
