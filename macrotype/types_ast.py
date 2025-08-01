@@ -294,14 +294,28 @@ class AnnotatedNode(Generic[N], ContainerNode[N]):
 
 
 @dataclass(frozen=True)
+class ConcatenateNode(Generic[N], ContainerNode[N]):
+    parts: list[NodeLike[N]]
+
+    def emit(self) -> TypeExpr:
+        return typing.Concatenate[tuple(part.emit() for part in self.parts)]
+
+    @classmethod
+    def for_args(cls, args: tuple[Any, ...]) -> "ConcatenateNode[N]":
+        return cls([parse_type(arg) for arg in args])
+
+
+@dataclass(frozen=True)
 class CallableNode(Generic[N], ContainerNode[N]):
-    args: list[NodeLike[N]] | None
+    args: NodeLike[N] | list[NodeLike[N]] | None
     return_type: NodeLike[N]
 
     def emit(self) -> TypeExpr:
         if self.args is None:
             return typing.Callable[..., self.return_type.emit()]
-        return typing.Callable[[a.emit() for a in self.args], self.return_type.emit()]
+        if isinstance(self.args, list):
+            return typing.Callable[[a.emit() for a in self.args], self.return_type.emit()]
+        return typing.Callable[self.args.emit(), self.return_type.emit()]
 
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> "CallableNode[N]":
@@ -313,6 +327,8 @@ class CallableNode(Generic[N], ContainerNode[N]):
         ret_node = parse_type(ret)
         if arg_list is Ellipsis:
             return cls(args=None, return_type=ret_node)
+        if isinstance(arg_list, typing.ParamSpec) or get_origin(arg_list) is typing.Concatenate:
+            return cls(parse_type(arg_list), return_type=ret_node)
         return cls([parse_type(a) for a in arg_list], return_type=ret_node)
 
 
@@ -370,6 +386,7 @@ def parse_type(typ: Any) -> BaseNode:
         frozenset: FrozenSetNode,
         dataclasses.InitVar: InitVarNode,
         typing.Annotated: AnnotatedNode,
+        typing.Concatenate: ConcatenateNode,
         typing.Self: SelfNode,
         typing.ClassVar: ClassVarNode,
         typing.Final: FinalNode,
@@ -433,6 +450,9 @@ def _reject_special(node: BaseNode) -> None:
     elif isinstance(node, UnionNode):
         for opt in node.options:
             _reject_special(opt)
+    elif isinstance(node, ConcatenateNode):
+        for part in node.parts:
+            _reject_special(part)
     elif isinstance(node, UnpackNode):
         _reject_special(node.target)
     elif isinstance(node, InitVarNode):
