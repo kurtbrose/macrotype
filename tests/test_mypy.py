@@ -21,3 +21,16 @@ def test_stubs_pass_typecheck(pyi_file: Path, tool: str) -> None:
         cmd = [tool, str(pyi_file)]
     result = subprocess.run(cmd, capture_output=True, text=True)
     assert result.returncode == 0, result.stdout + result.stderr
+
+
+TYPES_AST_FILE = Path(__file__).with_name("types_ast_typing.py")
+
+
+@pytest.mark.parametrize("tool", ["mypy", "pyright"])
+def test_types_ast_types(tool: str) -> None:
+    if tool == "mypy":
+        cmd = [sys.executable, "-m", "mypy", "--follow-imports=skip", str(TYPES_AST_FILE)]
+    else:
+        cmd = [tool, str(TYPES_AST_FILE)]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    assert result.returncode == 0, result.stdout + result.stderr
