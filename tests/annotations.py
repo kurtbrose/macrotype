@@ -439,6 +439,11 @@ def is_str_list(val: list[object]) -> TypeGuard[list[str]]:
     return all(isinstance(v, str) for v in val)
 
 
+# Additional TypeGuard example
+def is_int(val: object) -> TypeGuard[int]:
+    return isinstance(val, int)
+
+
 # Edge case: LiteralString handling
 LITERAL_STR_VAR: LiteralString
 
