@@ -1,6 +1,6 @@
-# Generated via: macrotype macrotype
+# Generated via: macrotype macrotype -o /tmp/tmp_stub
 # Do not edit by hand
-from typing import Any, ClassVar, ParamSpec, TypeVar, TypeVarTuple, Unpack, _TypedDictMeta
+from typing import Any, Callable, ClassVar, ParamSpec, TypeVar, TypeVarTuple, Unpack, _TypedDictMeta
 from dataclasses import dataclass
 from enum import Enum
 
@@ -50,6 +50,12 @@ class VarNode(TypeExprNode):
 @dataclass(frozen=True)
 class TypedDictNode(AtomNode):
     type_: _TypedDictMeta
+
+@dataclass(frozen=True)
+class GenericNode(ContainerNode[TypeExprNode]):
+    origin: type[Any]
+    args: tuple[BaseNode, ...]
+    def emit(self) -> Any: ...
 
 @dataclass(frozen=True)
 class LiteralNode(TypeExprNode):
@@ -203,9 +209,11 @@ class UnpackNode(SpecialFormNode):
 
 def _parse_no_origin_type(typ: Any) -> BaseNode: ...
 
-def _parse_origin_type(origin: Any, args: tuple[Any, ...]) -> BaseNode: ...
+def _parse_origin_type(origin: Any, args: tuple[Any, ...], raw: Any) -> BaseNode: ...
 
-def parse_type(typ: Any) -> BaseNode: ...
+_on_generic_callback: Callable[[GenericNode], BaseNode] | None
+
+def parse_type(typ: Any, *, on_generic: Callable[[GenericNode], BaseNode] | None) -> BaseNode: ...
 
 def parse_type_expr(typ: Any) -> TypeExprNode: ...
 

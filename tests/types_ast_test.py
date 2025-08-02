@@ -1,3 +1,4 @@
+import collections
 import dataclasses
 import enum
 import typing
@@ -13,6 +14,7 @@ from macrotype.types_ast import (
     DictNode,
     FinalNode,
     FrozenSetNode,
+    GenericNode,
     InitVarNode,
     ListNode,
     LiteralNode,
@@ -44,6 +46,10 @@ T = typing.TypeVar("T")
 P = typing.ParamSpec("P")
 Ts = typing.TypeVarTuple("Ts")
 AliasListT = typing.TypeAliasType("AliasListT", list[T], type_params=(T,))
+
+
+class Box(typing.Generic[T]):
+    pass
 
 
 PARSINGS = {
@@ -109,6 +115,8 @@ PARSINGS = {
         ConcatenateNode([AtomNode(int), VarNode(P)]),
         AtomNode(int),
     ),
+    typing.Deque[int]: GenericNode(collections.deque, (AtomNode(int),)),
+    Box[int]: GenericNode(Box, (AtomNode(int),)),
 }
 
 
@@ -122,9 +130,9 @@ def test_invalid_literal() -> None:
         parse_type(typing.Literal[object()])
 
 
-def test_unsupported_origin() -> None:
-    with pytest.raises(NotImplementedError):
-        parse_type(typing.Deque[int])
+def test_generic_nodes() -> None:
+    assert parse_type(typing.Deque[int]) == GenericNode(collections.deque, (AtomNode(int),))
+    assert parse_type(Box[int]) == GenericNode(Box, (AtomNode(int),))
 
 
 def test_invalid_tuple() -> None:
