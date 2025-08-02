@@ -73,6 +73,23 @@ def test_process_directory(tmp_path, src: str, expected: str) -> None:
     assert generated == expected_lines
 
 
+def test_process_directory_skips_dunder_main(tmp_path) -> None:
+    pkg = tmp_path / "pkg"
+    pkg.mkdir()
+    (pkg / "__init__.py").write_text("# pkg init\n")
+    sub = pkg / "sub"
+    sub.mkdir()
+    (sub / "__init__.py").write_text("# sub init\n")
+    (sub / "__main__.py").write_text("raise RuntimeError('should not import')\n")
+    (sub / "mod.py").write_text("X = 1\n")
+
+    out = tmp_path / "out"
+    process_directory(pkg, out)
+    names = {p.name for p in out.iterdir()}
+    assert "mod.pyi" in names
+    assert "__main__.pyi" not in names
+
+
 def test_module_alias(tmp_path) -> None:
     import pathlib
 
