@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 from . import stubgen
+from .watch import watch_and_run
 
 DEFAULT_OUT_DIR = Path("__macrotype__")
 
@@ -25,6 +26,7 @@ def _stdout_write(lines: list[str], command: str | None = None) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
+    argv = list(argv or sys.argv[1:])
     parser = argparse.ArgumentParser(prog="macrotype")
     parser.add_argument(
         "paths",
@@ -37,8 +39,25 @@ def main(argv: list[str] | None = None) -> int:
         "--output",
         help="Output directory or file. Use '-' for stdout when processing a single file or stdin.",
     )
+    parser.add_argument(
+        "-w",
+        "--watch",
+        action="store_true",
+        help="Watch for changes and regenerate stubs",
+    )
     args = parser.parse_args(argv)
-    command = "macrotype " + " ".join(argv or sys.argv[1:])
+    command = "macrotype " + " ".join(argv)
+
+    if args.watch:
+        if args.paths == ["-"]:
+            parser.error("--watch cannot be used with stdin")
+        cmd = [
+            sys.executable,
+            "-m",
+            "macrotype",
+            *[a for a in argv if a not in {"-w", "--watch"}],
+        ]
+        return watch_and_run(args.paths, cmd)
 
     if args.paths == ["-"]:
         code = sys.stdin.read()
