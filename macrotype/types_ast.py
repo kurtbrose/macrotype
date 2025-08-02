@@ -23,6 +23,28 @@ from typing import (
 TypeExpr = Any
 
 
+class InvalidTypeError(TypeError):
+    """Exception raised for invalid typing constructs."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        hint: str | None = None,
+        file: str | None = None,
+        line: int | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.hint = hint
+        self.file = file
+        self.line = line
+
+    def __str__(self) -> str:  # pragma: no cover - simple formatting
+        location = f"{self.file}:{self.line}: " if self.file and self.line else ""
+        hint = f"\nhelp: {self.hint}" if self.hint else ""
+        return f"{location}{self.args[0]}{hint}"
+
+
 class BaseNode:
     """Base class for parsed type nodes."""
 
@@ -161,7 +183,10 @@ class LiteralNode(TypeExprNode):
             if val is None or isinstance(val, (int, str, bool, enum.Enum)):
                 validated.append(val)
             else:
-                raise TypeError(f"Invalid Literal value: {val!r}")
+                raise InvalidTypeError(
+                    f"Invalid Literal value: {val!r}",
+                    hint="Literal values must be int, str, bool, Enum, or None",
+                )
         return cls(values=validated)
 
 
@@ -177,7 +202,10 @@ class DictNode(Generic[K, V], ContainerNode[typing.Union[K, V]]):
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> "DictNode[K, V]":
         if len(args) > 2:
-            raise TypeError(f"Too many arguments to dict: {args}")
+            raise InvalidTypeError(
+                f"Too many arguments to dict: {args}",
+                hint="dict accepts at most two type arguments",
+            )
         key = parse_type(args[0]) if len(args) > 0 else AtomNode(typing.Any)
         val = parse_type(args[1]) if len(args) > 1 else AtomNode(typing.Any)
         return cls(key, val)
@@ -195,7 +223,10 @@ class ListNode(Generic[N], ContainerNode[N]):
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> "ListNode[N]":
         if len(args) > 1:
-            raise TypeError(f"Too many arguments to list: {args}")
+            raise InvalidTypeError(
+                f"Too many arguments to list: {args}",
+                hint="list accepts at most one type argument",
+            )
         elem = parse_type(args[0]) if args else AtomNode(typing.Any)
         return cls(elem)
 
@@ -221,8 +252,9 @@ class TupleNode(Generic[*Ctx], ContainerNode[typing.Union[*Ctx]]):
     def for_args(cls, args: tuple[Any, ...]) -> "TupleNode[N]":
         if Ellipsis in args:
             if args[-1] is not Ellipsis or len(args) < 2:
-                raise TypeError(
-                    "tuple[T, ...] must have one or more arguments with Ellipsis in final position"
+                raise InvalidTypeError(
+                    "tuple[T, ...] must have one or more arguments with Ellipsis in final position",
+                    hint="Place Ellipsis at the end, e.g. tuple[int, ...]",
                 )
             return cls(items=tuple(parse_type(arg) for arg in args[:-1]), variable=True)
         return cls(items=tuple(parse_type(arg) for arg in args), variable=False)
@@ -240,7 +272,10 @@ class SetNode(Generic[N], ContainerNode[N]):
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> "SetNode[N]":
         if len(args) > 1:
-            raise TypeError(f"Too many arguments to set: {args}")
+            raise InvalidTypeError(
+                f"Too many arguments to set: {args}",
+                hint="set accepts at most one type argument",
+            )
         elem = parse_type(args[0]) if args else AtomNode(typing.Any)
         return cls(elem)
 
@@ -257,7 +292,10 @@ class FrozenSetNode(Generic[N], ContainerNode[N]):
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> "FrozenSetNode[N]":
         if len(args) > 1:
-            raise TypeError(f"Too many arguments to frozenset: {args}")
+            raise InvalidTypeError(
+                f"Too many arguments to frozenset: {args}",
+                hint="frozenset accepts at most one type argument",
+            )
         elem = parse_type(args[0]) if args else AtomNode(typing.Any)
         return cls(elem)
 
@@ -275,7 +313,10 @@ class InitVarNode(SpecialFormNode):
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> "InitVarNode":
         if len(args) > 1:
-            raise TypeError(f"InitVar takes at most one argument: {args}")
+            raise InvalidTypeError(
+                f"InitVar takes at most one argument: {args}",
+                hint="InitVar[T] accepts a single type argument",
+            )
         inner = parse_type_expr(args[0]) if args else AtomNode(typing.Any)
         return cls(inner)
 
@@ -291,7 +332,10 @@ class SelfNode(InClassExprNode):
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> "SelfNode":
         if args:
-            raise TypeError(f"Self takes no arguments: {args}")
+            raise InvalidTypeError(
+                f"Self takes no arguments: {args}",
+                hint="Self should be used without type arguments",
+            )
         return cls()
 
 
@@ -308,7 +352,10 @@ class ClassVarNode(Generic[N], ContainerNode[N], InClassExprNode):
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> "ClassVarNode[N]":
         if len(args) > 1:
-            raise TypeError(f"ClassVar takes at most one argument: {args}")
+            raise InvalidTypeError(
+                f"ClassVar takes at most one argument: {args}",
+                hint="ClassVar[T] accepts a single type argument",
+            )
         inner = parse_type(args[0]) if args else AtomNode(typing.Any)
         return cls(inner)
 
@@ -326,7 +373,10 @@ class FinalNode(Generic[N], ContainerNode[N], SpecialFormNode):
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> "FinalNode[N]":
         if len(args) > 1:
-            raise TypeError(f"Final takes at most one argument: {args}")
+            raise InvalidTypeError(
+                f"Final takes at most one argument: {args}",
+                hint="Final[T] accepts a single type argument",
+            )
         inner = parse_type(args[0]) if args else AtomNode(typing.Any)
         return cls(inner)
 
@@ -344,7 +394,10 @@ class RequiredNode(Generic[N], ContainerNode[N], InClassExprNode):
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> "RequiredNode[N]":
         if len(args) != 1:
-            raise TypeError(f"Required requires a single argument: {args}")
+            raise InvalidTypeError(
+                f"Required requires a single argument: {args}",
+                hint="Required[T] expects exactly one argument",
+            )
         return cls(parse_type(args[0]))
 
 
@@ -361,7 +414,10 @@ class NotRequiredNode(Generic[N], ContainerNode[N], InClassExprNode):
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> "NotRequiredNode[N]":
         if len(args) != 1:
-            raise TypeError(f"NotRequired requires a single argument: {args}")
+            raise InvalidTypeError(
+                f"NotRequired requires a single argument: {args}",
+                hint="NotRequired[T] expects exactly one argument",
+            )
         return cls(parse_type(args[0]))
 
 
@@ -378,7 +434,10 @@ class TypeGuardNode(Generic[N], ContainerNode[N], SpecialFormNode):
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> "TypeGuardNode[N]":
         if len(args) != 1:
-            raise TypeError(f"TypeGuard requires a single argument: {args}")
+            raise InvalidTypeError(
+                f"TypeGuard requires a single argument: {args}",
+                hint="TypeGuard[T] expects exactly one argument",
+            )
         return cls(parse_type(args[0]))
 
 
@@ -394,7 +453,10 @@ class AnnotatedNode(Generic[N], ContainerNode[N]):
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> "AnnotatedNode[N]":
         if not args:
-            raise TypeError("Annotated requires a base type")
+            raise InvalidTypeError(
+                "Annotated requires a base type",
+                hint="Annotated[T, ...] must start with a type",
+            )
         base = parse_type(args[0])
         return cls(base, list(args[1:]))
 
@@ -430,7 +492,10 @@ class CallableNode(Generic[N], ContainerNode[N]):
         if not args:
             return cls(args=None, return_type=AtomNode(typing.Any))
         if len(args) != 2:
-            raise TypeError(f"Callable arguments invalid: {args}")
+            raise InvalidTypeError(
+                f"Callable arguments invalid: {args}",
+                hint="Use Callable[[Arg, ...], Return]",
+            )
         arg_list, ret = args
         ret_node = parse_type(ret)
         if arg_list is Ellipsis:
@@ -469,7 +534,10 @@ class UnpackNode(SpecialFormNode):
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> "UnpackNode":
         if len(args) != 1:
-            raise TypeError(f"Unpack requires a single argument: {args}")
+            raise InvalidTypeError(
+                f"Unpack requires a single argument: {args}",
+                hint="Unpack[T] expects exactly one argument",
+            )
 
         target_raw = args[0]
         target_node = parse_type_expr(target_raw)
@@ -480,7 +548,10 @@ class UnpackNode(SpecialFormNode):
         if isinstance(target_node, VarNode) and isinstance(target_node.var, typing.TypeVarTuple):
             return cls(target_node)
 
-        raise TypeError(f"Invalid target for Unpack: {target_raw!r}")
+        raise InvalidTypeError(
+            f"Invalid target for Unpack: {target_raw!r}",
+            hint="Unpack can target TypeVar or container types",
+        )
 
 
 def _parse_no_origin_type(typ: Any) -> BaseNode:
@@ -557,7 +628,10 @@ def _reject_special(node: BaseNode) -> None:
     """Recursively reject special-form or in-class nodes."""
 
     if isinstance(node, (SpecialFormNode, InClassExprNode)):
-        raise TypeError("Special form not allowed in this context")
+        raise InvalidTypeError(
+            "Special form not allowed in this context",
+            hint="Use this type only in valid contexts",
+        )
 
     if dataclasses.is_dataclass(node):
         for field in dataclasses.fields(node):
@@ -742,6 +816,8 @@ def format_type(type_obj: Any, *, _skip_parse: bool = False) -> TypeRenderInfo:
     if not _skip_parse:
         try:
             node = parse_type(type_obj)
+        except InvalidTypeError:
+            raise
         except Exception:
             node = None
         else:
