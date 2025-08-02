@@ -67,6 +67,19 @@ checker command followed by the paths to stub.  Any additional arguments after
 Stubs are written to ``__macrotype__`` by default; use ``-o`` to choose a
 different directory.
 
+Watch mode
+----------
+
+Use ``--watch`` (or ``-w``) to regenerate stubs whenever the source files
+change.  The command is re-run in a fresh Python process each time:
+
+.. code-block:: bash
+
+    macrotype --watch your_module
+
+The same flag is available for ``macrotype-check`` to rerun the wrapped type
+checker as files change.
+
 Dogfooding
 ----------
 

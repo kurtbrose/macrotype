@@ -8,6 +8,7 @@ from pathlib import Path
 
 from . import stubgen
 from .cli import DEFAULT_OUT_DIR, _default_output_path
+from .watch import watch_and_run
 
 
 def _generate_stubs(paths: list[str], out_dir: Path, command: str) -> list[Path]:
@@ -33,15 +34,33 @@ def main(argv: list[str] | None = None) -> int:
     except ValueError:
         dash = len(argv)
     tool_args = argv[dash + 1 :]
-    argv = argv[:dash]
+    cli_argv = argv[:dash]
 
     parser = argparse.ArgumentParser(prog="macrotype-check")
     parser.add_argument("tool")
     parser.add_argument("paths", nargs="+")
     parser.add_argument("-o", "--output", default=str(DEFAULT_OUT_DIR))
-    args = parser.parse_args(argv)
+    parser.add_argument(
+        "-w",
+        "--watch",
+        action="store_true",
+        help="Watch for changes and re-run the checker",
+    )
+    args = parser.parse_args(cli_argv)
 
-    command = "macrotype-check " + " ".join(argv + (["--"] + tool_args if tool_args else []))
+    command = "macrotype-check " + " ".join(cli_argv + (["--"] + tool_args if tool_args else []))
+
+    if args.watch:
+        cmd = [
+            sys.executable,
+            "-m",
+            "macrotype.typecheck",
+            *[a for a in cli_argv if a not in {"-w", "--watch"}],
+        ]
+        if tool_args:
+            cmd += ["--", *tool_args]
+        return watch_and_run(args.paths, cmd)
+
     out_dir = Path(args.output)
     stub_paths = _generate_stubs(args.paths, out_dir, command)
 
