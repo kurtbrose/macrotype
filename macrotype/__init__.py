@@ -7,7 +7,7 @@ from .pyi_extract import (
     PyiModule,
     PyiVariable,
 )
-from .types_ast import TypeRenderInfo, find_typevars, format_type
+from .types_ast import InvalidTypeError, TypeRenderInfo, find_typevars, format_type
 
 __all__ = [
     "PyiElement",
@@ -16,6 +16,7 @@ __all__ = [
     "PyiFunction",
     "PyiClass",
     "PyiModule",
+    "InvalidTypeError",
     "format_type",
     "find_typevars",
 ]

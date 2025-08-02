@@ -1,10 +1,14 @@
-# Generated via: macrotype macrotype -o /tmp/tmp_stub
+# Generated via: macrotype macrotype -o __macrotype__/macrotype
 # Do not edit by hand
 from typing import Any, Callable, ClassVar, ParamSpec, TypeVar, TypeVarTuple, Unpack, _TypedDictMeta
 from dataclasses import dataclass
 from enum import Enum
 
 TypeExpr = Any
+
+class InvalidTypeError(TypeError):
+    def __init__(self, message: str, *, hint: str | None, file: str | None, line: int | None) -> None: ...
+    def __str__(self) -> str: ...
 
 class BaseNode:
     _registry: ClassVar[dict[Any, type[BaseNode]]]

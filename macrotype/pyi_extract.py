@@ -14,6 +14,7 @@ from types import ModuleType
 from typing import Any, Callable, get_args, get_origin, get_type_hints
 
 from .types_ast import (
+    InvalidTypeError,
     UnpackNode,
     VarNode,
     find_typevars,
@@ -1024,13 +1025,21 @@ class _ModuleBuilder:
         self.body.append(item)
         self.used_types.update(getattr(item, "used_types", set()))
 
+    def _format_annotation(self, annotation: Any, name: str) -> str:
+        try:
+            return format_type(annotation)
+        except InvalidTypeError as exc:
+            exc.file = getattr(self.mod, "__file__", None)
+            exc.line = self.line_map.get(name)
+            raise
+
     def _handle_alias(self, name: str, obj: Any) -> bool:
         if self.resolved_ann.get(name) is typing.TypeAlias:
             if isinstance(obj, str):
                 fmt_text = obj
                 alias_used: set[type] = set()
             else:
-                fmt = format_type(obj)
+                fmt = self._format_annotation(obj, name)
                 fmt_text = fmt.text
                 alias_used = fmt.used
             self._add(
@@ -1044,7 +1053,7 @@ class _ModuleBuilder:
             return True
 
         if isinstance(obj, typing.TypeAliasType):
-            fmt = format_type(obj.__value__)
+            fmt = self._format_annotation(obj.__value__, name)
             params = []
             for tp in getattr(obj, "__type_params__", ()):  # pragma: no cover - py312
                 if self.globals.get(tp.__name__) is tp:
@@ -1077,7 +1086,7 @@ class _ModuleBuilder:
         if not hasattr(obj, "__module__"):
             annotation = self.resolved_ann.get(name)
             if annotation is not None:
-                fmt = format_type(annotation)
+                fmt = self._format_annotation(annotation, name)
                 self._add(
                     PyiVariable(
                         name=name,
@@ -1094,7 +1103,7 @@ class _ModuleBuilder:
             return True
         if obj.__module__ != self.mod_name:
             if annotation is not None:
-                fmt = format_type(annotation)
+                fmt = self._format_annotation(annotation, name)
                 self._add(
                     PyiVariable(
                         name=name,
@@ -1130,7 +1139,7 @@ class _ModuleBuilder:
         if fn_obj.__name__ == "<lambda>":
             annotation = self.resolved_ann.get(name)
             if annotation is not None:
-                fmt = format_type(annotation)
+                fmt = self._format_annotation(annotation, name)
                 self._add(
                     PyiVariable(
                         name=name,
@@ -1215,7 +1224,7 @@ class _ModuleBuilder:
 
     def _handle_newtype(self, name: str, obj: Any) -> bool:
         if callable(obj) and hasattr(obj, "__supertype__"):
-            base_fmt = format_type(obj.__supertype__)
+            base_fmt = self._format_annotation(obj.__supertype__, name)
             alias_used = {typing.NewType, *base_fmt.used}
             self._add(
                 PyiAlias(
@@ -1307,7 +1316,7 @@ class _ModuleBuilder:
             if name not in self.handled_names and name not in self.globals:
                 if annotation is typing.TypeAlias:
                     continue
-                fmt = format_type(annotation)
+                fmt = self._format_annotation(annotation, name)
                 self._add(
                     PyiVariable(
                         name=name,
