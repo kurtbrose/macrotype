@@ -212,7 +212,15 @@ def write_stub(dest: Path, lines: list[str], command: str | None = None) -> None
 def iter_python_files(target: Path) -> list[Path]:
     if target.is_file():
         return [target]
-    return [p for p in target.rglob("*.py") if p.name != "__main__.py" or p.parent == target]
+    files = []
+    for p in target.rglob("*.py"):
+        if p.name == "__main__.py" and p.parent != target:
+            continue
+        rel = p.relative_to(target)
+        if rel.parts and rel.parts[0] == "test":
+            continue
+        files.append(p)
+    return files
 
 
 def process_file(src: Path, dest: Path | None = None, *, command: str | None = None) -> Path:
@@ -229,7 +237,10 @@ def process_directory(
     outputs = []
     for src in iter_python_files(directory):
         dest = (out_dir / src.with_suffix(".pyi").name) if out_dir else None
-        outputs.append(process_file(src, dest, command=command))
+        try:
+            outputs.append(process_file(src, dest, command=command))
+        except (Exception, SystemExit) as exc:  # pragma: no cover - defensive
+            print(f"Skipping {src}: {exc}", file=sys.stderr)
     return outputs
 
 
