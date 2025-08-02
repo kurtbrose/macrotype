@@ -679,10 +679,15 @@ def _format_runtime_type(type_obj: Any) -> TypeRenderInfo:
             return TypeRenderInfo(origin_name, used)
 
     if hasattr(type_obj, "__args__"):
-        arg_strs = [format_type(a) for a in type_obj.__args__]
-        used.update(*(a.used for a in arg_strs))
-        args_str = ", ".join(a.text for a in arg_strs)
-        return TypeRenderInfo(f"{type_obj.__class__.__name__}[{args_str}]", used)
+        try:
+            arg_iter = list(type_obj.__args__)
+        except TypeError:
+            arg_iter = []
+        if arg_iter:
+            arg_strs = [format_type(a) for a in arg_iter]
+            used.update(*(a.used for a in arg_strs))
+            args_str = ", ".join(a.text for a in arg_strs)
+            return TypeRenderInfo(f"{type_obj.__class__.__name__}[{args_str}]", used)
 
     if isinstance(type_obj, type):
         used.add(type_obj)

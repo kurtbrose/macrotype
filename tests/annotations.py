@@ -728,3 +728,9 @@ def bool_gate(flag: bool) -> int:
 class AbstractBase(ABC):
     @abstractmethod
     def do_something(self) -> int: ...
+
+
+# Class with non-iterable __parameters__ to ensure graceful handling
+class BadParams:
+    __parameters__ = 1
+    value: int
