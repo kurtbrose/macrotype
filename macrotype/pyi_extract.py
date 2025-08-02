@@ -843,7 +843,11 @@ class PyiFunction(PyiNamedElement):
         except Exception:
             hints = {}
 
-        sig = inspect.signature(fn)
+        try:
+            sig = inspect.signature(fn)
+        except (TypeError, ValueError):
+            # Built-in callables may not have retrievable signatures
+            sig = inspect.Signature()
         args, used_types = _collect_args(sig, hints)
 
         if "return" in hints:
@@ -912,11 +916,22 @@ class PyiClass(PyiNamedElement):
 
         td_bases, typeddict_total = _typeddict_info(klass)
         decorators, used_types, is_dataclass_obj = _class_decorators(klass)
-        class_params: set[str] = {t.__name__ for t in getattr(klass, "__parameters__", ())}
+        try:
+            class_params: set[str] = {t.__name__ for t in getattr(klass, "__parameters__", ())}
+        except TypeError:
+            # Some built-in classes expose ``__parameters__`` as a descriptor
+            # object, which isn't iterable. Treat such cases as having no
+            # parameters.
+            class_params = set()
 
         type_params: list[str] = []
-        if hasattr(klass, "__type_params__") and klass.__type_params__:
-            for tp in klass.__type_params__:
+        tp_attr = getattr(klass, "__type_params__", None)
+        if tp_attr:
+            try:
+                iterable = list(tp_attr)
+            except TypeError:
+                iterable = []
+            for tp in iterable:
                 fmt = format_type_param(tp)
                 type_params.append(fmt.text)
                 used_types.update(fmt.used)
