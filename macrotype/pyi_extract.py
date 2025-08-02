@@ -1025,7 +1025,7 @@ class _ModuleBuilder:
         self.body.append(item)
         self.used_types.update(getattr(item, "used_types", set()))
 
-    def _format_annotation(self, annotation: Any, name: str):
+    def _format_annotation(self, annotation: Any, name: str) -> str:
         try:
             return format_type(annotation)
         except InvalidTypeError as exc:
