@@ -1,4 +1,4 @@
-# Generated via: macrotype macrotype -o /tmp/tmp.swm0snV22p
+# Generated via: macrotype macrotype
 # Do not edit by hand
 from typing import Any, ClassVar, ParamSpec, TypeVar, TypeVarTuple, Unpack, _TypedDictMeta
 from dataclasses import dataclass
