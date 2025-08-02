@@ -25,23 +25,25 @@ def test_watch_and_run_regenerates(tmp_path: Path) -> None:
         target=watch_and_run,
         args=([src], cmd),
         kwargs={"interval": 0.1, "stop_event": stop, "cwd": tmp_path, "env": env},
+        daemon=True,
     )
     thread.start()
+    try:
+        for _ in range(50):
+            if dest.exists():
+                break
+            time.sleep(0.1)
+        assert dest.exists()
+        assert "a: int" in dest.read_text()
 
-    for _ in range(50):
-        if dest.exists():
-            break
-        time.sleep(0.1)
-    assert dest.exists()
-    assert "a: int" in dest.read_text()
-
-    src.write_text("b=1\n")
-    old = dest.read_text()
-    for _ in range(50):
-        time.sleep(0.1)
-        if dest.read_text() != old:
-            break
-    assert "b: int" in dest.read_text()
-
-    stop.set()
-    thread.join(5)
+        time.sleep(1)
+        src.write_text("b=1\n")
+        old = dest.read_text()
+        for _ in range(50):
+            time.sleep(0.1)
+            if dest.read_text() != old:
+                break
+        assert "b: int" in dest.read_text()
+    finally:
+        stop.set()
+        thread.join(5)
