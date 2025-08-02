@@ -136,6 +136,17 @@ class TypedDictNode(AtomNode):
 
 
 @dataclass(frozen=True)
+class GenericNode(ContainerNode[TypeExprNode]):
+    """Node for generics without dedicated handlers."""
+
+    origin: type[Any]
+    args: tuple[BaseNode, ...]
+
+    def emit(self) -> TypeExpr:
+        return self.origin[tuple(arg.emit() for arg in self.args)]
+
+
+@dataclass(frozen=True)
 class LiteralNode(TypeExprNode):
     handles: ClassVar[tuple[Any, ...]] = (typing.Literal,)
     values: list[int | str | bool | enum.Enum | None]
@@ -491,20 +502,47 @@ def _parse_no_origin_type(typ: Any) -> BaseNode:
     raise TypeError(f"Unrecognized type atom: {typ!r}")
 
 
-def _parse_origin_type(origin: Any, args: tuple[Any, ...]) -> BaseNode:
+def _parse_origin_type(origin: Any, args: tuple[Any, ...], raw: Any) -> BaseNode:
     node_cls = BaseNode._registry.get(origin)
     if node_cls is not None:
         return node_cls.for_args(args)
+    if args and (
+        (isinstance(origin, type) and issubclass(origin, typing.Generic))
+        or hasattr(origin, "__parameters__")
+        or hasattr(raw, "__parameters__")
+    ):
+        return GenericNode(origin, tuple(parse_type(a) for a in args))
     raise NotImplementedError(f"Unsupported type origin: {origin!r} with args {args!r}")
 
 
-def parse_type(typ: Any) -> BaseNode:
-    """Parse *typ* into a :class:`BaseNode`."""
+_on_generic_callback: Callable[[GenericNode], BaseNode] | None = None
 
-    origin = get_origin(typ)
-    if origin is None:
-        return _parse_no_origin_type(typ)
-    return _parse_origin_type(origin, get_args(typ))
+
+def parse_type(
+    typ: Any, *, on_generic: Callable[[GenericNode], BaseNode] | None = None
+) -> BaseNode:
+    """Parse *typ* into a :class:`BaseNode`.
+
+    If *on_generic* is provided, it will be invoked with any ``GenericNode``
+    produced during parsing, allowing custom post-processing of generic types.
+    """
+
+    global _on_generic_callback
+    prev = _on_generic_callback
+    if on_generic is not None:
+        _on_generic_callback = on_generic
+    try:
+        origin = get_origin(typ)
+        if origin is None:
+            node = _parse_no_origin_type(typ)
+        else:
+            node = _parse_origin_type(origin, get_args(typ), typ)
+        if isinstance(node, GenericNode) and _on_generic_callback is not None:
+            return _on_generic_callback(node)
+        return node
+    finally:
+        if on_generic is not None:
+            _on_generic_callback = prev
 
 
 def parse_type_expr(typ: Any) -> TypeExprNode:

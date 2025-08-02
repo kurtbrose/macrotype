@@ -3,6 +3,7 @@
 # pyright: basic
 from typing import Annotated, Any, Callable, ClassVar, Concatenate, Final, Literal, LiteralString, NamedTuple, Never, NewType, NoReturn, NotRequired, ParamSpec, Protocol, Required, Self, TypeGuard, TypeVar, TypeVarTuple, TypedDict, Unpack, final, overload, override, runtime_checkable
 from abc import ABC, abstractmethod
+from collections import deque
 from collections.abc import AsyncIterator, Iterator, Sequence
 from dataclasses import InitVar, dataclass
 from enum import Enum, IntEnum, IntFlag
@@ -78,6 +79,9 @@ TYPED_LAMBDA: Callable[[int, int], int]
 ANNOTATED_EXTRA: Annotated[str, 'extra']
 
 NESTED_ANNOTATED: Annotated[int, 'a', 'b']
+
+class UserBox[T]:
+    pass
 
 class Basic:
     simple: list[str]
@@ -439,5 +443,9 @@ TUPLE_VAR: tuple[int, ...]
 SET_VAR: set[int]
 
 FROZENSET_VAR: frozenset[str]
+
+GENERIC_DEQUE: deque[int]
+
+GENERIC_USERBOX: UserBox[int]
 
 LITERAL_STR_VAR: LiteralString

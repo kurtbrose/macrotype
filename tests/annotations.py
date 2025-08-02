@@ -14,6 +14,7 @@ from typing import (
     Callable,
     ClassVar,
     Concatenate,
+    Deque,
     Final,
     Generic,
     Literal,
@@ -118,6 +119,17 @@ TYPED_LAMBDA: Callable[[int, int], int] = lambda a, b: a + b
 ANNOTATED_EXTRA: Annotated[str, "extra"] = "x"
 # Nested Annotated usage should merge metadata
 NESTED_ANNOTATED: Annotated[Annotated[int, "a"], "b"] = 3
+
+# Built-in generic without dedicated handler
+GENERIC_DEQUE: Deque[int]
+
+
+# User-defined generic class to exercise GenericNode
+class UserBox(Generic[T]):
+    pass
+
+
+GENERIC_USERBOX: UserBox[int]
 
 
 class Basic:
