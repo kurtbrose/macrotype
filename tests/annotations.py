@@ -106,6 +106,10 @@ ANNOTATED_CLASSVAR: int = 1
 # Edge case: unannotated constant should be included
 UNANNOTATED_CONST = 42
 
+# Edge case: boolean constants should be retained
+BOOL_TRUE = True
+BOOL_FALSE = False
+
 # Edge case: lambda expressions should be treated as variables, not functions
 UNTYPED_LAMBDA = lambda x, y: x + y
 TYPED_LAMBDA: Callable[[int, int], int] = lambda a, b: a + b
@@ -711,6 +715,13 @@ def parse_int_or_none(val: str | None) -> int | None:
 @overload_for(3)
 def times_two(val: int, factor: int = 2) -> int:
     return val * factor
+
+
+# Edge case: overload_for should support boolean literals
+@overload_for(True)
+@overload_for(False)
+def bool_gate(flag: bool) -> int:
+    return 1 if flag else 0
 
 
 # Class with an abstract method to verify abstract decorators
