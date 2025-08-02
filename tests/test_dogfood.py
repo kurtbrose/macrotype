@@ -1,7 +1,10 @@
 import os
 import subprocess
 import sys
+import sysconfig
 from pathlib import Path
+
+import pytest
 
 # Ensure package root on path when running tests directly
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -71,3 +74,26 @@ def test_cli_requires_relative_path(tmp_path: Path) -> None:
     )
     assert result.returncode != 0
     assert "specify -o" in result.stderr
+
+
+@pytest.mark.xfail(reason="CLI cannot yet process the entire stdlib", strict=False)
+def test_cli_stdlib(tmp_path: Path) -> None:
+    repo_root = STUBS_DIR.parents[1]
+    stdlib = Path(sysconfig.get_path("stdlib"))
+    site_pkgs = stdlib / "site-packages"
+    renamed = None
+    if site_pkgs.exists():
+        renamed = stdlib / "site-packages_tmp"
+        site_pkgs.rename(renamed)
+    try:
+        env = dict(os.environ)
+        env["PYTHONPATH"] = str(repo_root)
+        subprocess.run(
+            [sys.executable, "-m", "macrotype", ".", "-o", str(tmp_path)],
+            cwd=stdlib,
+            env=env,
+            check=True,
+        )
+    finally:
+        if renamed:
+            renamed.rename(site_pkgs)
