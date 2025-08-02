@@ -67,6 +67,10 @@ ANNOTATED_CLASSVAR: int
 
 UNANNOTATED_CONST: int
 
+BOOL_TRUE: bool
+
+BOOL_FALSE: bool
+
 UNTYPED_LAMBDA: function
 
 TYPED_LAMBDA: Callable[[int, int], int]
@@ -405,6 +409,15 @@ def times_two(val: Literal[3], factor: Literal[2]) -> Literal[6]: ...
 
 @overload
 def times_two(val: int, factor: int) -> int: ...
+
+@overload
+def bool_gate(flag: Literal[True]) -> Literal[1]: ...
+
+@overload
+def bool_gate(flag: Literal[False]) -> Literal[0]: ...
+
+@overload
+def bool_gate(flag: bool) -> int: ...
 
 class AbstractBase(ABC):
     @abstractmethod
