@@ -212,7 +212,7 @@ def write_stub(dest: Path, lines: list[str], command: str | None = None) -> None
 def iter_python_files(target: Path) -> list[Path]:
     if target.is_file():
         return [target]
-    return list(target.rglob("*.py"))
+    return [p for p in target.rglob("*.py") if p.name != "__main__.py" or p.parent == target]
 
 
 def process_file(src: Path, dest: Path | None = None, *, command: str | None = None) -> Path:
