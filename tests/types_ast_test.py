@@ -16,6 +16,7 @@ from macrotype.types_ast import (
     FrozenSetNode,
     GenericNode,
     InitVarNode,
+    InvalidTypeError,
     ListNode,
     LiteralNode,
     NotRequiredNode,
@@ -128,6 +129,11 @@ def test_parsing_roundtrip() -> None:
 def test_invalid_literal() -> None:
     with pytest.raises(TypeError):
         parse_type(typing.Literal[object()])
+
+
+def test_unrecognized_type_atom() -> None:
+    with pytest.raises(InvalidTypeError):
+        parse_type(123)
 
 
 def test_generic_nodes() -> None:

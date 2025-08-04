@@ -570,7 +570,10 @@ def _parse_no_origin_type(typ: Any) -> BaseNode:
         return InitVarNode.for_args((typ.type,))
     if AtomNode.is_atom(typ):
         return AtomNode(typ)
-    raise TypeError(f"Unrecognized type atom: {typ!r}")
+    raise InvalidTypeError(
+        f"Unrecognized type annotation: {typ!r}",
+        hint="Use a valid type or typing construct",
+    )
 
 
 def _parse_origin_type(origin: Any, args: tuple[Any, ...], raw: Any) -> BaseNode:
@@ -583,7 +586,10 @@ def _parse_origin_type(origin: Any, args: tuple[Any, ...], raw: Any) -> BaseNode
         or hasattr(raw, "__parameters__")
     ):
         return GenericNode(origin, tuple(parse_type(a) for a in args))
-    raise NotImplementedError(f"Unsupported type origin: {origin!r} with args {args!r}")
+    raise InvalidTypeError(
+        f"Unsupported type annotation: {raw!r}",
+        hint="Use a supported generic type or typing construct",
+    )
 
 
 _on_generic_callback: Callable[[GenericNode], BaseNode] | None = None
