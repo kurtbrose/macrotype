@@ -129,6 +129,8 @@ class AtomNode(TypeExprNode):
         )
         if isinstance(type_, type) and type_ not in {dict, list, tuple, set, frozenset}:
             return True
+        if callable(type_) and hasattr(type_, "__supertype__"):
+            return True
         if isinstance(
             type_,
             (
@@ -609,11 +611,14 @@ def parse_type(
     if on_generic is not None:
         _on_generic_callback = on_generic
     try:
-        origin = get_origin(typ)
-        if origin is None:
-            node = _parse_no_origin_type(typ)
+        if isinstance(typ, (typing.ParamSpecArgs, typing.ParamSpecKwargs)):
+            node = AtomNode(typ)
         else:
-            node = _parse_origin_type(origin, get_args(typ), typ)
+            origin = get_origin(typ)
+            if origin is None:
+                node = _parse_no_origin_type(typ)
+            else:
+                node = _parse_origin_type(origin, get_args(typ), typ)
         if isinstance(node, GenericNode) and _on_generic_callback is not None:
             return _on_generic_callback(node)
         return node
@@ -778,6 +783,11 @@ def _format_runtime_type(type_obj: Any) -> TypeRenderInfo:
         used.update(base_fmt.used)
         metadata_str = ", ".join(repr(m) for m in node.metadata)
         return TypeRenderInfo(f"Annotated[{base_fmt.text}, {metadata_str}]", used)
+
+    if origin is typing.Literal:
+        used.add(typing.Literal)
+        values = ", ".join(repr(a) for a in args)
+        return TypeRenderInfo(f"Literal[{values}]", used)
 
     if origin is tuple and len(args) == 2 and args[1] is Ellipsis:
         used.add(tuple)
