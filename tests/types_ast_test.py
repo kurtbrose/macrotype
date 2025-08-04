@@ -66,6 +66,7 @@ PARSINGS = {
     set: SetNode(AtomNode(typing.Any)),
     frozenset: FrozenSetNode(AtomNode(typing.Any)),
     dict[()]: DictNode(AtomNode(typing.Any), AtomNode(typing.Any)),
+    dict[int]: DictNode(AtomNode(int), AtomNode(typing.Any)),
     dict[int, str]: DictNode(AtomNode(int), AtomNode(str)),
     dict[int, typing.Any]: DictNode(AtomNode(int), AtomNode(typing.Any)),
     list[()]: ListNode(AtomNode(typing.Any)),
@@ -158,6 +159,15 @@ def test_tuple_requires_unpack_typevartuple() -> None:
 def test_invalid_unpack() -> None:
     with pytest.raises(TypeError):
         parse_type(typing.Unpack[list[int]])
+
+
+def test_disallow_any_generics_flag() -> None:
+    with pytest.raises(InvalidTypeError):
+        parse_type(dict[int], disallow_any_generics=True)
+    with pytest.raises(InvalidTypeError):
+        parse_type(list, disallow_any_generics=True)
+    with pytest.raises(InvalidTypeError):
+        parse_type(Box, disallow_any_generics=True)
 
 
 def test_invalid_initvar() -> None:
