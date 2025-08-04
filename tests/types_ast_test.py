@@ -73,12 +73,14 @@ PARSINGS = {
     list[list[int]]: ListNode(ListNode(AtomNode(int))),
     dict[str, list[int]]: DictNode(AtomNode(str), ListNode(AtomNode(int))),
     tuple[()]: TupleNode((), False),
+    tuple[int]: TupleNode((AtomNode(int),), True),
     tuple[int, str]: TupleNode((AtomNode(int), AtomNode(str)), False),
     tuple[int, ...]: TupleNode((AtomNode(int),), True),
     tuple[int, str, ...]: TupleNode(
         (AtomNode(int), AtomNode(str)),
         True,
     ),
+    tuple[typing.Unpack[Ts]]: TupleNode((UnpackNode(VarNode(Ts)),), False),
     set[int]: SetNode(AtomNode(int)),
     frozenset[str]: FrozenSetNode(AtomNode(str)),
     typing.Union[int, str]: UnionNode((AtomNode(int), AtomNode(str))),
@@ -146,6 +148,11 @@ def test_invalid_tuple() -> None:
         parse_type(tuple[..., int])
     with pytest.raises(TypeError):
         parse_type(tuple[int, ..., str])
+
+
+def test_tuple_requires_unpack_typevartuple() -> None:
+    with pytest.raises(TypeError):
+        parse_type(tuple[Ts])
 
 
 def test_invalid_unpack() -> None:

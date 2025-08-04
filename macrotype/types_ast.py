@@ -237,8 +237,9 @@ class ListNode(Generic[N], ContainerNode[N]):
 class TupleNode(Generic[*Ctx], ContainerNode[typing.Union[*Ctx]]):
     handles: ClassVar[tuple[Any, ...]] = (tuple,)
     """
-    ``tuple[T1, T2, …]`` is class-specific if any element type is. For the
-    variadic form ``tuple[T, …]`` we can treat it as ``TupleNode[T]``.
+    ``tuple[T1, T2, …]`` is class-specific if any element type is. The
+    variadic forms ``tuple[T, …]`` and ``tuple[T]`` are treated as
+    ``TupleNode[T]`` with ``variable=True``.
     """
 
     items: tuple[BaseNode, ...]
@@ -259,6 +260,15 @@ class TupleNode(Generic[*Ctx], ContainerNode[typing.Union[*Ctx]]):
                     hint="Place Ellipsis at the end, e.g. tuple[int, ...]",
                 )
             return cls(items=tuple(parse_type(arg) for arg in args[:-1]), variable=True)
+        if len(args) == 1:
+            first = parse_type(args[0])
+            if isinstance(first, VarNode) and isinstance(first.var, typing.TypeVarTuple):
+                raise InvalidTypeError(
+                    "TypeVarTuple must be unpacked in tuple", hint="Use Unpack[Ts]"
+                )
+            if isinstance(first, UnpackNode):
+                return cls(items=(first,), variable=False)
+            return cls(items=(first,), variable=True)
         return cls(items=tuple(parse_type(arg) for arg in args), variable=False)
 
 

@@ -1,4 +1,4 @@
-# Generated via: macrotype tests/annotations.py -o tests/annotations.pyi
+# Generated via: macrotype tests/annotations.py -o -
 # Do not edit by hand
 # pyright: basic
 from typing import Annotated, Any, Callable, ClassVar, Concatenate, Final, Literal, LiteralString, NamedTuple, Never, NewType, NoReturn, NotRequired, ParamSpec, Protocol, Required, Self, TypeGuard, TypeVar, TypeVarTuple, TypedDict, Unpack, final, overload, override, runtime_checkable
@@ -278,7 +278,7 @@ class Info(TypedDict):
 
 def with_kwargs(**kwargs: Unpack[Info]) -> Info: ...
 
-def sum_of(*args: tuple[int]) -> int: ...
+def sum_of(*args: tuple[int, ...]) -> int: ...
 
 def dict_echo(**kwargs: dict[str, Any]) -> dict[str, Any]: ...
 
