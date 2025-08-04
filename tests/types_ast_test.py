@@ -212,3 +212,15 @@ def test_nested_required_notrequired() -> None:
         parse_type_expr(list[typing.NotRequired[int]])
     with pytest.raises(TypeError):
         parse_type_expr(list[typing.Required[int]])
+
+
+def test_annotated_requires_metadata() -> None:
+    bad = typing._AnnotatedAlias(int, ())
+    with pytest.raises(InvalidTypeError):
+        parse_type(bad)
+
+
+def test_concatenate_requires_paramspec() -> None:
+    bad = typing._ConcatenateGenericAlias(typing.Concatenate, (int, str))
+    with pytest.raises(InvalidTypeError):
+        parse_type(bad)

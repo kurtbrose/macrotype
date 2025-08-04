@@ -459,6 +459,11 @@ class AnnotatedNode(Generic[N], ContainerNode[N]):
                 "Annotated requires a base type",
                 hint="Annotated[T, ...] must start with a type",
             )
+        if len(args) < 2:
+            raise InvalidTypeError(
+                f"Annotated requires a type and at least one annotation: {args}",
+                hint="Use Annotated[T, ...] with at least one metadata value",
+            )
         base = parse_type(args[0])
         return cls(base, list(args[1:]))
 
@@ -473,6 +478,17 @@ class ConcatenateNode(Generic[N], ContainerNode[N]):
 
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> "ConcatenateNode[N]":
+        if not args:
+            raise InvalidTypeError(
+                "Concatenate requires at least one argument",
+                hint="Concatenate[T, ..., P] expects one or more types ending with a ParamSpec or ...",
+            )
+        last = args[-1]
+        if not (isinstance(last, typing.ParamSpec) or last is Ellipsis):
+            raise InvalidTypeError(
+                f"Concatenate last argument must be a ParamSpec or ellipsis: {last!r}",
+                hint="Use a ParamSpec variable or ... as the final argument",
+            )
         return cls([parse_type(arg) for arg in args])
 
 
