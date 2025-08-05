@@ -1,4 +1,4 @@
-# Generated via: macrotype tests/annotations.py -o -
+# Generated via: macrotype tests/annotations.py -o tests/annotations.pyi
 # Do not edit by hand
 # pyright: basic
 from typing import Annotated, Any, Callable, ClassVar, Concatenate, Final, Literal, LiteralString, NamedTuple, Never, NewType, NoReturn, NotRequired, ParamSpec, Protocol, Required, Self, TypeGuard, TypeVar, TypeVarTuple, TypedDict, Unpack, final, overload, override, runtime_checkable
@@ -429,6 +429,26 @@ class AbstractBase(ABC):
 
 class BadParams:
     value: int
+
+class Mapped[T]:
+    pass
+
+class SQLBase:
+    @classmethod
+    def __init_subclass__(cls) -> None: ...
+
+ManagerModelId = NewType('ManagerModelId', int)
+
+class ManagerModel(SQLBase):
+    id: Mapped[ManagerModelId]
+    id_type: type[ManagerModelId]
+
+EmployeeModelId = NewType('EmployeeModelId', int)
+
+class EmployeeModel(SQLBase):
+    manager_id: Mapped[ManagerModelId]
+    id: Mapped[EmployeeModelId]
+    id_type: type[EmployeeModelId]
 
 GLOBAL: int
 
