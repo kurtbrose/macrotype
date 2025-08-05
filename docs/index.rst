@@ -25,3 +25,8 @@ Module Documentation
 .. automodule:: macrotype
     :members:
 
+.. toctree::
+   :maxdepth: 1
+
+   demos
+

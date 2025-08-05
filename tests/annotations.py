@@ -3,6 +3,7 @@ import collections.abc as cabc
 import functools
 import math
 import re
+import sys
 from abc import ABC, abstractmethod
 from dataclasses import InitVar, dataclass
 from enum import Enum, IntEnum, IntFlag
@@ -748,3 +749,24 @@ class AbstractBase(ABC):
 class BadParams:
     __parameters__ = 1
     value: int
+
+
+# Demo: dynamically generate a NewType per subclass
+class Mapped(Generic[T]): ...
+
+
+class SQLBase:
+    def __init_subclass__(cls) -> None:
+        typename = f"{cls.__name__}Id"
+        new_type = NewType(typename, int)
+        cls.id_type = new_type
+        cls.__annotations__["id"] = Mapped[new_type]
+        cls.__annotations__["id_type"] = type[new_type]
+        sys.modules[cls.__module__].__dict__[typename] = new_type
+
+
+class ManagerModel(SQLBase): ...
+
+
+class EmployeeModel(SQLBase):
+    manager_id: Mapped[ManagerModel.id_type]
