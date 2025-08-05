@@ -99,6 +99,8 @@ TUPLE_VAR: tuple[int, ...]
 # Variable using set and frozenset types to test container formatting
 SET_VAR: set[int]
 FROZENSET_VAR: frozenset[str]
+# Dict without explicit value type should default to Any
+DICT_WITH_IMPLICIT_ANY: dict[int]
 
 # Edge case: annotated constants with values should honor the annotation
 ANNOTATED_FINAL: Final[int] = 5

@@ -444,6 +444,8 @@ SET_VAR: set[int]
 
 FROZENSET_VAR: frozenset[str]
 
+DICT_WITH_IMPLICIT_ANY: dict[int, Any]
+
 GENERIC_DEQUE: deque[int]
 
 GENERIC_USERBOX: UserBox[int]

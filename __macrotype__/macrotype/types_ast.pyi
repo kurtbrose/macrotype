@@ -1,4 +1,4 @@
-# Generated via: macrotype macrotype -o __macrotype__/macrotype
+# Generated via: macrotype macrotype/types_ast.py -o -
 # Do not edit by hand
 from typing import Any, Callable, ClassVar, ParamSpec, TypeVar, TypeVarTuple, Unpack, _TypedDictMeta
 from dataclasses import dataclass
@@ -217,9 +217,11 @@ def _parse_origin_type(origin: Any, args: tuple[Any, ...], raw: Any) -> BaseNode
 
 _on_generic_callback: Callable[[GenericNode], BaseNode] | None
 
-def parse_type(typ: Any, *, on_generic: Callable[[GenericNode], BaseNode] | None) -> BaseNode: ...
+_strict: bool
 
-def parse_type_expr(typ: Any) -> TypeExprNode: ...
+def parse_type(typ: Any, *, on_generic: Callable[[GenericNode], BaseNode] | None, strict: bool | None) -> BaseNode: ...
+
+def parse_type_expr(typ: Any, *, strict: bool | None) -> TypeExprNode: ...
 
 def _reject_special(node: BaseNode) -> None: ...
 

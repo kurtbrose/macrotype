@@ -203,13 +203,30 @@ class DictNode(Generic[K, V], ContainerNode[typing.Union[K, V]]):
 
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> "DictNode[K, V]":
-        if len(args) > 2:
+        if len(args) == 0:
+            if _strict:
+                raise InvalidTypeError(
+                    "dict requires explicit key and value types",
+                    hint="Use dict[key_type, value_type]",
+                )
+            key = AtomNode(typing.Any)
+            val = AtomNode(typing.Any)
+        elif len(args) == 1:
+            if _strict:
+                raise InvalidTypeError(
+                    "dict requires explicit value type",
+                    hint="Use dict[key_type, value_type]",
+                )
+            key = parse_type(args[0])
+            val = AtomNode(typing.Any)
+        elif len(args) == 2:
+            key = parse_type(args[0])
+            val = parse_type(args[1])
+        else:
             raise InvalidTypeError(
                 f"Too many arguments to dict: {args}",
-                hint="dict accepts at most two type arguments",
+                hint="Use dict[key_type, value_type]",
             )
-        key = parse_type(args[0]) if len(args) > 0 else AtomNode(typing.Any)
-        val = parse_type(args[1]) if len(args) > 1 else AtomNode(typing.Any)
         return cls(key, val)
 
 
@@ -224,12 +241,20 @@ class ListNode(Generic[N], ContainerNode[N]):
 
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> "ListNode[N]":
-        if len(args) > 1:
+        if len(args) == 0:
+            if _strict:
+                raise InvalidTypeError(
+                    "list requires a type argument",
+                    hint="Use list[element_type]",
+                )
+            elem = AtomNode(typing.Any)
+        elif len(args) == 1:
+            elem = parse_type(args[0])
+        else:
             raise InvalidTypeError(
                 f"Too many arguments to list: {args}",
                 hint="list accepts at most one type argument",
             )
-        elem = parse_type(args[0]) if args else AtomNode(typing.Any)
         return cls(elem)
 
 
@@ -283,12 +308,20 @@ class SetNode(Generic[N], ContainerNode[N]):
 
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> "SetNode[N]":
-        if len(args) > 1:
+        if len(args) == 0:
+            if _strict:
+                raise InvalidTypeError(
+                    "set requires a type argument",
+                    hint="Use set[element_type]",
+                )
+            elem = AtomNode(typing.Any)
+        elif len(args) == 1:
+            elem = parse_type(args[0])
+        else:
             raise InvalidTypeError(
                 f"Too many arguments to set: {args}",
                 hint="set accepts at most one type argument",
             )
-        elem = parse_type(args[0]) if args else AtomNode(typing.Any)
         return cls(elem)
 
 
@@ -303,12 +336,20 @@ class FrozenSetNode(Generic[N], ContainerNode[N]):
 
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> "FrozenSetNode[N]":
-        if len(args) > 1:
+        if len(args) == 0:
+            if _strict:
+                raise InvalidTypeError(
+                    "frozenset requires a type argument",
+                    hint="Use frozenset[element_type]",
+                )
+            elem = AtomNode(typing.Any)
+        elif len(args) == 1:
+            elem = parse_type(args[0])
+        else:
             raise InvalidTypeError(
                 f"Too many arguments to frozenset: {args}",
                 hint="frozenset accepts at most one type argument",
             )
-        elem = parse_type(args[0]) if args else AtomNode(typing.Any)
         return cls(elem)
 
 
@@ -583,6 +624,12 @@ class UnpackNode(SpecialFormNode):
 
 
 def _parse_no_origin_type(typ: Any) -> BaseNode:
+    if _strict and isinstance(typ, type) and issubclass(typ, typing.Generic):
+        if getattr(typ, "__parameters__", ()):  # pragma: no branch
+            raise InvalidTypeError(
+                f"{typ.__qualname__} requires type arguments",
+                hint=f"Use {typ.__qualname__}[...]",
+            )
     if isinstance(typ, (typing.TypeVar, typing.ParamSpec, typing.TypeVarTuple)):
         return VarNode(typ)
     if isinstance(typ, TypeAliasType):
@@ -590,6 +637,11 @@ def _parse_no_origin_type(typ: Any) -> BaseNode:
     node_cls = BaseNode._registry.get(typ)
     if node_cls is not None:
         if node_cls is TupleNode:
+            if _strict:
+                raise InvalidTypeError(
+                    "tuple requires a type argument",
+                    hint="Use tuple[T, ...] or tuple[T1, T2]",
+                )
             return TupleNode((AtomNode(typing.Any),), True)
         return node_cls.for_args(())
     if isinstance(typ, typing._TypedDictMeta):
@@ -608,6 +660,20 @@ def _parse_origin_type(origin: Any, args: tuple[Any, ...], raw: Any) -> BaseNode
     node_cls = BaseNode._registry.get(origin)
     if node_cls is not None:
         return node_cls.for_args(args)
+    if (
+        not args
+        and _strict
+        and (
+            (isinstance(origin, type) and issubclass(origin, typing.Generic))
+            or hasattr(origin, "__parameters__")
+            or hasattr(raw, "__parameters__")
+        )
+    ):
+        name = getattr(origin, "__qualname__", repr(origin))
+        raise InvalidTypeError(
+            f"{name} requires type arguments",
+            hint=f"Use {name}[...]",
+        )
     if args and (
         (isinstance(origin, type) and issubclass(origin, typing.Generic))
         or hasattr(origin, "__parameters__")
@@ -621,10 +687,14 @@ def _parse_origin_type(origin: Any, args: tuple[Any, ...], raw: Any) -> BaseNode
 
 
 _on_generic_callback: Callable[[GenericNode], BaseNode] | None = None
+_strict: bool = False
 
 
 def parse_type(
-    typ: Any, *, on_generic: Callable[[GenericNode], BaseNode] | None = None
+    typ: Any,
+    *,
+    on_generic: Callable[[GenericNode], BaseNode] | None = None,
+    strict: bool | None = None,
 ) -> BaseNode:
     """Parse *typ* into a :class:`BaseNode`.
 
@@ -632,10 +702,13 @@ def parse_type(
     produced during parsing, allowing custom post-processing of generic types.
     """
 
-    global _on_generic_callback
-    prev = _on_generic_callback
+    global _on_generic_callback, _strict
+    prev_cb = _on_generic_callback
+    prev_flag = _strict
     if on_generic is not None:
         _on_generic_callback = on_generic
+    if strict is not None:
+        _strict = strict
     try:
         if isinstance(typ, (typing.ParamSpecArgs, typing.ParamSpecKwargs)):
             node = AtomNode(typ)
@@ -650,13 +723,15 @@ def parse_type(
         return node
     finally:
         if on_generic is not None:
-            _on_generic_callback = prev
+            _on_generic_callback = prev_cb
+        if strict is not None:
+            _strict = prev_flag
 
 
-def parse_type_expr(typ: Any) -> TypeExprNode:
+def parse_type_expr(typ: Any, *, strict: bool | None = None) -> TypeExprNode:
     """Parse *typ* ensuring it is a :class:`TypeExprNode`."""
 
-    node = parse_type(typ)
+    node = parse_type(typ, strict=strict)
     _reject_special(node)
     return typing.cast(TypeExprNode, node)
 
