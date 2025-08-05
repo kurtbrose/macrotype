@@ -204,7 +204,7 @@ class DictNode(Generic[K, V], ContainerNode[typing.Union[K, V]]):
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> "DictNode[K, V]":
         if len(args) == 0:
-            if _disallow_any_generics:
+            if _strict:
                 raise InvalidTypeError(
                     "dict requires explicit key and value types",
                     hint="Use dict[key_type, value_type]",
@@ -212,7 +212,7 @@ class DictNode(Generic[K, V], ContainerNode[typing.Union[K, V]]):
             key = AtomNode(typing.Any)
             val = AtomNode(typing.Any)
         elif len(args) == 1:
-            if _disallow_any_generics:
+            if _strict:
                 raise InvalidTypeError(
                     "dict requires explicit value type",
                     hint="Use dict[key_type, value_type]",
@@ -242,7 +242,7 @@ class ListNode(Generic[N], ContainerNode[N]):
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> "ListNode[N]":
         if len(args) == 0:
-            if _disallow_any_generics:
+            if _strict:
                 raise InvalidTypeError(
                     "list requires a type argument",
                     hint="Use list[element_type]",
@@ -309,7 +309,7 @@ class SetNode(Generic[N], ContainerNode[N]):
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> "SetNode[N]":
         if len(args) == 0:
-            if _disallow_any_generics:
+            if _strict:
                 raise InvalidTypeError(
                     "set requires a type argument",
                     hint="Use set[element_type]",
@@ -337,7 +337,7 @@ class FrozenSetNode(Generic[N], ContainerNode[N]):
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> "FrozenSetNode[N]":
         if len(args) == 0:
-            if _disallow_any_generics:
+            if _strict:
                 raise InvalidTypeError(
                     "frozenset requires a type argument",
                     hint="Use frozenset[element_type]",
@@ -624,7 +624,7 @@ class UnpackNode(SpecialFormNode):
 
 
 def _parse_no_origin_type(typ: Any) -> BaseNode:
-    if _disallow_any_generics and isinstance(typ, type) and issubclass(typ, typing.Generic):
+    if _strict and isinstance(typ, type) and issubclass(typ, typing.Generic):
         if getattr(typ, "__parameters__", ()):  # pragma: no branch
             raise InvalidTypeError(
                 f"{typ.__qualname__} requires type arguments",
@@ -637,7 +637,7 @@ def _parse_no_origin_type(typ: Any) -> BaseNode:
     node_cls = BaseNode._registry.get(typ)
     if node_cls is not None:
         if node_cls is TupleNode:
-            if _disallow_any_generics:
+            if _strict:
                 raise InvalidTypeError(
                     "tuple requires a type argument",
                     hint="Use tuple[T, ...] or tuple[T1, T2]",
@@ -662,7 +662,7 @@ def _parse_origin_type(origin: Any, args: tuple[Any, ...], raw: Any) -> BaseNode
         return node_cls.for_args(args)
     if (
         not args
-        and _disallow_any_generics
+        and _strict
         and (
             (isinstance(origin, type) and issubclass(origin, typing.Generic))
             or hasattr(origin, "__parameters__")
@@ -687,14 +687,14 @@ def _parse_origin_type(origin: Any, args: tuple[Any, ...], raw: Any) -> BaseNode
 
 
 _on_generic_callback: Callable[[GenericNode], BaseNode] | None = None
-_disallow_any_generics: bool = False
+_strict: bool = False
 
 
 def parse_type(
     typ: Any,
     *,
     on_generic: Callable[[GenericNode], BaseNode] | None = None,
-    disallow_any_generics: bool | None = None,
+    strict: bool | None = None,
 ) -> BaseNode:
     """Parse *typ* into a :class:`BaseNode`.
 
@@ -702,13 +702,13 @@ def parse_type(
     produced during parsing, allowing custom post-processing of generic types.
     """
 
-    global _on_generic_callback, _disallow_any_generics
+    global _on_generic_callback, _strict
     prev_cb = _on_generic_callback
-    prev_flag = _disallow_any_generics
+    prev_flag = _strict
     if on_generic is not None:
         _on_generic_callback = on_generic
-    if disallow_any_generics is not None:
-        _disallow_any_generics = disallow_any_generics
+    if strict is not None:
+        _strict = strict
     try:
         if isinstance(typ, (typing.ParamSpecArgs, typing.ParamSpecKwargs)):
             node = AtomNode(typ)
@@ -724,14 +724,14 @@ def parse_type(
     finally:
         if on_generic is not None:
             _on_generic_callback = prev_cb
-        if disallow_any_generics is not None:
-            _disallow_any_generics = prev_flag
+        if strict is not None:
+            _strict = prev_flag
 
 
-def parse_type_expr(typ: Any, *, disallow_any_generics: bool | None = None) -> TypeExprNode:
+def parse_type_expr(typ: Any, *, strict: bool | None = None) -> TypeExprNode:
     """Parse *typ* ensuring it is a :class:`TypeExprNode`."""
 
-    node = parse_type(typ, disallow_any_generics=disallow_any_generics)
+    node = parse_type(typ, strict=strict)
     _reject_special(node)
     return typing.cast(TypeExprNode, node)
 

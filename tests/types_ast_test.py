@@ -161,13 +161,13 @@ def test_invalid_unpack() -> None:
         parse_type(typing.Unpack[list[int]])
 
 
-def test_disallow_any_generics_flag() -> None:
+def test_strict_flag() -> None:
     with pytest.raises(InvalidTypeError):
-        parse_type(dict[int], disallow_any_generics=True)
+        parse_type(dict[int], strict=True)
     with pytest.raises(InvalidTypeError):
-        parse_type(list, disallow_any_generics=True)
+        parse_type(list, strict=True)
     with pytest.raises(InvalidTypeError):
-        parse_type(Box, disallow_any_generics=True)
+        parse_type(Box, strict=True)
 
 
 def test_invalid_initvar() -> None:
