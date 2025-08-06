@@ -100,9 +100,6 @@ TUPLE_VAR: tuple[int, ...]
 # Variable using set and frozenset types to test container formatting
 SET_VAR: set[int]
 FROZENSET_VAR: frozenset[str]
-# Dict without explicit value type should default to Any
-DICT_WITH_IMPLICIT_ANY: dict[int]
-
 # Edge case: annotated constants with values should honor the annotation
 ANNOTATED_FINAL: Final[int] = 5
 ANNOTATED_CLASSVAR: int = 1
@@ -549,6 +546,11 @@ def final_func(x: int) -> int:
 def pragma_func(x: int) -> int:  # pyright: ignore
     return x
 
+
+# Dict without explicit value type should remain as written
+DICT_WITH_IMPLICIT_ANY: dict[int]  # type: ignore[type-arg]  # pyright: ignore[reportInvalidTypeArguments]
+# Generic container without type arguments should remain unparameterized
+UNPARAM_LIST: list
 
 # Edge case: positional-only and keyword-only parameters
 def pos_only_func(a: int, b: str, /) -> None:

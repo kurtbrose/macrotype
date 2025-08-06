@@ -1,2 +1,2 @@
-# Generated via: macrotype macrotype/__main__.py -o __macrotype__/macrotype/__main__.pyi
+# Generated via: macrotype macrotype -o __macrotype__/macrotype
 # Do not edit by hand

@@ -1,4 +1,4 @@
-# Generated via: macrotype macrotype/watch.py -o __macrotype__/macrotype/watch.pyi
+# Generated via: macrotype macrotype -o __macrotype__/macrotype
 # Do not edit by hand
 from collections.abc import Iterable
 from pathlib import Path
