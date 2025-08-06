@@ -18,13 +18,13 @@ class BaseNode:
     def emit(self) -> Any: ...
 
 class TypeExprNode(BaseNode):
-    pass
+    ...
 
 class InClassExprNode(BaseNode):
-    pass
+    ...
 
 class SpecialFormNode(BaseNode):
-    pass
+    ...
 
 N = TypeVar('N')
 
@@ -35,7 +35,7 @@ V = TypeVar('V')
 Ctx = TypeVarTuple('Ctx')
 
 class ContainerNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](BaseNode):
-    pass
+    ...
 
 type NodeLike[N] = N | ContainerNode[N]
 
