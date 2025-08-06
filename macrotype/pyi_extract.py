@@ -347,8 +347,7 @@ def _collect_args(
                 used_types.update(fmt.used)
                 ann = fmt.text
             else:
-                ann = "Any"
-                used_types.add(Any)
+                ann = None
         else:
             hint = hints.get(name, "Any")
             fmt = format_type(hint)

@@ -76,9 +76,9 @@ BOOL_TRUE: bool
 
 BOOL_FALSE: bool
 
-def mult(a: Any, b: int): ...
+def mult(a, b: int): ...
 
-def takes_optional(x: Any): ...
+def takes_optional(x): ...
 
 UNTYPED_LAMBDA: function
 
@@ -349,7 +349,7 @@ def annotated_fn(x: Annotated[int, 'inp']) -> Annotated[str, 'out']: ...
 
 class FutureClass: ...
 
-def wrap_descriptor(desc: Any): ...
+def wrap_descriptor(desc): ...
 
 class WrappedDescriptors:
     @property
@@ -466,10 +466,12 @@ SET_VAR: set[int]
 
 FROZENSET_VAR: frozenset[str]
 
-DICT_WITH_IMPLICIT_ANY: dict[int, Any]
-
 GENERIC_DEQUE: deque[int]
 
 GENERIC_USERBOX: UserBox[int]
 
 LITERAL_STR_VAR: LiteralString
+
+DICT_WITH_IMPLICIT_ANY: dict[int]  # type: ignore[type-arg]  # pyright: ignore[reportInvalidTypeArguments]
+
+UNPARAM_LIST: list

@@ -1,4 +1,4 @@
-# Generated via: macrotype macrotype/types_ast.py -o __macrotype__/macrotype/types_ast.pyi
+# Generated via: macrotype macrotype
 # Do not edit by hand
 from typing import Any, Callable, ClassVar, ParamSpec, TypeVar, TypeVarTuple, Unpack, _TypedDictMeta
 from dataclasses import dataclass
@@ -72,7 +72,7 @@ class DictNode[K: (TypeExprNode, InClassExprNode | TypeExprNode), V: (TypeExprNo
     value: NodeLike[V]
     def emit(self) -> Any: ...
     @classmethod
-    def for_args(cls, args: tuple[Any, ...]) -> DictNode[K, V]: ...
+    def for_args(cls, args: tuple[Any, ...]) -> BaseNode: ...
 
 @dataclass(frozen=True)
 class ListNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](ContainerNode[N]):
@@ -81,7 +81,7 @@ class ListNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](ContainerNode[
     container_type: ClassVar[type]
     def emit(self) -> Any: ...
     @classmethod
-    def for_args(cls, args: tuple[Any, ...]) -> ListNode[N]: ...
+    def for_args(cls, args: tuple[Any, ...]) -> BaseNode: ...
 
 @dataclass(frozen=True)
 class TupleNode[*Ctx](ContainerNode[Unpack[Ctx]]):
@@ -99,7 +99,7 @@ class SetNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](ContainerNode[N
     container_type: ClassVar[type]
     def emit(self) -> Any: ...
     @classmethod
-    def for_args(cls, args: tuple[Any, ...]) -> SetNode[N]: ...
+    def for_args(cls, args: tuple[Any, ...]) -> BaseNode: ...
 
 @dataclass(frozen=True)
 class FrozenSetNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](ContainerNode[N]):
@@ -108,7 +108,7 @@ class FrozenSetNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](Container
     container_type: ClassVar[type]
     def emit(self) -> Any: ...
     @classmethod
-    def for_args(cls, args: tuple[Any, ...]) -> FrozenSetNode[N]: ...
+    def for_args(cls, args: tuple[Any, ...]) -> BaseNode: ...
 
 @dataclass(frozen=True)
 class InitVarNode(SpecialFormNode):

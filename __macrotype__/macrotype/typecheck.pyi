@@ -1,4 +1,4 @@
-# Generated via: macrotype macrotype/typecheck.py -o __macrotype__/macrotype/typecheck.pyi
+# Generated via: macrotype macrotype
 # Do not edit by hand
 from pathlib import Path
 

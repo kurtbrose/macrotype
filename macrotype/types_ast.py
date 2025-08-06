@@ -202,32 +202,30 @@ class DictNode(Generic[K, V], ContainerNode[typing.Union[K, V]]):
         return dict[self.key.emit(), self.value.emit()]
 
     @classmethod
-    def for_args(cls, args: tuple[Any, ...]) -> "DictNode[K, V]":
+    def for_args(cls, args: tuple[Any, ...]) -> BaseNode:
         if len(args) == 0:
             if _strict:
                 raise InvalidTypeError(
                     "dict requires explicit key and value types",
                     hint="Use dict[key_type, value_type]",
                 )
-            key = AtomNode(typing.Any)
-            val = AtomNode(typing.Any)
-        elif len(args) == 1:
+            return AtomNode(dict)
+        if len(args) == 1:
             if _strict:
                 raise InvalidTypeError(
                     "dict requires explicit value type",
                     hint="Use dict[key_type, value_type]",
                 )
             key = parse_type(args[0])
-            val = AtomNode(typing.Any)
-        elif len(args) == 2:
+            return GenericNode(dict, (key,))
+        if len(args) == 2:
             key = parse_type(args[0])
             val = parse_type(args[1])
-        else:
-            raise InvalidTypeError(
-                f"Too many arguments to dict: {args}",
-                hint="Use dict[key_type, value_type]",
-            )
-        return cls(key, val)
+            return cls(key, val)
+        raise InvalidTypeError(
+            f"Too many arguments to dict: {args}",
+            hint="Use dict[key_type, value_type]",
+        )
 
 
 @dataclass(frozen=True)
@@ -240,22 +238,21 @@ class ListNode(Generic[N], ContainerNode[N]):
         return list[self.element.emit()]
 
     @classmethod
-    def for_args(cls, args: tuple[Any, ...]) -> "ListNode[N]":
+    def for_args(cls, args: tuple[Any, ...]) -> BaseNode:
         if len(args) == 0:
             if _strict:
                 raise InvalidTypeError(
                     "list requires a type argument",
                     hint="Use list[element_type]",
                 )
-            elem = AtomNode(typing.Any)
-        elif len(args) == 1:
+            return AtomNode(list)
+        if len(args) == 1:
             elem = parse_type(args[0])
-        else:
-            raise InvalidTypeError(
-                f"Too many arguments to list: {args}",
-                hint="list accepts at most one type argument",
-            )
-        return cls(elem)
+            return cls(elem)
+        raise InvalidTypeError(
+            f"Too many arguments to list: {args}",
+            hint="list accepts at most one type argument",
+        )
 
 
 @dataclass(frozen=True)
@@ -307,22 +304,21 @@ class SetNode(Generic[N], ContainerNode[N]):
         return set[self.element.emit()]
 
     @classmethod
-    def for_args(cls, args: tuple[Any, ...]) -> "SetNode[N]":
+    def for_args(cls, args: tuple[Any, ...]) -> BaseNode:
         if len(args) == 0:
             if _strict:
                 raise InvalidTypeError(
                     "set requires a type argument",
                     hint="Use set[element_type]",
                 )
-            elem = AtomNode(typing.Any)
-        elif len(args) == 1:
+            return AtomNode(set)
+        if len(args) == 1:
             elem = parse_type(args[0])
-        else:
-            raise InvalidTypeError(
-                f"Too many arguments to set: {args}",
-                hint="set accepts at most one type argument",
-            )
-        return cls(elem)
+            return cls(elem)
+        raise InvalidTypeError(
+            f"Too many arguments to set: {args}",
+            hint="set accepts at most one type argument",
+        )
 
 
 @dataclass(frozen=True)
@@ -335,22 +331,21 @@ class FrozenSetNode(Generic[N], ContainerNode[N]):
         return frozenset[self.element.emit()]
 
     @classmethod
-    def for_args(cls, args: tuple[Any, ...]) -> "FrozenSetNode[N]":
+    def for_args(cls, args: tuple[Any, ...]) -> BaseNode:
         if len(args) == 0:
             if _strict:
                 raise InvalidTypeError(
                     "frozenset requires a type argument",
                     hint="Use frozenset[element_type]",
                 )
-            elem = AtomNode(typing.Any)
-        elif len(args) == 1:
+            return AtomNode(frozenset)
+        if len(args) == 1:
             elem = parse_type(args[0])
-        else:
-            raise InvalidTypeError(
-                f"Too many arguments to frozenset: {args}",
-                hint="frozenset accepts at most one type argument",
-            )
-        return cls(elem)
+            return cls(elem)
+        raise InvalidTypeError(
+            f"Too many arguments to frozenset: {args}",
+            hint="frozenset accepts at most one type argument",
+        )
 
 
 @dataclass(frozen=True)
@@ -642,7 +637,7 @@ def _parse_no_origin_type(typ: Any) -> BaseNode:
                     "tuple requires a type argument",
                     hint="Use tuple[T, ...] or tuple[T1, T2]",
                 )
-            return TupleNode((AtomNode(typing.Any),), True)
+            return AtomNode(tuple)
         return node_cls.for_args(())
     if isinstance(typ, typing._TypedDictMeta):
         return TypedDictNode(typ)
