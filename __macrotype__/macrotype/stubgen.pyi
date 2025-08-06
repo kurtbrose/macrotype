@@ -1,4 +1,4 @@
-# Generated via: macrotype macrotype
+# Generated via: macrotype macrotype/stubgen.py -o __macrotype__/macrotype/stubgen.pyi
 # Do not edit by hand
 from ast import If, NodeTransformer, expr, stmt
 from pathlib import Path

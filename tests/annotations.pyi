@@ -88,8 +88,7 @@ ANNOTATED_EXTRA: Annotated[str, 'extra']
 
 NESTED_ANNOTATED: Annotated[int, 'a', 'b']
 
-class UserBox[T]:
-    ...
+class UserBox[T]: ...
 
 class Basic:
     simple: list[str]
@@ -129,8 +128,7 @@ class Basic:
         x: float
         y: str
 
-class Child(Basic):
-    ...
+class Child(Basic): ...
 
 class OverrideChild(Basic):
     @override
@@ -323,8 +321,7 @@ async def async_add_one(x: int) -> int: ...
 async def gen_range(n: int) -> AsyncIterator[int]: ...
 
 @final
-class FinalClass:
-    ...
+class FinalClass: ...
 
 class HasFinalMethod:
     @final
@@ -350,8 +347,7 @@ def cached_add(a: int, b: int) -> int: ...
 
 def annotated_fn(x: Annotated[int, 'inp']) -> Annotated[str, 'out']: ...
 
-class FutureClass:
-    ...
+class FutureClass: ...
 
 def wrap_descriptor(desc: Any): ...
 
@@ -376,8 +372,7 @@ class EmittedCls:
 
 def make_dynamic_cls(): ...
 
-class FixedModuleCls:
-    ...
+class FixedModuleCls: ...
 
 class EmittedMap:
     @overload
@@ -438,8 +433,7 @@ class AbstractBase(ABC):
 class BadParams:
     value: int
 
-class Mapped[T]:
-    ...
+class Mapped[T]: ...
 
 class SQLBase:
     @classmethod

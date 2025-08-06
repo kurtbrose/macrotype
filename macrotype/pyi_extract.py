@@ -902,12 +902,13 @@ class PyiClass(PyiNamedElement):
         param_str = f"[{', '.join(self.type_params)}]" if self.type_params else ""
 
         lines = [f"{space}@{d}" for d in self.decorators]
-        lines.append(f"{space}class {self.name}{param_str}{base_decl}:")
+        header = f"{space}class {self.name}{param_str}{base_decl}:"
         if self.body:
+            lines.append(header)
             for item in self.body:
                 lines.extend(item.render(indent + 1))
         else:
-            lines.append(f"{space}    ...")
+            lines.append(f"{header} ...")
         return lines
 
     @classmethod
