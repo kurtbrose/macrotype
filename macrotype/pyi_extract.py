@@ -342,6 +342,10 @@ def _collect_args(
         if param.annotation is inspect._empty:
             if name in {"self", "cls"}:
                 ann = None
+            elif param.default is not inspect._empty and param.default is not None:
+                fmt = format_type(type(param.default))
+                used_types.update(fmt.used)
+                ann = fmt.text
             else:
                 ann = "Any"
                 used_types.add(Any)
@@ -898,12 +902,13 @@ class PyiClass(PyiNamedElement):
         param_str = f"[{', '.join(self.type_params)}]" if self.type_params else ""
 
         lines = [f"{space}@{d}" for d in self.decorators]
-        lines.append(f"{space}class {self.name}{param_str}{base_decl}:")
+        header = f"{space}class {self.name}{param_str}{base_decl}:"
         if self.body:
+            lines.append(header)
             for item in self.body:
                 lines.extend(item.render(indent + 1))
         else:
-            lines.append(f"{space}    pass")
+            lines.append(f"{header} ...")
         return lines
 
     @classmethod
@@ -1286,6 +1291,14 @@ class _ModuleBuilder:
         if name == "TYPE_CHECKING":
             return
         canonical = getattr(obj, "__qualname_override__", name)
+
+        annotation = self.resolved_ann.get(name)
+        if (
+            annotation is not None
+            and (annotation is typing.Final or get_origin(annotation) is typing.Final)
+            and not get_args(annotation)
+        ):
+            self.resolved_ann[name] = typing.Final[type(obj)]
 
         if canonical in self.handled_names and id(obj) not in self.seen:
             raise ValueError(f"duplicate emit name: {canonical}")

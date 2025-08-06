@@ -1,6 +1,5 @@
 from tests.circ_a import A
 
-class B:
-    pass
+class B: ...
 
 def takes_a(x: A) -> None: ...

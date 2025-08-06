@@ -1,4 +1,4 @@
-# Generated via: macrotype macrotype
+# Generated via: macrotype macrotype/cli.py -o __macrotype__/macrotype/cli.pyi
 # Do not edit by hand
 from pathlib import Path
 

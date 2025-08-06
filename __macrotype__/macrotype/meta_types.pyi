@@ -1,4 +1,4 @@
-# Generated via: macrotype macrotype
+# Generated via: macrotype macrotype/meta_types.py -o __macrotype__/macrotype/meta_types.pyi
 # Do not edit by hand
 from typing import Any, Callable
 

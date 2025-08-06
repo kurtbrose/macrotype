@@ -107,12 +107,27 @@ DICT_WITH_IMPLICIT_ANY: dict[int]
 ANNOTATED_FINAL: Final[int] = 5
 ANNOTATED_CLASSVAR: int = 1
 
+# ``Final`` without explicit type should infer from value
+BOX_SIZE: Final = 20
+BORDER_SIZE: Final = 4
+
 # Edge case: unannotated constant should be included
 UNANNOTATED_CONST = 42
 
 # Edge case: boolean constants should be retained
 BOOL_TRUE = True
 BOOL_FALSE = False
+
+
+# Unannotated parameters infer type from default values
+def mult(a, b=1):
+    return a * b
+
+
+# Defaults of ``None`` do not refine "Any"
+def takes_optional(x=None):
+    return x
+
 
 # Edge case: lambda expressions should be treated as variables, not functions
 UNTYPED_LAMBDA = lambda x, y: x + y

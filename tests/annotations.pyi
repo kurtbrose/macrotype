@@ -66,11 +66,19 @@ ANNOTATED_FINAL: Final[int]
 
 ANNOTATED_CLASSVAR: int
 
+BOX_SIZE: Final[int]
+
+BORDER_SIZE: Final[int]
+
 UNANNOTATED_CONST: int
 
 BOOL_TRUE: bool
 
 BOOL_FALSE: bool
+
+def mult(a: Any, b: int): ...
+
+def takes_optional(x: Any): ...
 
 UNTYPED_LAMBDA: function
 
@@ -80,8 +88,7 @@ ANNOTATED_EXTRA: Annotated[str, 'extra']
 
 NESTED_ANNOTATED: Annotated[int, 'a', 'b']
 
-class UserBox[T]:
-    pass
+class UserBox[T]: ...
 
 class Basic:
     simple: list[str]
@@ -121,8 +128,7 @@ class Basic:
         x: float
         y: str
 
-class Child(Basic):
-    pass
+class Child(Basic): ...
 
 class OverrideChild(Basic):
     @override
@@ -315,8 +321,7 @@ async def async_add_one(x: int) -> int: ...
 async def gen_range(n: int) -> AsyncIterator[int]: ...
 
 @final
-class FinalClass:
-    pass
+class FinalClass: ...
 
 class HasFinalMethod:
     @final
@@ -342,8 +347,7 @@ def cached_add(a: int, b: int) -> int: ...
 
 def annotated_fn(x: Annotated[int, 'inp']) -> Annotated[str, 'out']: ...
 
-class FutureClass:
-    pass
+class FutureClass: ...
 
 def wrap_descriptor(desc: Any): ...
 
@@ -368,8 +372,7 @@ class EmittedCls:
 
 def make_dynamic_cls(): ...
 
-class FixedModuleCls:
-    pass
+class FixedModuleCls: ...
 
 class EmittedMap:
     @overload
@@ -430,8 +433,7 @@ class AbstractBase(ABC):
 class BadParams:
     value: int
 
-class Mapped[T]:
-    pass
+class Mapped[T]: ...
 
 class SQLBase:
     @classmethod

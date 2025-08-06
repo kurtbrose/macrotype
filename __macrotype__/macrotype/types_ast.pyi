@@ -1,4 +1,4 @@
-# Generated via: macrotype macrotype/types_ast.py -o -
+# Generated via: macrotype macrotype/types_ast.py -o __macrotype__/macrotype/types_ast.pyi
 # Do not edit by hand
 from typing import Any, Callable, ClassVar, ParamSpec, TypeVar, TypeVarTuple, Unpack, _TypedDictMeta
 from dataclasses import dataclass
@@ -17,14 +17,11 @@ class BaseNode:
     def __init_subclass__(cls, **kwargs: Any) -> None: ...
     def emit(self) -> Any: ...
 
-class TypeExprNode(BaseNode):
-    pass
+class TypeExprNode(BaseNode): ...
 
-class InClassExprNode(BaseNode):
-    pass
+class InClassExprNode(BaseNode): ...
 
-class SpecialFormNode(BaseNode):
-    pass
+class SpecialFormNode(BaseNode): ...
 
 N = TypeVar('N')
 
@@ -34,8 +31,7 @@ V = TypeVar('V')
 
 Ctx = TypeVarTuple('Ctx')
 
-class ContainerNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](BaseNode):
-    pass
+class ContainerNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](BaseNode): ...
 
 type NodeLike[N] = N | ContainerNode[N]
 

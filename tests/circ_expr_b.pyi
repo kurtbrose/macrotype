@@ -1,6 +1,5 @@
 from tests.circ_expr_a import AComplex
 
-class BComplex:
-    pass
+class BComplex: ...
 
 def takes_a(x: AComplex) -> None: ...
