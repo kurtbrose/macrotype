@@ -359,15 +359,13 @@ class InitVarNode(SpecialFormNode):
         return dataclasses.InitVar[self.inner.emit()]
 
     @classmethod
-    def for_args(cls, args: tuple[Any, ...]) -> BaseNode:
+    def for_args(cls, args: tuple[Any, ...]) -> "InitVarNode":
         if len(args) > 1:
             raise InvalidTypeError(
                 f"InitVar takes at most one argument: {args}",
                 hint="InitVar[T] accepts a single type argument",
             )
-        if not args:
-            return AtomNode(dataclasses.InitVar)
-        inner = parse_type_expr(args[0])
+        inner = parse_type_expr(args[0]) if args else AtomNode(typing.Any)
         return cls(inner)
 
 
@@ -400,15 +398,13 @@ class ClassVarNode(Generic[N], ContainerNode[N], InClassExprNode):
         return typing.ClassVar[self.inner.emit()]
 
     @classmethod
-    def for_args(cls, args: tuple[Any, ...]) -> BaseNode:
+    def for_args(cls, args: tuple[Any, ...]) -> "ClassVarNode[N]":
         if len(args) > 1:
             raise InvalidTypeError(
                 f"ClassVar takes at most one argument: {args}",
                 hint="ClassVar[T] accepts a single type argument",
             )
-        if not args:
-            return AtomNode(typing.ClassVar)
-        inner = parse_type(args[0])
+        inner = parse_type(args[0]) if args else AtomNode(typing.Any)
         return cls(inner)
 
 
@@ -423,15 +419,13 @@ class FinalNode(Generic[N], ContainerNode[N], SpecialFormNode):
         return typing.Final[self.inner.emit()]
 
     @classmethod
-    def for_args(cls, args: tuple[Any, ...]) -> BaseNode:
+    def for_args(cls, args: tuple[Any, ...]) -> "FinalNode[N]":
         if len(args) > 1:
             raise InvalidTypeError(
                 f"Final takes at most one argument: {args}",
                 hint="Final[T] accepts a single type argument",
             )
-        if not args:
-            return AtomNode(typing.Final)
-        inner = parse_type(args[0])
+        inner = parse_type(args[0]) if args else AtomNode(typing.Any)
         return cls(inner)
 
 

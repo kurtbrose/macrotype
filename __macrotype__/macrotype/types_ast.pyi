@@ -1,4 +1,4 @@
-# Generated via: macrotype macrotype -o __macrotype__/macrotype
+# Generated via: macrotype macrotype
 # Do not edit by hand
 from typing import Any, Callable, ClassVar, ParamSpec, TypeVar, TypeVarTuple, Unpack, _TypedDictMeta
 from dataclasses import dataclass
@@ -116,7 +116,7 @@ class InitVarNode(SpecialFormNode):
     inner: TypeExprNode
     def emit(self) -> Any: ...
     @classmethod
-    def for_args(cls, args: tuple[Any, ...]) -> BaseNode: ...
+    def for_args(cls, args: tuple[Any, ...]) -> InitVarNode: ...
 
 @dataclass(frozen=True)
 class SelfNode(InClassExprNode):
@@ -131,7 +131,7 @@ class ClassVarNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](ContainerN
     inner: NodeLike[N]
     def emit(self) -> Any: ...
     @classmethod
-    def for_args(cls, args: tuple[Any, ...]) -> BaseNode: ...
+    def for_args(cls, args: tuple[Any, ...]) -> ClassVarNode[N]: ...
 
 @dataclass(frozen=True)
 class FinalNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](ContainerNode[N], SpecialFormNode):
@@ -139,7 +139,7 @@ class FinalNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](ContainerNode
     inner: NodeLike[N]
     def emit(self) -> Any: ...
     @classmethod
-    def for_args(cls, args: tuple[Any, ...]) -> BaseNode: ...
+    def for_args(cls, args: tuple[Any, ...]) -> FinalNode[N]: ...
 
 @dataclass(frozen=True)
 class RequiredNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](ContainerNode[N], InClassExprNode):
