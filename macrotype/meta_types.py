@@ -4,8 +4,7 @@ import sys
 import typing
 from collections import defaultdict
 from contextlib import contextmanager
-from types import UnionType
-from typing import Any, Callable, Final
+from typing import Any, Callable
 
 _OVERLOAD_REGISTRY: dict[str, dict[str, list[Callable]]] = defaultdict(lambda: defaultdict(list))
 
@@ -85,12 +84,6 @@ __all__ = [
     "clear_registry",
     "patch_typing",
     "all_annotations",
-    "optional",
-    "required",
-    "pick",
-    "omit",
-    "final",
-    "replace",
 ]
 
 
@@ -172,83 +165,9 @@ def make_literal_map(name: str, mapping: dict[str | int, str | int]):
     return LiteralMap
 
 
-_NoneType = type(None)
-
-
-def _make_class(name: str, annotations: dict[str, Any]) -> type:
-    """Return a new class named *name* with *annotations*."""
-
-    caller_mod = get_caller_module(3)
-
-    @emit_as(name)
-    class Generated:
-        pass
-
-    Generated.__annotations__ = annotations
-    set_module(Generated, caller_mod)
-    return Generated
-
-
-def _strip_type(ann: Any, null: Any) -> Any:
-    """Return *ann* with ``null`` removed from unions."""
-
-    origin = typing.get_origin(ann)
-    if origin in {typing.Union, UnionType}:
-        args = [a for a in typing.get_args(ann) if a is not null]
-        if not args:
-            return null
-        result = args[0]
-        for a in args[1:]:
-            result = result | a
-        return result
-    return ann
-
-
 def all_annotations(cls: type) -> dict[str, Any]:
     """Return annotations from *cls* and all base classes."""
     out: dict[str, Any] = {}
     for base in reversed(cls.__mro__):
         out.update(getattr(base, "__annotations__", {}))
     return out
-
-
-def optional(cls: type, *, null: Any = None) -> dict[str, Any]:
-    """Return ``__annotations__`` of *cls* with all attributes made optional."""
-
-    null_type = _NoneType if null is None else null
-    return {k: v | null_type for k, v in all_annotations(cls).items()}
-
-
-def required(cls: type, *, null: Any = None) -> dict[str, Any]:
-    """Return ``__annotations__`` of *cls* with optional types made required."""
-
-    null_type = _NoneType if null is None else null
-    return {k: _strip_type(v, null_type) for k, v in all_annotations(cls).items()}
-
-
-def pick(cls: type, keys: list[str]) -> dict[str, Any]:
-    """Return ``__annotations__`` of *cls* containing only *keys*."""
-
-    source = all_annotations(cls)
-    return {k: source[k] for k in keys if k in source}
-
-
-def omit(cls: type, keys: list[str]) -> dict[str, Any]:
-    """Return ``__annotations__`` of *cls* with *keys* removed."""
-
-    source = all_annotations(cls)
-    return {k: v for k, v in source.items() if k not in keys}
-
-
-def final(cls: type) -> dict[str, Any]:
-    """Return ``__annotations__`` of *cls* with attributes wrapped in ``Final``."""
-
-    return {k: Final[v] for k, v in all_annotations(cls).items()}
-
-
-def replace(name: str, cls: type, mapping: dict[str, Any]) -> type:
-    """Return a copy of *cls* with annotations updated from *mapping*."""
-
-    anns = all_annotations(cls).copy()
-    anns.update(mapping)
-    return _make_class(name, anns)

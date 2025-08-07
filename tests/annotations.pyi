@@ -452,6 +452,8 @@ class EmployeeModel(SQLBase):
     id: Mapped[EmployeeModelId]
     id_type: type[EmployeeModelId]
 
+def strip_null(ann: Any, null: Any) -> Any: ...
+
 class Cls:
     a: int
     b: float | None

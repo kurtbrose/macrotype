@@ -4,6 +4,8 @@ import functools
 import math
 import re
 import sys
+import types
+import typing
 from abc import ABC, abstractmethod
 from dataclasses import InitVar, dataclass
 from enum import Enum, IntEnum, IntFlag
@@ -794,6 +796,19 @@ class EmployeeModel(SQLBase):
 # TypeScript-inspired metaclass utilities
 
 
+def strip_null(ann: Any, null: Any) -> Any:
+    origin = typing.get_origin(ann)
+    if origin in {typing.Union, types.UnionType}:
+        args = [a for a in typing.get_args(ann) if a is not null]
+        if not args:
+            return null
+        result = args[0]
+        for a in args[1:]:
+            result |= a
+        return result
+    return ann
+
+
 class Cls:
     a: int
     b: float | None
@@ -802,26 +817,30 @@ class Cls:
 
 
 class OptionalCls:
-    __annotations__ = mt.optional(Cls)
+    __annotations__ = {k: v | None for k, v in mt.all_annotations(Cls).items()}
 
 
 class RequiredCls:
-    __annotations__ = mt.required(Cls)
+    __annotations__ = {k: strip_null(v, type(None)) for k, v in mt.all_annotations(Cls).items()}
 
 
 class PickedCls:
-    __annotations__ = mt.pick(Cls, ["a", "b"])
+    __annotations__ = {k: v for k, v in mt.all_annotations(Cls).items() if k in {"a", "b"}}
 
 
 class OmittedCls:
-    __annotations__ = mt.omit(Cls, ["c", "d"])
+    __annotations__ = {k: v for k, v in mt.all_annotations(Cls).items() if k not in {"c", "d"}}
 
 
 class FinalCls:
-    __annotations__ = mt.final(Cls)
+    __annotations__ = {k: Final[v] for k, v in mt.all_annotations(Cls).items()}
 
 
-ReplacedCls = mt.replace("ReplacedCls", Cls, {"a": str, "b": bool})
+ReplacedCls = type(
+    "ReplacedCls",
+    (),
+    {"__annotations__": {**mt.all_annotations(Cls), "a": str, "b": bool}},
+)
 
 
 # meta_types with inherited annotations
@@ -834,11 +853,11 @@ class SubInherit(BaseInherit):
 
 
 class InheritedOmit:
-    __annotations__ = mt.omit(SubInherit, ["sub"])
+    __annotations__ = {k: v for k, v in mt.all_annotations(SubInherit).items() if k != "sub"}
 
 
 class InheritedFinal:
-    __annotations__ = mt.final(SubInherit)
+    __annotations__ = {k: Final[v] for k, v in mt.all_annotations(SubInherit).items()}
 
 
 # optional() and required() with a custom null sentinel
@@ -851,8 +870,10 @@ class UndefinedCls:
 
 
 class OptionalUndefinedCls:
-    __annotations__ = mt.optional(UndefinedCls, null=Undefined)
+    __annotations__ = {k: v | Undefined for k, v in mt.all_annotations(UndefinedCls).items()}
 
 
 class RequiredUndefinedCls:
-    __annotations__ = mt.required(UndefinedCls, null=Undefined)
+    __annotations__ = {
+        k: strip_null(v, Undefined) for k, v in mt.all_annotations(UndefinedCls).items()
+    }
