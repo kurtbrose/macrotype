@@ -458,7 +458,7 @@ class Cls:
     c: str | None
     d: bytes
 
-class PartialCls:
+class OptionalCls:
     a: int | None
     b: float | None
     c: str | None

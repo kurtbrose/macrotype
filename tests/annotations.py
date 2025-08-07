@@ -801,7 +801,7 @@ class Cls:
     d: bytes
 
 
-PartialCls = mt.partial("PartialCls", Cls)
+OptionalCls = mt.optional("OptionalCls", Cls)
 RequiredCls = mt.required("RequiredCls", Cls)
 PickedCls = mt.pick("PickedCls", Cls, ["a", "b"])
 OmittedCls = mt.omit("OmittedCls", Cls, ["c", "d"])
