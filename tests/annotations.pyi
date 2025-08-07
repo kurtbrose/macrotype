@@ -490,6 +490,19 @@ class ReplacedCls:
     c: str | None
     d: bytes
 
+class BaseInherit:
+    base: int
+
+class SubInherit(BaseInherit):
+    sub: str
+
+class InheritedOmit:
+    base: int
+
+class InheritedFinal:
+    base: Final[int]
+    sub: Final[str]
+
 class Undefined: ...
 
 class UndefinedCls:

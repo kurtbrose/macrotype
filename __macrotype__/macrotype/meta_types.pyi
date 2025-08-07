@@ -1,4 +1,4 @@
-# Generated via: macrotype macrotype
+# Generated via: macrotype macrotype/meta_types.py -o __macrotype__/macrotype/meta_types.pyi
 # Do not edit by hand
 from typing import Any, Callable
 
@@ -31,6 +31,8 @@ _NoneType = NoneType
 def _make_class(name: str, annotations: dict[str, Any]) -> type: ...
 
 def _strip_type(ann: Any, null: Any) -> Any: ...
+
+def all_annotations(cls: type) -> dict[str, Any]: ...
 
 def optional(name: str, cls: type, *, null: Any) -> type: ...
 

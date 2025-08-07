@@ -84,6 +84,7 @@ __all__ = [
     "get_overloads",
     "clear_registry",
     "patch_typing",
+    "all_annotations",
     "optional",
     "required",
     "pick",
@@ -203,11 +204,19 @@ def _strip_type(ann: Any, null: Any) -> Any:
     return ann
 
 
+def all_annotations(cls: type) -> dict[str, Any]:
+    """Return annotations from *cls* and all base classes."""
+    out: dict[str, Any] = {}
+    for base in reversed(cls.__mro__):
+        out.update(getattr(base, "__annotations__", {}))
+    return out
+
+
 def optional(name: str, cls: type, *, null: Any = None) -> type:
     """Return a copy of *cls* with all attributes made optional."""
 
     null_type = _NoneType if null is None else null
-    anns = {k: v | null_type for k, v in getattr(cls, "__annotations__", {}).items()}
+    anns = {k: v | null_type for k, v in all_annotations(cls).items()}
     return _make_class(name, anns)
 
 
@@ -215,14 +224,14 @@ def required(name: str, cls: type, *, null: Any = None) -> type:
     """Return a copy of *cls* with optional types made required."""
 
     null_type = _NoneType if null is None else null
-    anns = {k: _strip_type(v, null_type) for k, v in getattr(cls, "__annotations__", {}).items()}
+    anns = {k: _strip_type(v, null_type) for k, v in all_annotations(cls).items()}
     return _make_class(name, anns)
 
 
 def pick(name: str, cls: type, keys: list[str]) -> type:
     """Return a copy of *cls* containing only *keys*."""
 
-    source = getattr(cls, "__annotations__", {})
+    source = all_annotations(cls)
     anns = {k: source[k] for k in keys if k in source}
     return _make_class(name, anns)
 
@@ -230,7 +239,7 @@ def pick(name: str, cls: type, keys: list[str]) -> type:
 def omit(name: str, cls: type, keys: list[str]) -> type:
     """Return a copy of *cls* with *keys* removed."""
 
-    source = getattr(cls, "__annotations__", {})
+    source = all_annotations(cls)
     anns = {k: v for k, v in source.items() if k not in keys}
     return _make_class(name, anns)
 
@@ -238,13 +247,13 @@ def omit(name: str, cls: type, keys: list[str]) -> type:
 def final(name: str, cls: type) -> type:
     """Return a copy of *cls* with attributes wrapped in ``Final``."""
 
-    anns = {k: Final[v] for k, v in getattr(cls, "__annotations__", {}).items()}
+    anns = {k: Final[v] for k, v in all_annotations(cls).items()}
     return _make_class(name, anns)
 
 
 def replace(name: str, cls: type, mapping: dict[str, Any]) -> type:
     """Return a copy of *cls* with annotations updated from *mapping*."""
 
-    anns = getattr(cls, "__annotations__", {}).copy()
+    anns = all_annotations(cls).copy()
     anns.update(mapping)
     return _make_class(name, anns)
