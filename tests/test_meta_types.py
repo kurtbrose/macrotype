@@ -36,18 +36,18 @@ def test_meta_type_functions_include_bases():
     class Child(Base):
         y: str
 
-    Opt = optional("Opt", Child)
-    Req = required("Req", Child)
-    Pik = pick("Pik", Child, ["x", "y"])
-    Om = omit("Om", Child, ["y"])
-    Fin = final("Fin", Child)
+    Opt = optional(Child)
+    Req = required(Child)
+    Pik = pick(Child, ["x", "y"])
+    Om = omit(Child, ["y"])
+    Fin = final(Child)
     Rep = replace("Rep", Child, {"z": float})
 
-    assert Opt.__annotations__ == {"x": int | None, "y": str | None}
-    assert Req.__annotations__ == {"x": int, "y": str}
-    assert Pik.__annotations__ == {"x": int, "y": str}
-    assert Om.__annotations__ == {"x": int}
-    assert Fin.__annotations__ == {"x": typing.Final[int], "y": typing.Final[str]}
+    assert Opt == {"x": int | None, "y": str | None}
+    assert Req == {"x": int, "y": str}
+    assert Pik == {"x": int, "y": str}
+    assert Om == {"x": int}
+    assert Fin == {"x": typing.Final[int], "y": typing.Final[str]}
     assert Rep.__annotations__ == {"x": int, "y": str, "z": float}
 
 
@@ -58,8 +58,8 @@ def test_optional_required_custom_null():
         a: int
         b: str | Undefined
 
-    OptCls = optional("OptCls", Cls, null=Undefined)
-    ReqCls = required("ReqCls", Cls, null=Undefined)
+    OptCls = optional(Cls, null=Undefined)
+    ReqCls = required(Cls, null=Undefined)
 
-    assert OptCls.__annotations__ == {"a": int | Undefined, "b": str | Undefined}
-    assert ReqCls.__annotations__ == {"a": int, "b": str}
+    assert OptCls == {"a": int | Undefined, "b": str | Undefined}
+    assert ReqCls == {"a": int, "b": str}
