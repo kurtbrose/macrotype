@@ -188,14 +188,14 @@ def _make_class(name: str, annotations: dict[str, Any]) -> type:
     return Generated
 
 
-def _strip_none(ann: Any) -> Any:
-    """Return *ann* with ``None`` removed from unions."""
+def _strip_type(ann: Any, null: Any) -> Any:
+    """Return *ann* with ``null`` removed from unions."""
 
     origin = typing.get_origin(ann)
     if origin in {typing.Union, UnionType}:
-        args = [a for a in typing.get_args(ann) if a is not _NoneType]
+        args = [a for a in typing.get_args(ann) if a is not null]
         if not args:
-            return _NoneType
+            return null
         result = args[0]
         for a in args[1:]:
             result = result | a
@@ -203,17 +203,19 @@ def _strip_none(ann: Any) -> Any:
     return ann
 
 
-def optional(name: str, cls: type) -> type:
+def optional(name: str, cls: type, *, null: Any = None) -> type:
     """Return a copy of *cls* with all attributes made optional."""
 
-    anns = {k: v | _NoneType for k, v in getattr(cls, "__annotations__", {}).items()}
+    null_type = _NoneType if null is None else null
+    anns = {k: v | null_type for k, v in getattr(cls, "__annotations__", {}).items()}
     return _make_class(name, anns)
 
 
-def required(name: str, cls: type) -> type:
+def required(name: str, cls: type, *, null: Any = None) -> type:
     """Return a copy of *cls* with optional types made required."""
 
-    anns = {k: _strip_none(v) for k, v in getattr(cls, "__annotations__", {}).items()}
+    null_type = _NoneType if null is None else null
+    anns = {k: _strip_type(v, null_type) for k, v in getattr(cls, "__annotations__", {}).items()}
     return _make_class(name, anns)
 
 

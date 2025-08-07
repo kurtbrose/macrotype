@@ -807,3 +807,16 @@ PickedCls = mt.pick("PickedCls", Cls, ["a", "b"])
 OmittedCls = mt.omit("OmittedCls", Cls, ["c", "d"])
 FinalCls = mt.final("FinalCls", Cls)
 ReplacedCls = mt.replace("ReplacedCls", Cls, {"a": str, "b": bool})
+
+
+# optional() and required() with a custom null sentinel
+class Undefined: ...
+
+
+class UndefinedCls:
+    a: int
+    b: str | Undefined
+
+
+OptionalUndefinedCls = mt.optional("OptionalUndefinedCls", UndefinedCls, null=Undefined)
+RequiredUndefinedCls = mt.required("RequiredUndefinedCls", UndefinedCls, null=Undefined)

@@ -490,6 +490,20 @@ class ReplacedCls:
     c: str | None
     d: bytes
 
+class Undefined: ...
+
+class UndefinedCls:
+    a: int
+    b: str | Undefined
+
+class OptionalUndefinedCls:
+    a: int | Undefined
+    b: str | Undefined
+
+class RequiredUndefinedCls:
+    a: int
+    b: str
+
 GLOBAL: int
 
 CONST: Final[str]
