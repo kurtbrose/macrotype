@@ -65,8 +65,12 @@ def main(argv: list[str] | None = None) -> int:
     stub_paths = _generate_stubs(args.paths, out_dir, command)
 
     env = os.environ.copy()
-    env["PYTHONPATH"] = str(out_dir) + os.pathsep + env.get("PYTHONPATH", "")
-    result = subprocess.run([args.tool, *map(str, stub_paths), *tool_args], env=env)
+    stub_path = str(out_dir)
+    env_path = "MYPYPATH" if args.tool == "mypy" else "PYTHONPATH"
+    env[env_path] = stub_path + os.pathsep + env.get(env_path, "")
+
+    cmd = [args.tool, *map(str, stub_paths), *tool_args]
+    result = subprocess.run(cmd, env=env)
     return result.returncode
 
 

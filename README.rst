@@ -65,7 +65,13 @@ checker command followed by the paths to stub.  Any additional arguments after
     macrotype-check mypy src/ -- --strict
 
 Stubs are written to ``__macrotype__`` by default; use ``-o`` to choose a
-different directory.
+different directory.  When run with ``mypy``, ``macrotype-check`` prepends the
+stub directory to ``MYPYPATH`` so the overlay stubs are picked up
+automatically.  Other tools receive the stub directory on ``PYTHONPATH``.
+
+If you run ``mypy`` without ``macrotype-check``, set ``MYPYPATH`` or pass
+``--custom-typeshed-dir`` to point at the stub directory so it behaves the same
+way.
 
 Watch mode
 ----------
