@@ -4,6 +4,7 @@ import ast
 import importlib.util
 import io
 import re
+import shutil
 import sys
 import tokenize
 import typing
@@ -223,22 +224,59 @@ def iter_python_files(target: Path) -> list[Path]:
     return files
 
 
-def process_file(src: Path, dest: Path | None = None, *, command: str | None = None) -> Path:
+def _link_stub_overlay(src: Path, dest: Path, overlay_dir: Path) -> None:
+    module_name = _guess_module_name(src) or src.stem
+    parts = module_name.split(".")
+    if src.name == "__init__.py":
+        overlay = overlay_dir.joinpath(*parts, "__init__.pyi")
+    else:
+        overlay = overlay_dir.joinpath(*parts[:-1], parts[-1] + ".pyi")
+    if overlay.resolve() == dest.resolve():
+        return
+    overlay.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        if overlay.exists() or overlay.is_symlink():
+            overlay.unlink()
+        overlay.symlink_to(dest)
+    except OSError:  # pragma: no cover - fallback on systems without symlink
+        shutil.copy2(dest, overlay)
+
+
+def process_file(
+    src: Path,
+    dest: Path | None = None,
+    *,
+    command: str | None = None,
+    stub_overlay_dir: Path | None = None,
+) -> Path:
     module = load_module_from_path(src)
     lines = stub_lines(module)
     dest = dest or src.with_suffix(".pyi")
     write_stub(dest, lines, command)
+    if stub_overlay_dir is not None:
+        _link_stub_overlay(src, dest, stub_overlay_dir)
     return dest
 
 
 def process_directory(
-    directory: Path, out_dir: Path | None = None, *, command: str | None = None
+    directory: Path,
+    out_dir: Path | None = None,
+    *,
+    command: str | None = None,
+    stub_overlay_dir: Path | None = None,
 ) -> list[Path]:
     outputs = []
     for src in iter_python_files(directory):
         dest = (out_dir / src.with_suffix(".pyi").name) if out_dir else None
         try:
-            outputs.append(process_file(src, dest, command=command))
+            outputs.append(
+                process_file(
+                    src,
+                    dest,
+                    command=command,
+                    stub_overlay_dir=stub_overlay_dir,
+                )
+            )
         except (Exception, SystemExit) as exc:  # pragma: no cover - defensive
             print(f"Skipping {src}: {exc}", file=sys.stderr)
     return outputs

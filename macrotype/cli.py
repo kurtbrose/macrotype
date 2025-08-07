@@ -45,8 +45,13 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Watch for changes and regenerate stubs",
     )
+    parser.add_argument(
+        "--stub-overlay-dir",
+        help="Symlink generated stubs into this directory for type checkers",
+    )
     args = parser.parse_args(argv)
     command = "macrotype " + " ".join(argv)
+    stub_overlay_dir = Path(args.stub_overlay_dir) if args.stub_overlay_dir else None
 
     if args.watch:
         if args.paths == ["-"]:
@@ -60,6 +65,8 @@ def main(argv: list[str] | None = None) -> int:
         return watch_and_run(args.paths, cmd)
 
     if args.paths == ["-"]:
+        if stub_overlay_dir:
+            parser.error("--stub-overlay-dir cannot be used with stdin")
         code = sys.stdin.read()
         module = stubgen.load_module_from_code(code, "<stdin>")
         lines = stubgen.stub_lines(module)
@@ -76,18 +83,43 @@ def main(argv: list[str] | None = None) -> int:
         if args.output != "-":
             default_output = _default_output_path(path, cwd, is_file=path.is_file())
         if path.is_file():
-            lines = stubgen.stub_lines(stubgen.load_module_from_path(path))
             if args.output == "-":
+                if stub_overlay_dir:
+                    parser.error("--stub-overlay-dir requires a file output")
+                lines = stubgen.stub_lines(stubgen.load_module_from_path(path))
                 _stdout_write(lines, command)
             else:
                 dest = Path(args.output) if args.output else default_output
-                stubgen.write_stub(dest, lines, command)
+                overlay = stub_overlay_dir
+                if overlay is None and dest.parent != path.parent:
+                    overlay = (
+                        DEFAULT_OUT_DIR if dest.is_relative_to(DEFAULT_OUT_DIR) else dest.parent
+                    )
+                stubgen.process_file(
+                    path,
+                    dest,
+                    command=command,
+                    stub_overlay_dir=overlay,
+                )
         else:
             if args.output == "-":
+                if stub_overlay_dir:
+                    parser.error("--stub-overlay-dir requires a directory output")
                 out_dir = None
+                overlay = None
             else:
                 out_dir = Path(args.output) if args.output else default_output
-            stubgen.process_directory(path, out_dir, command=command)
+                overlay = stub_overlay_dir
+                if overlay is None and out_dir and out_dir != path:
+                    overlay = (
+                        DEFAULT_OUT_DIR if out_dir.is_relative_to(DEFAULT_OUT_DIR) else out_dir
+                    )
+            stubgen.process_directory(
+                path,
+                out_dir,
+                command=command,
+                stub_overlay_dir=overlay,
+            )
     return 0
 
 
