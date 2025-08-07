@@ -801,11 +801,26 @@ class Cls:
     d: bytes
 
 
-OptionalCls = mt.optional("OptionalCls", Cls)
-RequiredCls = mt.required("RequiredCls", Cls)
-PickedCls = mt.pick("PickedCls", Cls, ["a", "b"])
-OmittedCls = mt.omit("OmittedCls", Cls, ["c", "d"])
-FinalCls = mt.final("FinalCls", Cls)
+class OptionalCls:
+    __annotations__ = mt.optional(Cls)
+
+
+class RequiredCls:
+    __annotations__ = mt.required(Cls)
+
+
+class PickedCls:
+    __annotations__ = mt.pick(Cls, ["a", "b"])
+
+
+class OmittedCls:
+    __annotations__ = mt.omit(Cls, ["c", "d"])
+
+
+class FinalCls:
+    __annotations__ = mt.final(Cls)
+
+
 ReplacedCls = mt.replace("ReplacedCls", Cls, {"a": str, "b": bool})
 
 
@@ -818,8 +833,12 @@ class SubInherit(BaseInherit):
     sub: str
 
 
-InheritedOmit = mt.omit("InheritedOmit", SubInherit, ["sub"])
-InheritedFinal = mt.final("InheritedFinal", SubInherit)
+class InheritedOmit:
+    __annotations__ = mt.omit(SubInherit, ["sub"])
+
+
+class InheritedFinal:
+    __annotations__ = mt.final(SubInherit)
 
 
 # optional() and required() with a custom null sentinel
@@ -831,5 +850,9 @@ class UndefinedCls:
     b: str | Undefined
 
 
-OptionalUndefinedCls = mt.optional("OptionalUndefinedCls", UndefinedCls, null=Undefined)
-RequiredUndefinedCls = mt.required("RequiredUndefinedCls", UndefinedCls, null=Undefined)
+class OptionalUndefinedCls:
+    __annotations__ = mt.optional(UndefinedCls, null=Undefined)
+
+
+class RequiredUndefinedCls:
+    __annotations__ = mt.required(UndefinedCls, null=Undefined)

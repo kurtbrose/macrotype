@@ -212,43 +212,38 @@ def all_annotations(cls: type) -> dict[str, Any]:
     return out
 
 
-def optional(name: str, cls: type, *, null: Any = None) -> type:
-    """Return a copy of *cls* with all attributes made optional."""
+def optional(cls: type, *, null: Any = None) -> dict[str, Any]:
+    """Return ``__annotations__`` of *cls* with all attributes made optional."""
 
     null_type = _NoneType if null is None else null
-    anns = {k: v | null_type for k, v in all_annotations(cls).items()}
-    return _make_class(name, anns)
+    return {k: v | null_type for k, v in all_annotations(cls).items()}
 
 
-def required(name: str, cls: type, *, null: Any = None) -> type:
-    """Return a copy of *cls* with optional types made required."""
+def required(cls: type, *, null: Any = None) -> dict[str, Any]:
+    """Return ``__annotations__`` of *cls* with optional types made required."""
 
     null_type = _NoneType if null is None else null
-    anns = {k: _strip_type(v, null_type) for k, v in all_annotations(cls).items()}
-    return _make_class(name, anns)
+    return {k: _strip_type(v, null_type) for k, v in all_annotations(cls).items()}
 
 
-def pick(name: str, cls: type, keys: list[str]) -> type:
-    """Return a copy of *cls* containing only *keys*."""
-
-    source = all_annotations(cls)
-    anns = {k: source[k] for k in keys if k in source}
-    return _make_class(name, anns)
-
-
-def omit(name: str, cls: type, keys: list[str]) -> type:
-    """Return a copy of *cls* with *keys* removed."""
+def pick(cls: type, keys: list[str]) -> dict[str, Any]:
+    """Return ``__annotations__`` of *cls* containing only *keys*."""
 
     source = all_annotations(cls)
-    anns = {k: v for k, v in source.items() if k not in keys}
-    return _make_class(name, anns)
+    return {k: source[k] for k in keys if k in source}
 
 
-def final(name: str, cls: type) -> type:
-    """Return a copy of *cls* with attributes wrapped in ``Final``."""
+def omit(cls: type, keys: list[str]) -> dict[str, Any]:
+    """Return ``__annotations__`` of *cls* with *keys* removed."""
 
-    anns = {k: Final[v] for k, v in all_annotations(cls).items()}
-    return _make_class(name, anns)
+    source = all_annotations(cls)
+    return {k: v for k, v in source.items() if k not in keys}
+
+
+def final(cls: type) -> dict[str, Any]:
+    """Return ``__annotations__`` of *cls* with attributes wrapped in ``Final``."""
+
+    return {k: Final[v] for k, v in all_annotations(cls).items()}
 
 
 def replace(name: str, cls: type, mapping: dict[str, Any]) -> type:
