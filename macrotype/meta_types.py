@@ -84,7 +84,7 @@ __all__ = [
     "get_overloads",
     "clear_registry",
     "patch_typing",
-    "partial",
+    "optional",
     "required",
     "pick",
     "omit",
@@ -203,7 +203,7 @@ def _strip_none(ann: Any) -> Any:
     return ann
 
 
-def partial(name: str, cls: type) -> type:
+def optional(name: str, cls: type) -> type:
     """Return a copy of *cls* with all attributes made optional."""
 
     anns = {k: v | _NoneType for k, v in getattr(cls, "__annotations__", {}).items()}
