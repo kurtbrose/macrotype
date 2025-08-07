@@ -809,6 +809,19 @@ FinalCls = mt.final("FinalCls", Cls)
 ReplacedCls = mt.replace("ReplacedCls", Cls, {"a": str, "b": bool})
 
 
+# meta_types with inherited annotations
+class BaseInherit:
+    base: int
+
+
+class SubInherit(BaseInherit):
+    sub: str
+
+
+InheritedOmit = mt.omit("InheritedOmit", SubInherit, ["sub"])
+InheritedFinal = mt.final("InheritedFinal", SubInherit)
+
+
 # optional() and required() with a custom null sentinel
 class Undefined: ...
 
