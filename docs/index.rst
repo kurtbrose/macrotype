@@ -41,11 +41,9 @@ With a comprehension you can derive new annotations using standard Python::
     class OmittedCls:
         __annotations__ = {k: v for k, v in all_annotations(Cls).items() if k != "b"}
 
-    ReplacedCls = type(
-        "ReplacedCls",
-        (),
-        {"__annotations__": {**all_annotations(Cls), "a": str}},
-    )
+    class ReplacedCls:
+        __annotations__ = {**all_annotations(Cls), "a": str}
+
 
 Module Documentation
 --------------------
