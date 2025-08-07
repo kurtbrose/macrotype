@@ -43,6 +43,7 @@ from typing import (
     runtime_checkable,
 )
 
+import macrotype.meta_types as mt
 from macrotype.meta_types import (
     emit_as,
     get_caller_module,
@@ -788,3 +789,21 @@ class ManagerModel(SQLBase): ...
 
 class EmployeeModel(SQLBase):
     manager_id: Mapped[ManagerModel.id_type]
+
+
+# TypeScript-inspired metaclass utilities
+
+
+class Cls:
+    a: int
+    b: float | None
+    c: str | None
+    d: bytes
+
+
+PartialCls = mt.partial("PartialCls", Cls)
+RequiredCls = mt.required("RequiredCls", Cls)
+PickedCls = mt.pick("PickedCls", Cls, ["a", "b"])
+OmittedCls = mt.omit("OmittedCls", Cls, ["c", "d"])
+FinalCls = mt.final("FinalCls", Cls)
+ReplacedCls = mt.replace("ReplacedCls", Cls, {"a": str, "b": bool})

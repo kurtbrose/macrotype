@@ -452,6 +452,44 @@ class EmployeeModel(SQLBase):
     id: Mapped[EmployeeModelId]
     id_type: type[EmployeeModelId]
 
+class Cls:
+    a: int
+    b: float | None
+    c: str | None
+    d: bytes
+
+class PartialCls:
+    a: int | None
+    b: float | None
+    c: str | None
+    d: bytes | None
+
+class RequiredCls:
+    a: int
+    b: float
+    c: str
+    d: bytes
+
+class PickedCls:
+    a: int
+    b: float | None
+
+class OmittedCls:
+    a: int
+    b: float | None
+
+class FinalCls:
+    a: Final[int]
+    b: Final[float | None]
+    c: Final[str | None]
+    d: Final[bytes]
+
+class ReplacedCls:
+    a: str
+    b: bool
+    c: str | None
+    d: bytes
+
 GLOBAL: int
 
 CONST: Final[str]
