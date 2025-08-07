@@ -4,7 +4,8 @@ import sys
 import typing
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import Any, Callable
+from types import UnionType
+from typing import Any, Callable, Final
 
 _OVERLOAD_REGISTRY: dict[str, dict[str, list[Callable]]] = defaultdict(lambda: defaultdict(list))
 
@@ -83,6 +84,12 @@ __all__ = [
     "get_overloads",
     "clear_registry",
     "patch_typing",
+    "optional",
+    "required",
+    "pick",
+    "omit",
+    "final",
+    "replace",
 ]
 
 
@@ -162,3 +169,80 @@ def make_literal_map(name: str, mapping: dict[str | int, str | int]):
     set_module(LiteralMap, caller_mod)
 
     return LiteralMap
+
+
+_NoneType = type(None)
+
+
+def _make_class(name: str, annotations: dict[str, Any]) -> type:
+    """Return a new class named *name* with *annotations*."""
+
+    caller_mod = get_caller_module(3)
+
+    @emit_as(name)
+    class Generated:
+        pass
+
+    Generated.__annotations__ = annotations
+    set_module(Generated, caller_mod)
+    return Generated
+
+
+def _strip_none(ann: Any) -> Any:
+    """Return *ann* with ``None`` removed from unions."""
+
+    origin = typing.get_origin(ann)
+    if origin in {typing.Union, UnionType}:
+        args = [a for a in typing.get_args(ann) if a is not _NoneType]
+        if not args:
+            return _NoneType
+        result = args[0]
+        for a in args[1:]:
+            result = result | a
+        return result
+    return ann
+
+
+def optional(name: str, cls: type) -> type:
+    """Return a copy of *cls* with all attributes made optional."""
+
+    anns = {k: v | _NoneType for k, v in getattr(cls, "__annotations__", {}).items()}
+    return _make_class(name, anns)
+
+
+def required(name: str, cls: type) -> type:
+    """Return a copy of *cls* with optional types made required."""
+
+    anns = {k: _strip_none(v) for k, v in getattr(cls, "__annotations__", {}).items()}
+    return _make_class(name, anns)
+
+
+def pick(name: str, cls: type, keys: list[str]) -> type:
+    """Return a copy of *cls* containing only *keys*."""
+
+    source = getattr(cls, "__annotations__", {})
+    anns = {k: source[k] for k in keys if k in source}
+    return _make_class(name, anns)
+
+
+def omit(name: str, cls: type, keys: list[str]) -> type:
+    """Return a copy of *cls* with *keys* removed."""
+
+    source = getattr(cls, "__annotations__", {})
+    anns = {k: v for k, v in source.items() if k not in keys}
+    return _make_class(name, anns)
+
+
+def final(name: str, cls: type) -> type:
+    """Return a copy of *cls* with attributes wrapped in ``Final``."""
+
+    anns = {k: Final[v] for k, v in getattr(cls, "__annotations__", {}).items()}
+    return _make_class(name, anns)
+
+
+def replace(name: str, cls: type, mapping: dict[str, Any]) -> type:
+    """Return a copy of *cls* with annotations updated from *mapping*."""
+
+    anns = getattr(cls, "__annotations__", {}).copy()
+    anns.update(mapping)
+    return _make_class(name, anns)
