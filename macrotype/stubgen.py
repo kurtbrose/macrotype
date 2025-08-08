@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import ast
-import importlib.util
+import importlib
 import io
 import re
 import shutil
@@ -152,7 +152,32 @@ def load_module_from_path(
     """
     name = module_name or _guess_module_name(path) or path.stem
 
+    if name in sys.modules:
+        module = sys.modules[name]
+        if getattr(module, "__file__", None) and not hasattr(
+            module, "__macrotype_header_pragmas__"
+        ):
+            header, comments, lines = _extract_source_info(Path(module.__file__).read_text())
+            module.__macrotype_header_pragmas__ = header
+            module.__macrotype_comments__ = comments
+            module.__macrotype_line_map__ = lines
+        return module
+
     if not type_checking:
+        try:
+            with patch_typing():
+                module = importlib.import_module(name)
+            if getattr(module, "__file__", None) and not hasattr(
+                module, "__macrotype_header_pragmas__"
+            ):
+                header, comments, lines = _extract_source_info(Path(module.__file__).read_text())
+                module.__macrotype_header_pragmas__ = header
+                module.__macrotype_comments__ = comments
+                module.__macrotype_line_map__ = lines
+            return module
+        except ImportError:
+            pass
+
         spec = importlib.util.spec_from_file_location(name, path)
         if spec is None or spec.loader is None:
             raise ImportError(f"Cannot import {path}")
