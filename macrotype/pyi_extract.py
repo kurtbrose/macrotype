@@ -461,20 +461,24 @@ def _class_decorators(klass: type) -> tuple[list[str], set[type], bool]:
     return decos, used, is_dc
 
 
-def _namedtuple_members(klass: type) -> tuple[list[PyiElement], set[type]]:
+def _namedtuple_members(
+    klass: type, *, globalns: dict[str, Any]
+) -> tuple[list[PyiElement], set[type]]:
     """Return ``PyiVariable`` members for ``NamedTuple`` classes."""
 
     members: list[PyiElement] = []
     used: set[type] = set()
     raw_ann = klass.__dict__.get("__annotations__", {})
     for name, annotation in raw_ann.items():
-        fmt = format_type(annotation)
+        fmt = format_type(annotation, globalns=globalns)
         members.append(PyiVariable(name=name, type_str=fmt.text, used_types=fmt.used))
         used.update(fmt.used)
     return members, used
 
 
-def _namedtuple_bases(klass: type, type_params: list[str]) -> tuple[list[str], set[type]]:
+def _namedtuple_bases(
+    klass: type, type_params: list[str], *, globalns: dict[str, Any]
+) -> tuple[list[str], set[type]]:
     """Return bases and used types for ``NamedTuple`` classes."""
 
     bases = ["NamedTuple"]
@@ -485,7 +489,7 @@ def _namedtuple_bases(klass: type, type_params: list[str]) -> tuple[list[str], s
             if not type_params:
                 for param in get_args(b):
                     try:
-                        node = parse_type(param)
+                        node = parse_type(param, globalns=globalns)
                     except Exception:
                         node = None
                     if isinstance(node, UnpackNode):
@@ -493,11 +497,11 @@ def _namedtuple_bases(klass: type, type_params: list[str]) -> tuple[list[str], s
                         if isinstance(target, VarNode):
                             fmt = format_type_param(target.var)
                         else:
-                            fmt = format_type(param)
+                            fmt = format_type(param, globalns=globalns)
                     elif isinstance(param, (typing.TypeVar, typing.ParamSpec, typing.TypeVarTuple)):
                         fmt = format_type_param(param)
                     else:
-                        fmt = format_type(param)
+                        fmt = format_type(param, globalns=globalns)
                     type_params.append(fmt.text)
                     used.update(fmt.used)
     return bases, used
@@ -518,7 +522,9 @@ def _typeddict_bases(klass: type, bases: list[type]) -> tuple[list[str], set[typ
     return rendered, used
 
 
-def _normal_class_bases(klass: type, type_params: list[str]) -> tuple[list[str], set[type]]:
+def _normal_class_bases(
+    klass: type, type_params: list[str], *, globalns: dict[str, Any]
+) -> tuple[list[str], set[type]]:
     """Return rendered bases and used types for normal classes."""
 
     raw_bases = getattr(klass, "__orig_bases__", None) or klass.__bases__
@@ -531,7 +537,7 @@ def _normal_class_bases(klass: type, type_params: list[str]) -> tuple[list[str],
             if not type_params:
                 for param in get_args(b):
                     try:
-                        node = parse_type(param)
+                        node = parse_type(param, globalns=globalns)
                     except Exception:
                         node = None
                     if isinstance(node, UnpackNode):
@@ -539,15 +545,15 @@ def _normal_class_bases(klass: type, type_params: list[str]) -> tuple[list[str],
                         if isinstance(target, VarNode):
                             fmt = format_type_param(target.var)
                         else:
-                            fmt = format_type(param)
+                            fmt = format_type(param, globalns=globalns)
                     elif isinstance(param, (typing.TypeVar, typing.ParamSpec, typing.TypeVarTuple)):
                         fmt = format_type_param(param)
                     else:
-                        fmt = format_type(param)
+                        fmt = format_type(param, globalns=globalns)
                     type_params.append(fmt.text)
                     used.update(fmt.used)
             continue
-        fmt = format_type(b)
+        fmt = format_type(b, globalns=globalns)
         rendered.append(fmt.text)
         used.update(fmt.used)
     return rendered, used
@@ -586,7 +592,7 @@ def _class_variables(
     members: list[PyiElement] = []
     used: set[type] = set()
     for name, annotation in resolved.items():
-        fmt = format_type(annotation)
+        fmt = format_type(annotation, globalns=globalns)
         members.append(PyiVariable(name=name, type_str=fmt.text, used_types=fmt.used))
         used.update(fmt.used)
     return members, used
@@ -949,9 +955,9 @@ class PyiClass(PyiNamedElement):
         members: list[PyiElement] = []
 
         if is_namedtuple:
-            bases, base_used = _namedtuple_bases(klass, type_params)
+            bases, base_used = _namedtuple_bases(klass, type_params, globalns=globalns)
             used_types.update(base_used)
-            vars_members, vars_used = _namedtuple_members(klass)
+            vars_members, vars_used = _namedtuple_members(klass, globalns=globalns)
             members.extend(vars_members)
             used_types.update(vars_used)
             return cls(
@@ -967,7 +973,7 @@ class PyiClass(PyiNamedElement):
         if is_typeddict:
             bases, base_used = _typeddict_bases(klass, td_bases)
         else:
-            bases, base_used = _normal_class_bases(klass, type_params)
+            bases, base_used = _normal_class_bases(klass, type_params, globalns=globalns)
         used_types.update(base_used)
 
         vars_members, vars_used = _class_variables(
@@ -1031,7 +1037,7 @@ class _ModuleBuilder:
 
     def _format_annotation(self, annotation: Any, name: str) -> str:
         try:
-            return format_type(annotation)
+            return format_type(annotation, globalns=self.globals)
         except InvalidTypeError as exc:
             exc.file = getattr(self.mod, "__file__", None)
             exc.line = self.line_map.get(name)
