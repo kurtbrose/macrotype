@@ -88,6 +88,8 @@ ANNOTATED_EXTRA: Annotated[str, 'extra']
 
 NESTED_ANNOTATED: Annotated[int, 'a', 'b']
 
+ANNOTATED_OPTIONAL_META: Annotated[int | None, 'meta']
+
 class UserBox[T]: ...
 
 class Basic:
