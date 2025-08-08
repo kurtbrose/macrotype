@@ -151,19 +151,7 @@ def load_module_from_path(
     to ``path.stem``.
     """
     name = module_name or _guess_module_name(path) or path.stem
-
-    if name in sys.modules:
-        module = sys.modules[name]
-        if getattr(module, "__file__", None) and not hasattr(
-            module, "__macrotype_header_pragmas__"
-        ):
-            header, comments, lines = _extract_source_info(Path(module.__file__).read_text())
-            module.__macrotype_header_pragmas__ = header
-            module.__macrotype_comments__ = comments
-            module.__macrotype_line_map__ = lines
-        return module
-
-    if not type_checking:
+    if not type_checking and "." in name and name not in sys.modules:
         try:
             with patch_typing():
                 module = importlib.import_module(name)
@@ -178,6 +166,18 @@ def load_module_from_path(
         except ImportError:
             pass
 
+    if name in sys.modules:
+        module = sys.modules[name]
+        if getattr(module, "__file__", None) and not hasattr(
+            module, "__macrotype_header_pragmas__"
+        ):
+            header, comments, lines = _extract_source_info(Path(module.__file__).read_text())
+            module.__macrotype_header_pragmas__ = header
+            module.__macrotype_comments__ = comments
+            module.__macrotype_line_map__ = lines
+        return module
+
+    if not type_checking:
         spec = importlib.util.spec_from_file_location(name, path)
         if spec is None or spec.loader is None:
             raise ImportError(f"Cannot import {path}")
