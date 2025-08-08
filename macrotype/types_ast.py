@@ -569,6 +569,23 @@ class UnpackNode(SpecialFormNode):
 
 
 def _parse_no_origin_type(typ: Any) -> BaseNode:
+    if isinstance(typ, typing.ForwardRef):
+        typ = typ.__forward_arg__
+    if isinstance(typ, str):
+        globals_ = _eval_globals or {}
+        try:
+            resolved = eval(typ, globals_)
+        except Exception as exc:
+            raise InvalidTypeError(
+                f"Unresolved forward reference: {typ!r}",
+                hint="Ensure the referenced name is defined",
+            ) from exc
+        if isinstance(resolved, str):
+            raise InvalidTypeError(
+                f"Unresolved forward reference: {typ!r}",
+                hint="Ensure the referenced name is defined",
+            )
+        return parse_type(resolved)
     if _strict and isinstance(typ, type) and issubclass(typ, typing.Generic):
         if getattr(typ, "__parameters__", ()):  # pragma: no branch
             raise InvalidTypeError(
@@ -677,6 +694,7 @@ def _parse_origin_type(origin: Any, args: tuple[Any, ...], raw: Any) -> BaseNode
 
 _on_generic_callback: Callable[[GenericNode], BaseNode] | None = None
 _strict: bool = False
+_eval_globals: dict[str, Any] | None = None
 
 
 def parse_type(
@@ -684,6 +702,7 @@ def parse_type(
     *,
     on_generic: Callable[[GenericNode], BaseNode] | None = None,
     strict: bool | None = None,
+    globalns: dict[str, Any] | None = None,
 ) -> BaseNode:
     """Parse *typ* into a :class:`BaseNode`.
 
@@ -691,13 +710,16 @@ def parse_type(
     produced during parsing, allowing custom post-processing of generic types.
     """
 
-    global _on_generic_callback, _strict
+    global _on_generic_callback, _strict, _eval_globals
     prev_cb = _on_generic_callback
     prev_flag = _strict
+    prev_globals = _eval_globals
     if on_generic is not None:
         _on_generic_callback = on_generic
     if strict is not None:
         _strict = strict
+    if globalns is not None:
+        _eval_globals = globalns
     try:
         if isinstance(typ, (typing.ParamSpecArgs, typing.ParamSpecKwargs)):
             node = AtomNode(typ)
@@ -715,12 +737,19 @@ def parse_type(
             _on_generic_callback = prev_cb
         if strict is not None:
             _strict = prev_flag
+        if globalns is not None:
+            _eval_globals = prev_globals
 
 
-def parse_type_expr(typ: Any, *, strict: bool | None = None) -> TypeExprNode:
+def parse_type_expr(
+    typ: Any,
+    *,
+    strict: bool | None = None,
+    globalns: dict[str, Any] | None = None,
+) -> TypeExprNode:
     """Parse *typ* ensuring it is a :class:`TypeExprNode`."""
 
-    node = parse_type(typ, strict=strict)
+    node = parse_type(typ, strict=strict, globalns=globalns)
     _reject_special(node)
     return typing.cast(TypeExprNode, node)
 
@@ -920,12 +949,17 @@ def _format_runtime_type(type_obj: Any) -> TypeRenderInfo:
     return TypeRenderInfo(repr(type_obj), used)
 
 
-def format_type(type_obj: Any, *, _skip_parse: bool = False) -> TypeRenderInfo:
+def format_type(
+    type_obj: Any,
+    *,
+    globalns: dict[str, Any] | None = None,
+    _skip_parse: bool = False,
+) -> TypeRenderInfo:
     """Return a ``TypeRenderInfo`` instance for ``type_obj``."""
 
     if not _skip_parse:
         try:
-            node = parse_type(type_obj)
+            node = parse_type(type_obj, globalns=globalns)
         except InvalidTypeError:
             raise
         except Exception:
