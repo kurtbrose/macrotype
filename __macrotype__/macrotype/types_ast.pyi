@@ -1,4 +1,4 @@
-# Generated via: macrotype macrotype
+# Generated via: macrotype macrotype -o __macrotype__/macrotype
 # Do not edit by hand
 from typing import Any, Callable, ClassVar, ParamSpec, TypeVar, TypeVarTuple, Unpack, _TypedDictMeta
 from dataclasses import dataclass
@@ -10,17 +10,25 @@ class InvalidTypeError(TypeError):
     def __init__(self, message: str, *, hint: str | None, file: str | None, line: int | None) -> None: ...
     def __str__(self) -> str: ...
 
+@dataclass(frozen=True, kw_only=True)
 class BaseNode:
+    annotated_metadata: list[Any]
+    is_final: bool
+    is_required: bool | None
     _registry: ClassVar[dict[Any, type[BaseNode]]]
     handles: ClassVar[tuple[Any, ...]]
     @classmethod
     def __init_subclass__(cls, **kwargs: Any) -> None: ...
     def emit(self) -> Any: ...
+    def _apply_modifiers(self, t: Any) -> Any: ...
 
+@dataclass(frozen=True, kw_only=True)
 class TypeExprNode(BaseNode): ...
 
+@dataclass(frozen=True, kw_only=True)
 class InClassExprNode(BaseNode): ...
 
+@dataclass(frozen=True, kw_only=True)
 class SpecialFormNode(BaseNode): ...
 
 N = TypeVar('N')
@@ -31,6 +39,7 @@ V = TypeVar('V')
 
 Ctx = TypeVarTuple('Ctx')
 
+@dataclass(frozen=True, kw_only=True)
 class ContainerNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](BaseNode): ...
 
 type NodeLike[N] = N | ContainerNode[N]
@@ -126,6 +135,13 @@ class SelfNode(InClassExprNode):
     def for_args(cls, args: tuple[Any, ...]) -> SelfNode: ...
 
 @dataclass(frozen=True)
+class FinalNode(SpecialFormNode):
+    handles: ClassVar[tuple[Any, ...]]
+    def emit(self) -> Any: ...
+    @classmethod
+    def for_args(cls, args: tuple[Any, ...]) -> FinalNode: ...
+
+@dataclass(frozen=True)
 class ClassVarNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](ContainerNode[N], InClassExprNode):
     handles: ClassVar[tuple[Any, ...]]
     inner: NodeLike[N]
@@ -134,45 +150,12 @@ class ClassVarNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](ContainerN
     def for_args(cls, args: tuple[Any, ...]) -> ClassVarNode[N]: ...
 
 @dataclass(frozen=True)
-class FinalNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](ContainerNode[N], SpecialFormNode):
-    handles: ClassVar[tuple[Any, ...]]
-    inner: NodeLike[N]
-    def emit(self) -> Any: ...
-    @classmethod
-    def for_args(cls, args: tuple[Any, ...]) -> FinalNode[N]: ...
-
-@dataclass(frozen=True)
-class RequiredNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](ContainerNode[N], InClassExprNode):
-    handles: ClassVar[tuple[Any, ...]]
-    inner: NodeLike[N]
-    def emit(self) -> Any: ...
-    @classmethod
-    def for_args(cls, args: tuple[Any, ...]) -> RequiredNode[N]: ...
-
-@dataclass(frozen=True)
-class NotRequiredNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](ContainerNode[N], InClassExprNode):
-    handles: ClassVar[tuple[Any, ...]]
-    inner: NodeLike[N]
-    def emit(self) -> Any: ...
-    @classmethod
-    def for_args(cls, args: tuple[Any, ...]) -> NotRequiredNode[N]: ...
-
-@dataclass(frozen=True)
 class TypeGuardNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](ContainerNode[N], SpecialFormNode):
     handles: ClassVar[tuple[Any, ...]]
     target: NodeLike[N]
     def emit(self) -> Any: ...
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> TypeGuardNode[N]: ...
-
-@dataclass(frozen=True)
-class AnnotatedNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](ContainerNode[N]):
-    handles: ClassVar[tuple[Any, ...]]
-    base: NodeLike[N]
-    metadata: list[Any]
-    def emit(self) -> Any: ...
-    @classmethod
-    def for_args(cls, args: tuple[Any, ...]) -> AnnotatedNode[N]: ...
 
 @dataclass(frozen=True)
 class ConcatenateNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](ContainerNode[N]):
@@ -215,9 +198,11 @@ _on_generic_callback: Callable[[GenericNode], BaseNode] | None
 
 _strict: bool
 
-def parse_type(typ: Any, *, on_generic: Callable[[GenericNode], BaseNode] | None, strict: bool | None) -> BaseNode: ...
+_eval_globals: dict[str, Any] | None
 
-def parse_type_expr(typ: Any, *, strict: bool | None) -> TypeExprNode: ...
+def parse_type(typ: Any, *, on_generic: Callable[[GenericNode], BaseNode] | None, strict: bool | None, globalns: dict[str, Any] | None) -> BaseNode: ...
+
+def parse_type_expr(typ: Any, *, strict: bool | None, globalns: dict[str, Any] | None) -> TypeExprNode: ...
 
 def _reject_special(node: BaseNode) -> None: ...
 
@@ -230,7 +215,7 @@ def _format_node(node: BaseNode) -> TypeRenderInfo: ...
 
 def _format_runtime_type(type_obj: Any) -> TypeRenderInfo: ...
 
-def format_type(type_obj: Any, *, _skip_parse: bool) -> TypeRenderInfo: ...
+def format_type(type_obj: Any, *, globalns: dict[str, Any] | None, _skip_parse: bool) -> TypeRenderInfo: ...
 
 def format_type_param(tp: Any) -> TypeRenderInfo: ...
 

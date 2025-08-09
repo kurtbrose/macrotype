@@ -1,4 +1,4 @@
-# Generated via: macrotype macrotype/meta_types.py -o __macrotype__/macrotype/meta_types.pyi
+# Generated via: macrotype macrotype -o __macrotype__/macrotype
 # Do not edit by hand
 from typing import Any, Callable, get_overloads, overload
 

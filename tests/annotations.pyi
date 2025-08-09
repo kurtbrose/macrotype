@@ -1,4 +1,4 @@
-# Generated via: macrotype tests/annotations.py -o tests/annotations.pyi
+# Generated via: macrotype tests/annotations.py -o -
 # Do not edit by hand
 # pyright: basic
 from typing import Annotated, Any, Callable, ClassVar, Concatenate, Final, Literal, LiteralString, NamedTuple, Never, NewType, NoReturn, NotRequired, ParamSpec, Protocol, Required, Self, TypeGuard, TypeVar, TypeVarTuple, TypedDict, Unpack, final, overload, override, runtime_checkable
@@ -87,6 +87,8 @@ TYPED_LAMBDA: Callable[[int, int], int]
 ANNOTATED_EXTRA: Annotated[str, 'extra']
 
 NESTED_ANNOTATED: Annotated[int, 'a', 'b']
+
+ANNOTATED_OPTIONAL_META: Annotated[int | None, 'meta']
 
 class UserBox[T]: ...
 
