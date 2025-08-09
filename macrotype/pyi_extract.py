@@ -492,13 +492,18 @@ def _namedtuple_bases(
                         node = parse_type(param, globalns=globalns)
                     except Exception:
                         node = None
-                    if isinstance(node, UnpackNode):
-                        target = node.target
-                        if isinstance(target, VarNode):
-                            fmt = format_type_param(target.var)
-                        else:
-                            fmt = format_type(param, globalns=globalns)
-                    elif isinstance(param, (typing.TypeVar, typing.ParamSpec, typing.TypeVarTuple)):
+                    if node and len(node.alts) == 1:
+                        (inner,) = node.alts
+                        if isinstance(inner, UnpackNode):
+                            target = inner.target
+                            if isinstance(target, VarNode):
+                                fmt = format_type_param(target.var)
+                            else:
+                                fmt = format_type(param, globalns=globalns)
+                            type_params.append(fmt.text)
+                            used.update(fmt.used)
+                            continue
+                    if isinstance(param, (typing.TypeVar, typing.ParamSpec, typing.TypeVarTuple)):
                         fmt = format_type_param(param)
                     else:
                         fmt = format_type(param, globalns=globalns)
@@ -540,13 +545,18 @@ def _normal_class_bases(
                         node = parse_type(param, globalns=globalns)
                     except Exception:
                         node = None
-                    if isinstance(node, UnpackNode):
-                        target = node.target
-                        if isinstance(target, VarNode):
-                            fmt = format_type_param(target.var)
-                        else:
-                            fmt = format_type(param, globalns=globalns)
-                    elif isinstance(param, (typing.TypeVar, typing.ParamSpec, typing.TypeVarTuple)):
+                    if node and len(node.alts) == 1:
+                        (inner,) = node.alts
+                        if isinstance(inner, UnpackNode):
+                            target = inner.target
+                            if isinstance(target, VarNode):
+                                fmt = format_type_param(target.var)
+                            else:
+                                fmt = format_type(param, globalns=globalns)
+                            type_params.append(fmt.text)
+                            used.update(fmt.used)
+                            continue
+                    if isinstance(param, (typing.TypeVar, typing.ParamSpec, typing.TypeVarTuple)):
                         fmt = format_type_param(param)
                     else:
                         fmt = format_type(param, globalns=globalns)

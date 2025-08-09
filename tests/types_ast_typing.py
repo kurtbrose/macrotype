@@ -50,11 +50,11 @@ tn: TupleNode[TypeExprNode] = TupleNode((TypeNode.single(AtomNode(int)),), True)
 assert_type(tn.items[0], TypeNode)
 
 cn: CallableNode[TypeExprNode] = CallableNode(
-    [TypeNode.single(AtomNode(int))],
+    (TypeNode.single(AtomNode(int)),),
     TypeNode.single(AtomNode(str)),
 )
 assert_type(cn.return_type, TypeNode)
-if isinstance(cn.args, list):
+if isinstance(cn.args, tuple):
     assert_type(cn.args[0], TypeNode)
 
 cvn: ClassVarNode[TypeExprNode] = ClassVarNode[TypeExprNode](TypeNode.single(AtomNode(int)))

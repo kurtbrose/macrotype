@@ -77,7 +77,7 @@ class GenericNode(ContainerNode[TypeExprNode]):
 @dataclass(frozen=True)
 class LiteralNode(TypeExprNode):
     handles: ClassVar[tuple[Any, ...]]
-    values: list[Enum | None | bool | int | str]
+    values: tuple[Enum | None | bool | int | str, ...]
     def _emit_core(self) -> Any: ...
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> LiteralNode: ...
@@ -130,7 +130,7 @@ class FrozenSetNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](Container
 @dataclass(frozen=True)
 class InitVarNode(SpecialFormNode):
     handles: ClassVar[tuple[Any, ...]]
-    inner: TypeExprNode
+    inner: TypeNode
     def _emit_core(self) -> Any: ...
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> InitVarNode: ...
@@ -176,7 +176,7 @@ class ConcatenateNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](Contain
 @dataclass(frozen=True)
 class CallableNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](ContainerNode[N]):
     handles: ClassVar[tuple[Any, ...]]
-    args: None | TypeNode | list[TypeNode]
+    args: None | TypeNode | tuple[TypeNode, ...]
     return_type: TypeNode
     def _emit_core(self) -> Any: ...
     @classmethod
@@ -190,9 +190,9 @@ class UnpackNode(SpecialFormNode):
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> UnpackNode: ...
 
-def _parse_no_origin_type(typ: Any) -> BaseNode: ...
+def _parse_no_origin_type(typ: Any) -> TypeNode: ...
 
-def _parse_origin_type(origin: Any, args: tuple[Any, ...], raw: Any) -> BaseNode | TypeNode: ...
+def _parse_origin_type(origin: Any, args: tuple[Any, ...], raw: Any) -> TypeNode: ...
 
 _on_generic_callback: Callable[[GenericNode], BaseNode] | None
 
@@ -200,9 +200,9 @@ _strict: bool
 
 _eval_globals: None | dict[str, Any]
 
-def parse_type(typ: Any, *, on_generic: Callable[[GenericNode], BaseNode] | None, strict: None | bool, globalns: None | dict[str, Any]) -> BaseNode | TypeNode: ...
+def parse_type(typ: Any, *, on_generic: Callable[[GenericNode], BaseNode] | None, strict: None | bool, globalns: None | dict[str, Any]) -> TypeNode: ...
 
-def parse_type_expr(typ: Any, *, strict: None | bool, globalns: None | dict[str, Any]) -> TypeExprNode: ...
+def parse_type_expr(typ: Any, *, strict: None | bool, globalns: None | dict[str, Any]) -> TypeNode: ...
 
 def _reject_special(node: BaseNode | TypeNode) -> None: ...
 
