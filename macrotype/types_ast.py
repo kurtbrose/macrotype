@@ -49,7 +49,7 @@ class InvalidTypeError(TypeError):
 class BaseNode:
     """Base class for parsed type nodes."""
 
-    node_ann: tuple[Any, ...] = ()
+    annotations: tuple[Any, ...] = ()
     is_final: bool = False
     is_required: bool | None = None
 
@@ -75,8 +75,8 @@ class BaseNode:
             t = typing.NotRequired[t]
         if self.is_final:
             t = typing.Final[t]
-        if self.node_ann:
-            t = typing.Annotated[t, *self.node_ann]
+        if self.annotations:
+            t = typing.Annotated[t, *self.annotations]
         return t
 
 
@@ -636,7 +636,7 @@ def _parse_origin_type(origin: Any, args: tuple[Any, ...], raw: Any) -> BaseNode
                 hint="Use Annotated[T, ...] with at least one metadata value",
             )
         base = parse_type(args[0])
-        return dataclasses.replace(base, node_ann=base.node_ann + tuple(args[1:]))
+        return dataclasses.replace(base, annotations=base.annotations + tuple(args[1:]))
     if origin is typing.Final:
         if len(args) != 1:
             raise InvalidTypeError(
@@ -898,11 +898,11 @@ def _format_runtime_type(type_obj: Any) -> TypeRenderInfo:
 
     if origin is typing.Annotated:
         node = parse_type(type_obj)
-        base_node = dataclasses.replace(node, node_ann=())
+        base_node = dataclasses.replace(node, annotations=())
         base_fmt = format_type(base_node.emit())
         used.add(typing.Annotated)
         used.update(base_fmt.used)
-        metadata_str = ", ".join(repr(m) for m in node.node_ann)
+        metadata_str = ", ".join(repr(m) for m in node.annotations)
         return TypeRenderInfo(f"Annotated[{base_fmt.text}, {metadata_str}]", used)
 
     if origin is typing.Literal:

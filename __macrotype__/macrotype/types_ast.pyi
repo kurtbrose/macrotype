@@ -12,7 +12,7 @@ class InvalidTypeError(TypeError):
 
 @dataclass(frozen=True, kw_only=True)
 class BaseNode:
-    node_ann: tuple[Any, ...]
+    annotations: tuple[Any, ...]
     is_final: bool
     is_required: bool | None
     _registry: ClassVar[dict[Any, type[BaseNode]]]
