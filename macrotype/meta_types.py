@@ -62,6 +62,10 @@ def patch_typing():
 
     orig_overload = typing.overload
     orig_get = getattr(typing, "get_overloads", None)
+
+    saved = {mod: dict(funcs) for mod, funcs in _OVERLOAD_REGISTRY.items()}
+    saved_typing = getattr(typing, "_overload_registry", {}).copy()
+
     clear_registry()
     typing.overload = overload
     typing.get_overloads = get_overloads
@@ -71,6 +75,21 @@ def patch_typing():
         typing.overload = orig_overload
         if orig_get is not None:
             typing.get_overloads = orig_get
+
+        new = {mod: dict(funcs) for mod, funcs in _OVERLOAD_REGISTRY.items()}
+        _OVERLOAD_REGISTRY.clear()
+        for mod, funcs in saved.items():
+            mod_dict = _OVERLOAD_REGISTRY.setdefault(mod, defaultdict(list))
+            mod_dict.update(funcs)
+        for mod, funcs in new.items():
+            mod_dict = _OVERLOAD_REGISTRY.setdefault(mod, defaultdict(list))
+            mod_dict.update(funcs)
+
+        if hasattr(typing, "_overload_registry"):
+            new_typing = typing._overload_registry.copy()
+            typing._overload_registry.clear()
+            typing._overload_registry.update(saved_typing)
+            typing._overload_registry.update(new_typing)
 
 
 __all__ = [
