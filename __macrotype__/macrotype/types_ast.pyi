@@ -1,4 +1,4 @@
-# Generated via: macrotype macrotype -o /tmp/macrotype_stub
+# Generated via: macrotype macrotype -o __macrotype__/macrotype
 # Do not edit by hand
 from dataclasses import dataclass
 from enum import Enum

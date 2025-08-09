@@ -345,9 +345,10 @@ class OptionDataclass:
 class InitVarExample:
     x: int
     init_only: InitVar[int]
+    init_list: InitVar[list[int]]
 
-    def __post_init__(self, init_only: int) -> None:
-        self.x += init_only
+    def __post_init__(self, init_only: int, init_list: list[int]) -> None:
+        self.x += init_only + len(init_list)
 
 
 @dataclass

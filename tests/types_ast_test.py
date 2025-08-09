@@ -136,6 +136,9 @@ PARSINGS = {
     typing.Annotated[int, "x"]: TypeNode.single(AtomNode(int, node_ann=("x",))),
     dataclasses.InitVar: TypeNode.single(InitVarNode(TypeNode.single(AtomNode(typing.Any)))),
     dataclasses.InitVar[int]: TypeNode.single(InitVarNode(TypeNode.single(AtomNode(int)))),
+    dataclasses.InitVar[list[int]]: TypeNode.single(
+        InitVarNode(TypeNode.single(ListNode(TypeNode.single(AtomNode(int)))))
+    ),
     typing.Self: TypeNode.single(SelfNode()),
     typing.Unpack[tuple[int, str]]: TypeNode.single(
         UnpackNode(

@@ -11,6 +11,7 @@ from macrotype.types_ast import (
     FrozenSetNode,
     GenericNode,
     InClassExprNode,
+    InitVarNode,
     ListNode,
     NodeLike,
     SelfNode,
@@ -60,6 +61,9 @@ if isinstance(cn.args, tuple):
 
 cvn: ClassVarNode[TypeExprNode] = ClassVarNode[TypeExprNode](TypeNode.single(AtomNode(int)))
 assert_type(cvn.inner, TypeNode)
+
+ivn: InitVarNode = InitVarNode(TypeNode.single(AtomNode(int)))
+assert_type(ivn.inner, TypeNode)
 
 tgn: TypeGuardNode[TypeExprNode] = TypeGuardNode[TypeExprNode](TypeNode.single(AtomNode(int)))
 assert_type(tgn.target, TypeNode)

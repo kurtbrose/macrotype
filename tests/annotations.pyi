@@ -1,4 +1,4 @@
-# Generated via: macrotype tests/annotations.py -o -
+# Generated via: macrotype tests/annotations.py -o tests/annotations.pyi
 # Do not edit by hand
 # pyright: basic
 from abc import ABC, abstractmethod
@@ -240,7 +240,8 @@ class OptionDataclass:
 class InitVarExample:
     x: int
     init_only: InitVar[int]
-    def __post_init__(self, init_only: int) -> None: ...
+    init_list: InitVar[list[int]]
+    def __post_init__(self, init_only: int, init_list: list[int]) -> None: ...
 
 @dataclass
 class Outer:
