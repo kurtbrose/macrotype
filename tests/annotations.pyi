@@ -546,6 +546,8 @@ CALLABLE_LIST_VAR: list[Callable[[int], str]]
 
 GENERIC_DEQUE: deque[int]
 
+GENERIC_DEQUE_LIST: deque[list[str]]
+
 GENERIC_USERBOX: UserBox[int]
 
 LITERAL_STR_VAR: LiteralString

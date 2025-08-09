@@ -212,7 +212,7 @@ class GenericNode(ContainerNode[TypeExprNode]):
     """Node for generics without dedicated handlers."""
 
     origin: type[Any]
-    args: tuple[BaseNode, ...]
+    args: tuple[TypeNode, ...]
 
     def emit(self) -> TypeExpr:
         return self._apply_modifiers(self.origin[tuple(arg.emit() for arg in self.args)])
@@ -265,7 +265,7 @@ class DictNode(Generic[K, V], ContainerNode[typing.Union[K, V]]):
                     hint="Use dict[key_type, value_type]",
                 )
             key = parse_type(args[0])
-            return GenericNode(dict, (key,))
+            return GenericNode(dict, (TypeNode.single(key),))
         if len(args) == 2:
             key = parse_type(args[0])
             val = parse_type(args[1])
@@ -503,7 +503,7 @@ class TypeGuardNode(Generic[N], ContainerNode[N], SpecialFormNode):
 @dataclass(frozen=True)
 class ConcatenateNode(Generic[N], ContainerNode[N]):
     handles: ClassVar[tuple[Any, ...]] = (typing.Concatenate,)
-    parts: tuple[NodeLike[N], ...]
+    parts: tuple[TypeNode, ...]
 
     def emit(self) -> TypeExpr:
         return self._apply_modifiers(typing.Concatenate[tuple(part.emit() for part in self.parts)])
@@ -521,7 +521,7 @@ class ConcatenateNode(Generic[N], ContainerNode[N]):
                 f"Concatenate last argument must be a ParamSpec or ellipsis: {last!r}",
                 hint="Use a ParamSpec variable or ... as the final argument",
             )
-        return cls(tuple(parse_type(arg) for arg in args))
+        return cls(tuple(TypeNode.single(parse_type(arg)) for arg in args))
 
 
 @dataclass(frozen=True)
@@ -563,14 +563,14 @@ class UnionNode(Generic[*Ctx], ContainerNode[typing.Union[*Ctx]]):
     """A ``typing.Union`` wrapper that is class-specific iff *any* arm is."""
 
     # The concrete nodes that correspond to each context in ``*Ctx``.
-    options: tuple[BaseNode, ...]
+    options: tuple[TypeNode, ...]
 
     def emit(self) -> TypeExpr:
         return self._apply_modifiers(Union[tuple(opt.emit() for opt in self.options)])
 
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> "UnionNode[*Ctx]":
-        return cls(tuple(parse_type(arg) for arg in args))
+        return cls(tuple(TypeNode.single(parse_type(arg)) for arg in args))
 
 
 @dataclass(frozen=True)
@@ -721,7 +721,7 @@ def _parse_origin_type(origin: Any, args: tuple[Any, ...], raw: Any) -> BaseNode
         or hasattr(origin, "__parameters__")
         or hasattr(raw, "__parameters__")
     ):
-        return GenericNode(origin, tuple(parse_type(a) for a in args))
+        return GenericNode(origin, tuple(TypeNode.single(parse_type(a)) for a in args))
     raise InvalidTypeError(
         f"Unsupported type annotation: {raw!r}",
         hint="Use a supported generic type or typing construct",

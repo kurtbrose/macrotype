@@ -73,7 +73,7 @@ class TypedDictNode(AtomNode):
 @dataclass(frozen=True)
 class GenericNode(ContainerNode[TypeExprNode]):
     origin: type[Any]
-    args: tuple[BaseNode, ...]
+    args: tuple[TypeNode, ...]
     def emit(self) -> Any: ...
 
 @dataclass(frozen=True)
@@ -170,7 +170,7 @@ class TypeGuardNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](Container
 @dataclass(frozen=True)
 class ConcatenateNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](ContainerNode[N]):
     handles: ClassVar[tuple[Any, ...]]
-    parts: tuple[NodeLike[N], ...]
+    parts: tuple[TypeNode, ...]
     def emit(self) -> Any: ...
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> ConcatenateNode[N]: ...
@@ -187,7 +187,7 @@ class CallableNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](ContainerN
 @dataclass(frozen=True)
 class UnionNode[*Ctx](ContainerNode[Unpack[Ctx]]):
     handles: ClassVar[tuple[Any, ...]]
-    options: tuple[BaseNode, ...]
+    options: tuple[TypeNode, ...]
     def emit(self) -> Any: ...
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> UnionNode[Unpack[Ctx]]: ...

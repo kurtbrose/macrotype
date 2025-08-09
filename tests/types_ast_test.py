@@ -64,7 +64,7 @@ PARSINGS = {
     set: AtomNode(set),
     frozenset: AtomNode(frozenset),
     dict[()]: AtomNode(dict),
-    dict[int]: GenericNode(dict, (AtomNode(int),)),
+    dict[int]: GenericNode(dict, (TypeNode.single(AtomNode(int)),)),
     dict[int, str]: DictNode(
         TypeNode.single(AtomNode(int)),
         TypeNode.single(AtomNode(str)),
@@ -103,12 +103,35 @@ PARSINGS = {
     ),
     set[int]: SetNode(TypeNode.single(AtomNode(int))),
     frozenset[str]: FrozenSetNode(TypeNode.single(AtomNode(str))),
-    typing.Union[int, str]: UnionNode((AtomNode(int), AtomNode(str))),
-    int | str: UnionNode((AtomNode(int), AtomNode(str))),
-    typing.Union[int, str, None]: UnionNode((AtomNode(int), AtomNode(str), AtomNode(type(None)))),
+    typing.Union[int, str]: UnionNode(
+        (
+            TypeNode.single(AtomNode(int)),
+            TypeNode.single(AtomNode(str)),
+        )
+    ),
+    int | str: UnionNode(
+        (
+            TypeNode.single(AtomNode(int)),
+            TypeNode.single(AtomNode(str)),
+        )
+    ),
+    typing.Union[int, str, None]: UnionNode(
+        (
+            TypeNode.single(AtomNode(int)),
+            TypeNode.single(AtomNode(str)),
+            TypeNode.single(AtomNode(type(None))),
+        )
+    ),
     dict[str, typing.Union[int, None]]: DictNode(
         TypeNode.single(AtomNode(str)),
-        TypeNode.single(UnionNode((AtomNode(int), AtomNode(type(None))))),
+        TypeNode.single(
+            UnionNode(
+                (
+                    TypeNode.single(AtomNode(int)),
+                    TypeNode.single(AtomNode(type(None))),
+                )
+            )
+        ),
     ),
     typing.Callable[[int, str], bool]: CallableNode(
         [TypeNode.single(AtomNode(int)), TypeNode.single(AtomNode(str))],
@@ -145,17 +168,32 @@ PARSINGS = {
     Ts: VarNode(Ts),
     typing.Unpack[Ts]: UnpackNode(VarNode(Ts)),
     AliasListT: ListNode(TypeNode.single(VarNode(T))),
-    typing.Concatenate[int, P]: ConcatenateNode((AtomNode(int), VarNode(P))),
+    typing.Concatenate[int, P]: ConcatenateNode(
+        (
+            TypeNode.single(AtomNode(int)),
+            TypeNode.single(VarNode(P)),
+        )
+    ),
     typing.Callable[P, int]: CallableNode(
         TypeNode.single(VarNode(P)),
         TypeNode.single(AtomNode(int)),
     ),
     typing.Callable[typing.Concatenate[int, P], int]: CallableNode(
-        TypeNode.single(ConcatenateNode((AtomNode(int), VarNode(P)))),
+        TypeNode.single(
+            ConcatenateNode(
+                (
+                    TypeNode.single(AtomNode(int)),
+                    TypeNode.single(VarNode(P)),
+                )
+            )
+        ),
         TypeNode.single(AtomNode(int)),
     ),
-    typing.Deque[int]: GenericNode(collections.deque, (AtomNode(int),)),
-    Box[int]: GenericNode(Box, (AtomNode(int),)),
+    typing.Deque[int]: GenericNode(
+        collections.deque,
+        (TypeNode.single(AtomNode(int)),),
+    ),
+    Box[int]: GenericNode(Box, (TypeNode.single(AtomNode(int)),)),
 }
 
 
@@ -175,8 +213,10 @@ def test_unrecognized_type_atom() -> None:
 
 
 def test_generic_nodes() -> None:
-    assert parse_type(typing.Deque[int]) == GenericNode(collections.deque, (AtomNode(int),))
-    assert parse_type(Box[int]) == GenericNode(Box, (AtomNode(int),))
+    assert parse_type(typing.Deque[int]) == GenericNode(
+        collections.deque, (TypeNode.single(AtomNode(int)),)
+    )
+    assert parse_type(Box[int]) == GenericNode(Box, (TypeNode.single(AtomNode(int)),))
 
 
 def test_invalid_tuple() -> None:

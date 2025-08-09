@@ -148,6 +148,8 @@ ANNOTATED_OPTIONAL_META: Annotated[int | None, "meta"] = 0
 
 # Built-in generic without dedicated handler
 GENERIC_DEQUE: Deque[int]
+# Deque with nested list to exercise TypeNode inside GenericNode
+GENERIC_DEQUE_LIST: Deque[list[str]]
 
 
 # User-defined generic class to exercise GenericNode

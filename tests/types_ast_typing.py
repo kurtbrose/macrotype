@@ -1,12 +1,14 @@
 # pyright: strict
-from typing import assert_type
+from typing import ParamSpec, assert_type
 
 from macrotype.types_ast import (
     AtomNode,
     CallableNode,
     ClassVarNode,
+    ConcatenateNode,
     DictNode,
     FrozenSetNode,
+    GenericNode,
     InClassExprNode,
     ListNode,
     NodeLike,
@@ -16,6 +18,8 @@ from macrotype.types_ast import (
     TypeExprNode,
     TypeGuardNode,
     TypeNode,
+    UnionNode,
+    VarNode,
 )
 
 expr_node: NodeLike[TypeExprNode] = AtomNode(int)
@@ -58,3 +62,18 @@ assert_type(cvn.inner, TypeNode)
 
 tgn: TypeGuardNode[TypeExprNode] = TypeGuardNode[TypeExprNode](TypeNode.single(AtomNode(int)))
 assert_type(tgn.target, TypeNode)
+
+P = ParamSpec("P")
+
+gn: GenericNode = GenericNode(list, (TypeNode.single(AtomNode(int)),))
+assert_type(gn.args[0], TypeNode)
+
+un: UnionNode[TypeExprNode, TypeExprNode] = UnionNode(
+    (TypeNode.single(AtomNode(int)), TypeNode.single(AtomNode(str)))
+)
+assert_type(un.options[0], TypeNode)
+
+ccn: ConcatenateNode[TypeExprNode] = ConcatenateNode(
+    (TypeNode.single(AtomNode(int)), TypeNode.single(VarNode(P)))
+)
+assert_type(ccn.parts[0], TypeNode)
