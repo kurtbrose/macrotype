@@ -45,7 +45,7 @@ class InvalidTypeError(TypeError):
         return f"{location}{self.args[0]}{hint}"
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, eq=False, kw_only=True)
 class BaseNode:
     """Base class for parsed type nodes."""
 
@@ -78,6 +78,24 @@ class BaseNode:
         if self.annotated_metadata:
             t = typing.Annotated[t, *self.annotated_metadata]
         return t
+
+    def __hash__(self) -> int:  # pragma: no cover - simple tuple hashing
+        items = []
+        for f in dataclasses.fields(self):
+            value = getattr(self, f.name)
+            if isinstance(value, list):
+                items.append(tuple(value))
+            else:
+                items.append(value)
+        return hash((self.__class__, *items))
+
+    def __eq__(self, other: object) -> bool:  # pragma: no cover - simple structural compare
+        if type(self) is not type(other):
+            return NotImplemented
+        for f in dataclasses.fields(self):
+            if getattr(self, f.name) != getattr(other, f.name):
+                return False
+        return True
 
 
 class TypeExprNode(BaseNode):
@@ -124,7 +142,16 @@ class ContainerNode(Generic[N], BaseNode):
 NodeLike = TypeAliasType("NodeLike", N | ContainerNode[N], type_params=(N,))
 
 
-@dataclass(frozen=True)
+def emit_slot(alts: frozenset[BaseNode]) -> TypeExpr:
+    """Return a runtime type for alternatives in ``alts``."""
+    if not alts:
+        return Any
+    if len(alts) == 1:
+        return next(iter(alts)).emit()
+    return typing.Union[tuple(a.emit() for a in alts)]
+
+
+@dataclass(frozen=True, eq=False)
 class AtomNode(TypeExprNode):
     """Leaf nodes such as ``int`` or ``str``."""
 
@@ -158,7 +185,7 @@ class AtomNode(TypeExprNode):
         return type_ in atomic_specials
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=False)
 class VarNode(TypeExprNode):
     """Node for ``TypeVar``, ``ParamSpec`` and ``TypeVarTuple``."""
 
@@ -168,14 +195,14 @@ class VarNode(TypeExprNode):
         return self._apply_modifiers(self.var)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=False)
 class TypedDictNode(AtomNode):
     """``TypedDict`` leaf node."""
 
     type_: typing._TypedDictMeta
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=False)
 class GenericNode(ContainerNode[TypeExprNode]):
     """Node for generics without dedicated handlers."""
 
@@ -186,7 +213,7 @@ class GenericNode(ContainerNode[TypeExprNode]):
         return self._apply_modifiers(self.origin[tuple(arg.emit() for arg in self.args)])
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=False)
 class LiteralNode(TypeExprNode):
     handles: ClassVar[tuple[Any, ...]] = (typing.Literal,)
     values: list[int | str | bool | enum.Enum | None]
@@ -208,7 +235,7 @@ class LiteralNode(TypeExprNode):
         return cls(values=validated)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=False)
 class DictNode(Generic[K, V], ContainerNode[typing.Union[K, V]]):
     handles: ClassVar[tuple[Any, ...]] = (dict,)
     key: NodeLike[K]
@@ -244,14 +271,14 @@ class DictNode(Generic[K, V], ContainerNode[typing.Union[K, V]]):
         )
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=False)
 class ListNode(Generic[N], ContainerNode[N]):
     handles: ClassVar[tuple[Any, ...]] = (list,)
-    element: NodeLike[N]
+    element: frozenset[BaseNode]
     container_type: ClassVar[type] = list
 
     def emit(self) -> TypeExpr:
-        return self._apply_modifiers(list[self.element.emit()])
+        return self._apply_modifiers(list[emit_slot(self.element)])
 
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> BaseNode:
@@ -264,14 +291,16 @@ class ListNode(Generic[N], ContainerNode[N]):
             return AtomNode(list)
         if len(args) == 1:
             elem = parse_type(args[0])
-            return cls(elem)
+            if isinstance(elem, UnionNode):
+                return cls(frozenset(elem.options))
+            return cls(frozenset({elem}))
         raise InvalidTypeError(
             f"Too many arguments to list: {args}",
             hint="list accepts at most one type argument",
         )
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=False)
 class TupleNode(Generic[*Ctx], ContainerNode[typing.Union[*Ctx]]):
     handles: ClassVar[tuple[Any, ...]] = (tuple,)
     """
@@ -310,7 +339,7 @@ class TupleNode(Generic[*Ctx], ContainerNode[typing.Union[*Ctx]]):
         return cls(items=tuple(parse_type(arg) for arg in args), variable=False)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=False)
 class SetNode(Generic[N], ContainerNode[N]):
     handles: ClassVar[tuple[Any, ...]] = (set,)
     element: NodeLike[N]
@@ -337,7 +366,7 @@ class SetNode(Generic[N], ContainerNode[N]):
         )
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=False)
 class FrozenSetNode(Generic[N], ContainerNode[N]):
     handles: ClassVar[tuple[Any, ...]] = (frozenset,)
     element: NodeLike[N]
@@ -364,7 +393,7 @@ class FrozenSetNode(Generic[N], ContainerNode[N]):
         )
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=False)
 class InitVarNode(SpecialFormNode):
     handles: ClassVar[tuple[Any, ...]] = (dataclasses.InitVar,)
     """``dataclasses.InitVar`` wrapper."""
@@ -385,7 +414,7 @@ class InitVarNode(SpecialFormNode):
         return cls(inner)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=False)
 class SelfNode(InClassExprNode):
     handles: ClassVar[tuple[Any, ...]] = (typing.Self,)
     """``typing.Self`` leaf node."""
@@ -403,7 +432,7 @@ class SelfNode(InClassExprNode):
         return cls()
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=False)
 class FinalNode(SpecialFormNode):
     handles: ClassVar[tuple[Any, ...]] = (typing.Final,)
     """Bare ``typing.Final`` marker with inferred type."""
@@ -421,7 +450,7 @@ class FinalNode(SpecialFormNode):
         return cls()
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=False)
 class ClassVarNode(Generic[N], ContainerNode[N], InClassExprNode):
     handles: ClassVar[tuple[Any, ...]] = (typing.ClassVar,)
     """``typing.ClassVar`` wrapper."""
@@ -442,7 +471,7 @@ class ClassVarNode(Generic[N], ContainerNode[N], InClassExprNode):
         return cls(inner)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=False)
 class TypeGuardNode(Generic[N], ContainerNode[N], SpecialFormNode):
     handles: ClassVar[tuple[Any, ...]] = (typing.TypeGuard,)
     """``typing.TypeGuard`` wrapper."""
@@ -462,7 +491,7 @@ class TypeGuardNode(Generic[N], ContainerNode[N], SpecialFormNode):
         return cls(parse_type(args[0]))
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=False)
 class ConcatenateNode(Generic[N], ContainerNode[N]):
     handles: ClassVar[tuple[Any, ...]] = (typing.Concatenate,)
     parts: list[NodeLike[N]]
@@ -486,7 +515,7 @@ class ConcatenateNode(Generic[N], ContainerNode[N]):
         return cls([parse_type(arg) for arg in args])
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=False)
 class CallableNode(Generic[N], ContainerNode[N]):
     handles: ClassVar[tuple[Any, ...]] = (collections.abc.Callable,)
     args: NodeLike[N] | list[NodeLike[N]] | None
@@ -519,7 +548,7 @@ class CallableNode(Generic[N], ContainerNode[N]):
         return cls([parse_type(a) for a in arg_list], return_type=ret_node)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=False)
 class UnionNode(Generic[*Ctx], ContainerNode[typing.Union[*Ctx]]):
     handles: ClassVar[tuple[Any, ...]] = (Union, types.UnionType)
     """A ``typing.Union`` wrapper that is class-specific iff *any* arm is."""
@@ -535,7 +564,7 @@ class UnionNode(Generic[*Ctx], ContainerNode[typing.Union[*Ctx]]):
         return cls(tuple(parse_type(arg) for arg in args))
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=False)
 class UnpackNode(SpecialFormNode):
     handles: ClassVar[tuple[Any, ...]] = (typing.Unpack,)
     """``typing.Unpack`` wrapper."""

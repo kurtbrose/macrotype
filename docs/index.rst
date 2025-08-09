@@ -14,7 +14,7 @@ can customize the result by providing an ``on_generic`` callback::
 
     def handle(node: GenericNode):
         if node.origin is deque:
-            return ListNode(node.args[0])
+            return ListNode(frozenset({node.args[0]}))
         return node
 
     parse_type(Deque[int], on_generic=handle)

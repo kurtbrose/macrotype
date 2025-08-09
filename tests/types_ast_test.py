@@ -67,9 +67,16 @@ PARSINGS = {
     dict[int, str]: DictNode(AtomNode(int), AtomNode(str)),
     dict[int, typing.Any]: DictNode(AtomNode(int), AtomNode(typing.Any)),
     list[()]: AtomNode(list),
-    list[int]: ListNode(AtomNode(int)),
-    list[list[int]]: ListNode(ListNode(AtomNode(int))),
-    dict[str, list[int]]: DictNode(AtomNode(str), ListNode(AtomNode(int))),
+    list[int]: ListNode(frozenset({AtomNode(int)})),
+    list[int | str]: ListNode(frozenset({AtomNode(int), AtomNode(str)})),
+    list[int | (str | None)]: ListNode(
+        frozenset({AtomNode(int), AtomNode(str), AtomNode(type(None))})
+    ),
+    list[list[int]]: ListNode(frozenset({ListNode(frozenset({AtomNode(int)}))})),
+    dict[str, list[int]]: DictNode(
+        AtomNode(str),
+        ListNode(frozenset({AtomNode(int)})),
+    ),
     tuple[()]: TupleNode((), False),
     tuple[int]: TupleNode((AtomNode(int),), True),
     tuple[int, str]: TupleNode((AtomNode(int), AtomNode(str)), False),
@@ -111,7 +118,7 @@ PARSINGS = {
     P: VarNode(P),
     Ts: VarNode(Ts),
     typing.Unpack[Ts]: UnpackNode(VarNode(Ts)),
-    AliasListT: ListNode(VarNode(T)),
+    AliasListT: ListNode(frozenset({VarNode(T)})),
     typing.Concatenate[int, P]: ConcatenateNode([AtomNode(int), VarNode(P)]),
     typing.Callable[P, int]: CallableNode(VarNode(P), AtomNode(int)),
     typing.Callable[typing.Concatenate[int, P], int]: CallableNode(
