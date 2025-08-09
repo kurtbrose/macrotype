@@ -1,7 +1,6 @@
 # Generated via: macrotype tests/annotations.py -o tests/annotations.pyi
 # Do not edit by hand
 # pyright: basic
-from typing import Annotated, Any, Callable, ClassVar, Concatenate, Final, Literal, LiteralString, NamedTuple, Never, NewType, NoReturn, NotRequired, ParamSpec, Protocol, Required, Self, TypeGuard, TypeVar, TypeVarTuple, TypedDict, Unpack, final, overload, override, runtime_checkable
 from abc import ABC, abstractmethod
 from collections import deque
 from collections.abc import AsyncIterator, Iterator, Sequence
@@ -11,6 +10,34 @@ from functools import cached_property
 from math import sin
 from pathlib import Path
 from re import Pattern
+from typing import (
+    Annotated,
+    Any,
+    Callable,
+    ClassVar,
+    Concatenate,
+    Final,
+    Literal,
+    LiteralString,
+    NamedTuple,
+    Never,
+    NewType,
+    NoReturn,
+    NotRequired,
+    ParamSpec,
+    Protocol,
+    Required,
+    Self,
+    TypeGuard,
+    TypeVar,
+    TypeVarTuple,
+    TypedDict,
+    Unpack,
+    final,
+    overload,
+    override,
+    runtime_checkable,
+)
 
 T = TypeVar('T')
 

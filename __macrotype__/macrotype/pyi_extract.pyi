@@ -1,11 +1,11 @@
 # Generated via: macrotype macrotype -o __macrotype__/macrotype
 # Do not edit by hand
-from typing import Any, Callable
 from dataclasses import _DataclassParams, dataclass
 from enum import EnumType
 from functools import partialmethod
 from inspect import Signature
 from macrotype.meta_types import get_overloads
+from typing import Any, Callable
 
 ModuleType = module
 

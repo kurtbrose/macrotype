@@ -138,7 +138,7 @@ PARSINGS = {
         TypeNode.single(AtomNode(bool)),
     ),
     typing.Callable[..., int]: CallableNode(None, TypeNode.single(AtomNode(int))),
-    typing.Annotated[int, "x"]: AtomNode(int, annotations=("x",)),
+    typing.Annotated[int, "x"]: AtomNode(int, node_ann=("x",)),
     dataclasses.InitVar: InitVarNode(AtomNode(typing.Any)),
     dataclasses.InitVar[int]: InitVarNode(AtomNode(int)),
     typing.Self: SelfNode(),
@@ -156,13 +156,13 @@ PARSINGS = {
     typing.ClassVar: ClassVarNode(TypeNode.single(AtomNode(typing.Any))),
     typing.ClassVar[int]: ClassVarNode(TypeNode.single(AtomNode(int))),
     typing.Final: FinalNode(),
-    typing.Final[int]: AtomNode(int, is_final=True),
+    typing.Final[int]: TypeNode(alts=frozenset({AtomNode(int)}), is_final=True),
     typing.NoReturn: AtomNode(typing.NoReturn),
     typing.Never: AtomNode(typing.Never),
     typing.LiteralString: AtomNode(typing.LiteralString),
     typing.TypeGuard[int]: TypeGuardNode(TypeNode.single(AtomNode(int))),
-    typing.NotRequired[int]: AtomNode(int, is_required=False),
-    typing.Required[str]: AtomNode(str, is_required=True),
+    typing.NotRequired[int]: TypeNode(alts=frozenset({AtomNode(int)}), is_required=False),
+    typing.Required[str]: TypeNode(alts=frozenset({AtomNode(str)}), is_required=True),
     T: VarNode(T),
     P: VarNode(P),
     Ts: VarNode(Ts),
@@ -279,14 +279,14 @@ def test_typeguard_special_form() -> None:
 
 def test_annotated_nesting() -> None:
     nested = typing.Annotated[typing.Annotated[int, "a"], "b"]
-    expected = AtomNode(int, annotations=("a", "b"))
+    expected = AtomNode(int, node_ann=("a", "b"))
     assert parse_type(nested) == expected
     assert parse_type_expr(nested) == expected
 
 
 def test_annotated_classvar() -> None:
     ann = typing.Annotated[typing.ClassVar[int], "x"]
-    assert parse_type(ann) == ClassVarNode(TypeNode.single(AtomNode(int)), annotations=("x",))
+    assert parse_type(ann) == ClassVarNode(TypeNode.single(AtomNode(int)), node_ann=("x",))
     with pytest.raises(TypeError):
         parse_type_expr(ann)
 

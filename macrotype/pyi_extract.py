@@ -1363,11 +1363,21 @@ class _ModuleBuilder:
                 continue
             external_imports[modname].add(name)
 
-        lines = []
+        imports: list[tuple[str, list[str]]] = []
         if typing_names:
-            lines.append(f"from typing import {', '.join(typing_names)}")
-        for modname, names in sorted(external_imports.items()):
-            lines.append(f"from {modname} import {', '.join(sorted(names))}")
+            joined = ", ".join(typing_names)
+            if len(joined) > 88:
+                wrapped = [f"    {name}," for name in typing_names]
+                block = ["from typing import ("] + wrapped + [")"]
+            else:
+                block = [f"from typing import {joined}"]
+            imports.append(("typing", block))
+        for modname, names in external_imports.items():
+            line = f"from {modname} import {', '.join(sorted(names))}"
+            imports.append((modname, [line]))
+        lines: list[str] = []
+        for _mod, block in sorted(imports, key=lambda x: x[0]):
+            lines.extend(block)
         return lines
 
     def build(
