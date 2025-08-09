@@ -1,4 +1,4 @@
-# Generated via: macrotype macrotype -o __macrotype__/macrotype
+# Generated via: macrotype macrotype -o /tmp/macrotype_stub
 # Do not edit by hand
 from dataclasses import dataclass
 from enum import Enum
@@ -39,13 +39,13 @@ class TypeNode:
     @staticmethod
     def single(form: Any): ...
 
-N = TypeVar('N')
+N = TypeVar("N")
 
-K = TypeVar('K')
+K = TypeVar("K")
 
-V = TypeVar('V')
+V = TypeVar("V")
 
-Ctx = TypeVarTuple('Ctx')
+Ctx = TypeVarTuple("Ctx")
 
 @dataclass(frozen=True, kw_only=True)
 class ContainerNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](BaseNode): ...
@@ -141,13 +141,6 @@ class SelfNode(InClassExprNode):
     def _emit_core(self) -> Any: ...
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> SelfNode: ...
-
-@dataclass(frozen=True)
-class FinalNode(SpecialFormNode):
-    handles: ClassVar[tuple[Any, ...]]
-    def _emit_core(self) -> Any: ...
-    @classmethod
-    def for_args(cls, args: tuple[Any, ...]) -> FinalNode: ...
 
 @dataclass(frozen=True)
 class ClassVarNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](ContainerNode[N], InClassExprNode):

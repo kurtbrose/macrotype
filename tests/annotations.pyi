@@ -1,4 +1,4 @@
-# Generated via: macrotype tests/annotations.py -o tests/annotations.pyi
+# Generated via: macrotype tests/annotations.py -o -
 # Do not edit by hand
 # pyright: basic
 from abc import ABC, abstractmethod
@@ -39,23 +39,23 @@ from typing import (
     runtime_checkable,
 )
 
-T = TypeVar('T')
+T = TypeVar("T")
 
-P = ParamSpec('P')
+P = ParamSpec("P")
 
-Ts = TypeVarTuple('Ts')
+Ts = TypeVarTuple("Ts")
 
-U = TypeVar('U')
+U = TypeVar("U")
 
-NumberLike = TypeVar('NumberLike')
+NumberLike = TypeVar("NumberLike")
 
-CovariantT = TypeVar('CovariantT', covariant=True)
+CovariantT = TypeVar("CovariantT", covariant=True)
 
-ContravariantT = TypeVar('ContravariantT', contravariant=True)
+ContravariantT = TypeVar("ContravariantT", contravariant=True)
 
-TDV = TypeVar('TDV')
+TDV = TypeVar("TDV")
 
-UserId = NewType('UserId', int)
+UserId = NewType("UserId", int)
 
 type AliasListT[T] = list[T]
 
@@ -471,13 +471,13 @@ class SQLBase:
     @classmethod
     def __init_subclass__(cls) -> None: ...
 
-ManagerModelId = NewType('ManagerModelId', int)
+ManagerModelId = NewType("ManagerModelId", int)
 
 class ManagerModel(SQLBase):
     id: Mapped[ManagerModelId]
     id_type: type[ManagerModelId]
 
-EmployeeModelId = NewType('EmployeeModelId', int)
+EmployeeModelId = NewType("EmployeeModelId", int)
 
 class EmployeeModel(SQLBase):
     manager_id: Mapped[ManagerModelId]

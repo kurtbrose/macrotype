@@ -1262,7 +1262,7 @@ class _ModuleBuilder:
             self._add(
                 PyiAlias(
                     name=name,
-                    value=f"NewType('{name}', {base_fmt.text})",
+                    value=f'NewType("{name}", {base_fmt.text})',
                     used_types=alias_used,
                     line=self.line_map.get(name),
                 )
@@ -1276,7 +1276,7 @@ class _ModuleBuilder:
             if isinstance(obj, alias_type):
                 alias_used = {alias_type}
                 if isinstance(obj, typing.TypeVar):
-                    args = [f"'{obj.__name__}'"]
+                    args = [f'"{obj.__name__}"']
                     if getattr(obj, "__covariant__", False):
                         args.append("covariant=True")
                     if getattr(obj, "__contravariant__", False):
@@ -1285,14 +1285,14 @@ class _ModuleBuilder:
                         args.append("infer_variance=True")
                     value = f"TypeVar({', '.join(args)})"
                 elif isinstance(obj, typing.ParamSpec):
-                    args = [f"'{obj.__name__}'"]
+                    args = [f'"{obj.__name__}"']
                     if getattr(obj, "__covariant__", False):
                         args.append("covariant=True")
                     if getattr(obj, "__contravariant__", False):
                         args.append("contravariant=True")
                     value = f"ParamSpec({', '.join(args)})"
                 else:
-                    value = f"{alias_type.__name__}('{obj.__name__}')"
+                    value = f'{alias_type.__name__}("{obj.__name__}")'
                 self._add(
                     PyiAlias(
                         name=name,

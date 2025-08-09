@@ -444,24 +444,6 @@ class SelfNode(InClassExprNode):
 
 
 @dataclass(frozen=True)
-class FinalNode(SpecialFormNode):
-    handles: ClassVar[tuple[Any, ...]] = (typing.Final,)
-    """Bare ``typing.Final`` marker with inferred type."""
-
-    def _emit_core(self) -> TypeExpr:
-        return typing.Final
-
-    @classmethod
-    def for_args(cls, args: tuple[Any, ...]) -> "FinalNode":
-        if args:
-            raise InvalidTypeError(
-                f"Final takes no arguments: {args}",
-                hint="Use Final[T] with a type argument",
-            )
-        return cls()
-
-
-@dataclass(frozen=True)
 class ClassVarNode(Generic[N], ContainerNode[N], InClassExprNode):
     handles: ClassVar[tuple[Any, ...]] = (typing.ClassVar,)
     """``typing.ClassVar`` wrapper."""
@@ -623,6 +605,13 @@ def _parse_no_origin_type(typ: Any) -> TypeNode:
             f"{typ.__qualname__} requires a single argument",
             hint=f"Use {typ.__qualname__}[T] with a type argument",
         )
+    if typ is typing.Final:
+        if _strict:
+            raise InvalidTypeError(
+                "Final requires a single argument",
+                hint="Use Final[T] with a type argument",
+            )
+        return TypeNode(is_final=True)
     node_cls = BaseNode._registry.get(typ)
     if node_cls is not None:
         if node_cls is TupleNode:
