@@ -15,7 +15,6 @@ from typing import (
     TypeAliasType,
     TypeVar,
     TypeVarTuple,
-    Union,
     get_args,
     get_origin,
 )
@@ -112,6 +111,7 @@ class TypeNode:
         elif len(parts) == 1:
             combined = parts[0]
         else:
+            parts.sort(key=lambda x: repr(x))
             combined = typing.Union[tuple(parts)]
         if self.is_required is True:
             combined = typing.Required[combined]
@@ -124,7 +124,9 @@ class TypeNode:
         return combined
 
     @staticmethod
-    def single(form: BaseNode) -> "TypeNode":
+    def single(form: BaseNode | "TypeNode") -> "TypeNode":
+        if isinstance(form, TypeNode):
+            return form
         return TypeNode(alts=frozenset({form}))
 
 
@@ -137,7 +139,7 @@ N = TypeVar("N", TypeExprNode, InClassExprNode | TypeExprNode)
 K = TypeVar("K", TypeExprNode, InClassExprNode | TypeExprNode)
 V = TypeVar("V", TypeExprNode, InClassExprNode | TypeExprNode)
 
-# ``Ctx`` is used with variadic containers such as ``UnionNode`` and ``TupleNode``.
+# ``Ctx`` is used with variadic containers such as ``TupleNode``.
 # Each element corresponds to one argument's context.
 Ctx = TypeVarTuple("Ctx")
 
@@ -554,22 +556,6 @@ class CallableNode(Generic[N], ContainerNode[N]):
 
 
 @dataclass(frozen=True)
-class UnionNode(Generic[*Ctx], ContainerNode[typing.Union[*Ctx]]):
-    handles: ClassVar[tuple[Any, ...]] = (Union, types.UnionType)
-    """A ``typing.Union`` wrapper that is class-specific iff *any* arm is."""
-
-    # The concrete nodes that correspond to each context in ``*Ctx``.
-    options: tuple[TypeNode, ...]
-
-    def _emit_core(self) -> TypeExpr:
-        return Union[tuple(opt.emit() for opt in self.options)]
-
-    @classmethod
-    def for_args(cls, args: tuple[Any, ...]) -> "UnionNode[*Ctx]":
-        return cls(tuple(TypeNode.single(parse_type(arg)) for arg in args))
-
-
-@dataclass(frozen=True)
 class UnpackNode(SpecialFormNode):
     handles: ClassVar[tuple[Any, ...]] = (typing.Unpack,)
     """``typing.Unpack`` wrapper."""
@@ -606,7 +592,7 @@ def _parse_no_origin_type(typ: Any) -> BaseNode:
     if isinstance(typ, typing.ForwardRef):
         typ = typ.__forward_arg__
     if isinstance(typ, str):
-        globals_ = _eval_globals or {}
+        globals_ = _eval_globals if _eval_globals is not None else globals()
         try:
             resolved = eval(typ, globals_)
         except Exception as exc:
@@ -658,6 +644,15 @@ def _parse_no_origin_type(typ: Any) -> BaseNode:
 
 
 def _parse_origin_type(origin: Any, args: tuple[Any, ...], raw: Any) -> BaseNode | TypeNode:
+    if origin in {typing.Union, types.UnionType}:
+        alts: set[BaseNode] = set()
+        for arg in args:
+            part = parse_type(arg)
+            if isinstance(part, TypeNode):
+                alts.update(part.alts)
+            else:
+                alts.add(part)
+        return TypeNode(alts=frozenset(alts))
     if origin is typing.Annotated:
         if not args:
             raise InvalidTypeError(
@@ -934,6 +929,7 @@ def _format_runtime_type(type_obj: Any) -> TypeRenderInfo:
     if origin in {types.UnionType, typing.Union}:
         arg_strs = [format_type(a) for a in args]
         used.update(*(a.used for a in arg_strs))
+        arg_strs.sort(key=lambda a: a.text)
         text = " | ".join(a.text for a in arg_strs)
         return TypeRenderInfo(text, used)
 

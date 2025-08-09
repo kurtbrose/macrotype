@@ -3,6 +3,7 @@ from typing import ParamSpec, assert_type
 
 from macrotype.types_ast import (
     AtomNode,
+    BaseNode,
     CallableNode,
     ClassVarNode,
     ConcatenateNode,
@@ -18,7 +19,6 @@ from macrotype.types_ast import (
     TypeExprNode,
     TypeGuardNode,
     TypeNode,
-    UnionNode,
     VarNode,
 )
 
@@ -68,10 +68,8 @@ P = ParamSpec("P")
 gn: GenericNode = GenericNode(list, (TypeNode.single(AtomNode(int)),))
 assert_type(gn.args[0], TypeNode)
 
-un: UnionNode[TypeExprNode, TypeExprNode] = UnionNode(
-    (TypeNode.single(AtomNode(int)), TypeNode.single(AtomNode(str)))
-)
-assert_type(un.options[0], TypeNode)
+un: TypeNode = TypeNode(alts=frozenset({AtomNode(int), AtomNode(str)}))
+assert_type(list(un.alts)[0], BaseNode)
 
 ccn: ConcatenateNode[TypeExprNode] = ConcatenateNode(
     (TypeNode.single(AtomNode(int)), TypeNode.single(VarNode(P)))

@@ -115,14 +115,14 @@ ANNOTATED_EXTRA: Annotated[str, 'extra']
 
 NESTED_ANNOTATED: Annotated[int, 'a', 'b']
 
-ANNOTATED_OPTIONAL_META: Annotated[int | None, 'meta']
+ANNOTATED_OPTIONAL_META: Annotated[None | int, 'meta']
 
 class UserBox[T]: ...
 
 class Basic:
     simple: list[str]
     mapping: dict[str, int]
-    optional: int | None
+    optional: None | int
     union: int | str
     pipe_union: int | str
     func: Callable[[int, str], bool]
@@ -441,7 +441,7 @@ def special_neg(val: int) -> int: ...
 def parse_int_or_none(val: None) -> None: ...
 
 @overload
-def parse_int_or_none(val: str | None) -> int | None: ...
+def parse_int_or_none(val: None | str) -> None | int: ...
 
 @overload
 def times_two(val: Literal[3], factor: Literal[2]) -> Literal[6]: ...
@@ -488,15 +488,15 @@ def strip_null(ann: Any, null: Any) -> Any: ...
 
 class Cls:
     a: int
-    b: float | None
-    c: str | None
+    b: None | float
+    c: None | str
     d: bytes
 
 class OptionalCls:
-    a: int | None
-    b: float | None
-    c: str | None
-    d: bytes | None
+    a: None | int
+    b: None | float
+    c: None | str
+    d: None | bytes
 
 class RequiredCls:
     a: int
@@ -506,22 +506,22 @@ class RequiredCls:
 
 class PickedCls:
     a: int
-    b: float | None
+    b: None | float
 
 class OmittedCls:
     a: int
-    b: float | None
+    b: None | float
 
 class FinalCls:
     a: Final[int]
-    b: Final[float | None]
-    c: Final[str | None]
+    b: Final[None | float]
+    c: Final[None | str]
     d: Final[bytes]
 
 class ReplacedCls:
     a: str
     b: bool
-    c: str | None
+    c: None | str
     d: bytes
 
 class BaseInherit:
@@ -541,11 +541,11 @@ class Undefined: ...
 
 class UndefinedCls:
     a: int
-    b: str | Undefined
+    b: Undefined | str
 
 class OptionalUndefinedCls:
-    a: int | Undefined
-    b: str | Undefined
+    a: Undefined | int
+    b: Undefined | str
 
 class RequiredUndefinedCls:
     a: int

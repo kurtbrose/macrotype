@@ -24,7 +24,6 @@ from macrotype.types_ast import (
     TypedDictNode,
     TypeGuardNode,
     TypeNode,
-    UnionNode,
     UnpackNode,
     VarNode,
     parse_type,
@@ -103,35 +102,14 @@ PARSINGS = {
     ),
     set[int]: SetNode(TypeNode.single(AtomNode(int))),
     frozenset[str]: FrozenSetNode(TypeNode.single(AtomNode(str))),
-    typing.Union[int, str]: UnionNode(
-        (
-            TypeNode.single(AtomNode(int)),
-            TypeNode.single(AtomNode(str)),
-        )
-    ),
-    int | str: UnionNode(
-        (
-            TypeNode.single(AtomNode(int)),
-            TypeNode.single(AtomNode(str)),
-        )
-    ),
-    typing.Union[int, str, None]: UnionNode(
-        (
-            TypeNode.single(AtomNode(int)),
-            TypeNode.single(AtomNode(str)),
-            TypeNode.single(AtomNode(type(None))),
-        )
+    typing.Union[int, str]: TypeNode(alts=frozenset({AtomNode(int), AtomNode(str)})),
+    int | str: TypeNode(alts=frozenset({AtomNode(int), AtomNode(str)})),
+    typing.Union[int, str, None]: TypeNode(
+        alts=frozenset({AtomNode(int), AtomNode(str), AtomNode(type(None))})
     ),
     dict[str, typing.Union[int, None]]: DictNode(
         TypeNode.single(AtomNode(str)),
-        TypeNode.single(
-            UnionNode(
-                (
-                    TypeNode.single(AtomNode(int)),
-                    TypeNode.single(AtomNode(type(None))),
-                )
-            )
-        ),
+        TypeNode(alts=frozenset({AtomNode(int), AtomNode(type(None))})),
     ),
     typing.Callable[[int, str], bool]: CallableNode(
         [TypeNode.single(AtomNode(int)), TypeNode.single(AtomNode(str))],
