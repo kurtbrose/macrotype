@@ -243,8 +243,8 @@ class LiteralNode(TypeExprNode):
 @dataclass(frozen=True)
 class DictNode(Generic[K, V], ContainerNode[typing.Union[K, V]]):
     handles: ClassVar[tuple[Any, ...]] = (dict,)
-    key: NodeLike[K]
-    value: NodeLike[V]
+    key: TypeNode
+    value: TypeNode
 
     def emit(self) -> TypeExpr:
         return self._apply_modifiers(dict[self.key.emit(), self.value.emit()])
@@ -269,7 +269,7 @@ class DictNode(Generic[K, V], ContainerNode[typing.Union[K, V]]):
         if len(args) == 2:
             key = parse_type(args[0])
             val = parse_type(args[1])
-            return cls(key, val)
+            return cls(TypeNode.single(key), TypeNode.single(val))
         raise InvalidTypeError(
             f"Too many arguments to dict: {args}",
             hint="Use dict[key_type, value_type]",

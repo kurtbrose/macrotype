@@ -87,8 +87,8 @@ class LiteralNode(TypeExprNode):
 @dataclass(frozen=True)
 class DictNode[K: (TypeExprNode, InClassExprNode | TypeExprNode), V: (TypeExprNode, InClassExprNode | TypeExprNode)](ContainerNode[K | V]):
     handles: ClassVar[tuple[Any, ...]]
-    key: NodeLike[K]
-    value: NodeLike[V]
+    key: TypeNode
+    value: TypeNode
     def emit(self) -> Any: ...
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> BaseNode: ...

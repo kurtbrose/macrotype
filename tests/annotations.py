@@ -554,6 +554,8 @@ def pragma_func(x: int) -> int:  # pyright: ignore
 
 # Dict without explicit value type should remain as written
 DICT_WITH_IMPLICIT_ANY: dict[int]  # type: ignore[type-arg]  # pyright: ignore[reportInvalidTypeArguments]
+# Dict with nested list to exercise TypeNode in dict key/value
+DICT_LIST_VALUE: dict[str, list[int]]
 # Generic container without type arguments should remain unparameterized
 UNPARAM_LIST: list
 
