@@ -105,7 +105,7 @@ class ListNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](ContainerNode[
 @dataclass(frozen=True)
 class TupleNode[*Ctx](ContainerNode[Unpack[Ctx]]):
     handles: ClassVar[tuple[Any, ...]]
-    items: tuple[BaseNode, ...]
+    items: tuple[TypeNode, ...]
     variable: bool
     def emit(self) -> Any: ...
     @classmethod

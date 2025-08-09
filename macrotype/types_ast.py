@@ -312,7 +312,7 @@ class TupleNode(Generic[*Ctx], ContainerNode[typing.Union[*Ctx]]):
     ``TupleNode[T]`` with ``variable=True``.
     """
 
-    items: tuple[BaseNode, ...]
+    items: tuple[TypeNode, ...]
     variable: bool = False
 
     def emit(self) -> TypeExpr:
@@ -329,7 +329,10 @@ class TupleNode(Generic[*Ctx], ContainerNode[typing.Union[*Ctx]]):
                     "tuple[T, ...] must have one or more arguments with Ellipsis in final position",
                     hint="Place Ellipsis at the end, e.g. tuple[int, ...]",
                 )
-            return cls(items=tuple(parse_type(arg) for arg in args[:-1]), variable=True)
+            return cls(
+                items=tuple(TypeNode.single(parse_type(arg)) for arg in args[:-1]),
+                variable=True,
+            )
         if len(args) == 1:
             first = parse_type(args[0])
             if isinstance(first, VarNode) and isinstance(first.var, typing.TypeVarTuple):
@@ -337,9 +340,12 @@ class TupleNode(Generic[*Ctx], ContainerNode[typing.Union[*Ctx]]):
                     "TypeVarTuple must be unpacked in tuple", hint="Use Unpack[Ts]"
                 )
             if isinstance(first, UnpackNode):
-                return cls(items=(first,), variable=False)
-            return cls(items=(first,), variable=True)
-        return cls(items=tuple(parse_type(arg) for arg in args), variable=False)
+                return cls(items=(TypeNode.single(first),), variable=False)
+            return cls(items=(TypeNode.single(first),), variable=True)
+        return cls(
+            items=tuple(TypeNode.single(parse_type(arg)) for arg in args),
+            variable=False,
+        )
 
 
 @dataclass(frozen=True)

@@ -11,6 +11,7 @@ from macrotype.types_ast import (
     NodeLike,
     SelfNode,
     SetNode,
+    TupleNode,
     TypeExprNode,
     TypeNode,
 )
@@ -36,3 +37,6 @@ assert_type(sn.element, TypeNode)
 
 fsn: FrozenSetNode[TypeExprNode] = FrozenSetNode(TypeNode.single(AtomNode(str)))
 assert_type(fsn.element, TypeNode)
+
+tn: TupleNode[TypeExprNode] = TupleNode((TypeNode.single(AtomNode(int)),), True)
+assert_type(tn.items[0], TypeNode)

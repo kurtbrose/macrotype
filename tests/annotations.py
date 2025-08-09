@@ -105,6 +105,8 @@ SET_VAR: set[int]
 FROZENSET_VAR: frozenset[str]
 # Set containing a nested list to exercise TypeNode in set elements
 SET_LIST_VAR: set[list[str]]
+# Tuple containing a nested list to exercise TypeNode in tuple items
+TUPLE_LIST_VAR: tuple[list[str], int]
 # Edge case: annotated constants with values should honor the annotation
 ANNOTATED_FINAL: Final[int] = 5
 ANNOTATED_CLASSVAR: int = 1

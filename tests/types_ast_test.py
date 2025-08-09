@@ -81,14 +81,26 @@ PARSINGS = {
         TypeNode.single(ListNode(TypeNode.single(AtomNode(int)))),
     ),
     tuple[()]: TupleNode((), False),
-    tuple[int]: TupleNode((AtomNode(int),), True),
-    tuple[int, str]: TupleNode((AtomNode(int), AtomNode(str)), False),
-    tuple[int, ...]: TupleNode((AtomNode(int),), True),
+    tuple[int]: TupleNode((TypeNode.single(AtomNode(int)),), True),
+    tuple[int, str]: TupleNode(
+        (
+            TypeNode.single(AtomNode(int)),
+            TypeNode.single(AtomNode(str)),
+        ),
+        False,
+    ),
+    tuple[int, ...]: TupleNode((TypeNode.single(AtomNode(int)),), True),
     tuple[int, str, ...]: TupleNode(
-        (AtomNode(int), AtomNode(str)),
+        (
+            TypeNode.single(AtomNode(int)),
+            TypeNode.single(AtomNode(str)),
+        ),
         True,
     ),
-    tuple[typing.Unpack[Ts]]: TupleNode((UnpackNode(VarNode(Ts)),), False),
+    tuple[typing.Unpack[Ts]]: TupleNode(
+        (TypeNode.single(UnpackNode(VarNode(Ts))),),
+        False,
+    ),
     set[int]: SetNode(TypeNode.single(AtomNode(int))),
     frozenset[str]: FrozenSetNode(TypeNode.single(AtomNode(str))),
     typing.Union[int, str]: UnionNode((AtomNode(int), AtomNode(str))),
@@ -104,7 +116,15 @@ PARSINGS = {
     dataclasses.InitVar: InitVarNode(AtomNode(typing.Any)),
     dataclasses.InitVar[int]: InitVarNode(AtomNode(int)),
     typing.Self: SelfNode(),
-    typing.Unpack[tuple[int, str]]: UnpackNode(TupleNode((AtomNode(int), AtomNode(str)), False)),
+    typing.Unpack[tuple[int, str]]: UnpackNode(
+        TupleNode(
+            (
+                TypeNode.single(AtomNode(int)),
+                TypeNode.single(AtomNode(str)),
+            ),
+            False,
+        )
+    ),
     typing.Unpack[TD]: UnpackNode(TypedDictNode(TD)),
     TD: TypedDictNode(TD),
     typing.ClassVar: ClassVarNode(AtomNode(typing.Any)),

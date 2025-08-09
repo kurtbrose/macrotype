@@ -537,6 +537,8 @@ FROZENSET_VAR: frozenset[str]
 
 SET_LIST_VAR: set[list[str]]
 
+TUPLE_LIST_VAR: tuple[list[str], int]
+
 GENERIC_DEQUE: deque[int]
 
 GENERIC_USERBOX: UserBox[int]
