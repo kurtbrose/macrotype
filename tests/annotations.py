@@ -557,6 +557,11 @@ DICT_WITH_IMPLICIT_ANY: dict[int]  # type: ignore[type-arg]  # pyright: ignore[r
 # Generic container without type arguments should remain unparameterized
 UNPARAM_LIST: list
 
+# Lists exercising set-based element slots
+LIST_INT_ONLY: list[int]
+LIST_INT_OR_STR: list[int | str]
+LIST_NESTED_UNION: list[int | (str | None)]
+
 
 # Edge case: positional-only and keyword-only parameters
 def pos_only_func(a: int, b: str, /) -> None:
