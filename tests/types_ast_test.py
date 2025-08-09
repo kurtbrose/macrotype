@@ -130,14 +130,14 @@ PARSINGS = {
     ),
     typing.Unpack[TD]: UnpackNode(TypedDictNode(TD)),
     TD: TypedDictNode(TD),
-    typing.ClassVar: ClassVarNode(AtomNode(typing.Any)),
-    typing.ClassVar[int]: ClassVarNode(AtomNode(int)),
+    typing.ClassVar: ClassVarNode(TypeNode.single(AtomNode(typing.Any))),
+    typing.ClassVar[int]: ClassVarNode(TypeNode.single(AtomNode(int))),
     typing.Final: FinalNode(),
     typing.Final[int]: AtomNode(int, is_final=True),
     typing.NoReturn: AtomNode(typing.NoReturn),
     typing.Never: AtomNode(typing.Never),
     typing.LiteralString: AtomNode(typing.LiteralString),
-    typing.TypeGuard[int]: TypeGuardNode(AtomNode(int)),
+    typing.TypeGuard[int]: TypeGuardNode(TypeNode.single(AtomNode(int))),
     typing.NotRequired[int]: AtomNode(int, is_required=False),
     typing.Required[str]: AtomNode(str, is_required=True),
     T: VarNode(T),
@@ -246,7 +246,7 @@ def test_annotated_nesting() -> None:
 
 def test_annotated_classvar() -> None:
     ann = typing.Annotated[typing.ClassVar[int], "x"]
-    assert parse_type(ann) == ClassVarNode(AtomNode(int), annotations=("x",))
+    assert parse_type(ann) == ClassVarNode(TypeNode.single(AtomNode(int)), annotations=("x",))
     with pytest.raises(TypeError):
         parse_type_expr(ann)
 

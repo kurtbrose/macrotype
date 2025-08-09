@@ -14,13 +14,16 @@ from macrotype.types_ast import (
     SetNode,
     TupleNode,
     TypeExprNode,
+    TypeGuardNode,
     TypeNode,
 )
 
 expr_node: NodeLike[TypeExprNode] = AtomNode(int)
 expr_node = ListNode[TypeExprNode](TypeNode.single(AtomNode(int)))
 
-class_node: NodeLike[InClassExprNode | TypeExprNode] = ClassVarNode(AtomNode(int))
+class_node: NodeLike[InClassExprNode | TypeExprNode] = ClassVarNode[TypeExprNode](
+    TypeNode.single(AtomNode(int))
+)
 class_node = SelfNode()
 
 ln: ListNode[TypeExprNode] = ListNode(TypeNode.single(AtomNode(int)))
@@ -49,3 +52,9 @@ cn: CallableNode[TypeExprNode] = CallableNode(
 assert_type(cn.return_type, TypeNode)
 if isinstance(cn.args, list):
     assert_type(cn.args[0], TypeNode)
+
+cvn: ClassVarNode[TypeExprNode] = ClassVarNode[TypeExprNode](TypeNode.single(AtomNode(int)))
+assert_type(cvn.inner, TypeNode)
+
+tgn: TypeGuardNode[TypeExprNode] = TypeGuardNode[TypeExprNode](TypeNode.single(AtomNode(int)))
+assert_type(tgn.target, TypeNode)

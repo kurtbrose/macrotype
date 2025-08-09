@@ -227,6 +227,9 @@ class ClassVarExample:
     x: int
     y: ClassVar[int]
 
+class ClassVarListExample:
+    items: ClassVar[list[int]]
+
 class OldGeneric[T]:
     value: T
     def get(self) -> T: ...

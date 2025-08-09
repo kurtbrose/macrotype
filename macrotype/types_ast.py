@@ -464,7 +464,7 @@ class ClassVarNode(Generic[N], ContainerNode[N], InClassExprNode):
     handles: ClassVar[tuple[Any, ...]] = (typing.ClassVar,)
     """``typing.ClassVar`` wrapper."""
 
-    inner: NodeLike[N]
+    inner: TypeNode
 
     def emit(self) -> TypeExpr:
         return self._apply_modifiers(typing.ClassVar[self.inner.emit()])
@@ -477,7 +477,7 @@ class ClassVarNode(Generic[N], ContainerNode[N], InClassExprNode):
                 hint="ClassVar[T] accepts a single type argument",
             )
         inner = parse_type(args[0]) if args else AtomNode(typing.Any)
-        return cls(inner)
+        return cls(TypeNode.single(inner))
 
 
 @dataclass(frozen=True)
@@ -485,7 +485,7 @@ class TypeGuardNode(Generic[N], ContainerNode[N], SpecialFormNode):
     handles: ClassVar[tuple[Any, ...]] = (typing.TypeGuard,)
     """``typing.TypeGuard`` wrapper."""
 
-    target: NodeLike[N]
+    target: TypeNode
 
     def emit(self) -> TypeExpr:
         return self._apply_modifiers(typing.TypeGuard[self.target.emit()])
@@ -497,7 +497,7 @@ class TypeGuardNode(Generic[N], ContainerNode[N], SpecialFormNode):
                 f"TypeGuard requires a single argument: {args}",
                 hint="TypeGuard[T] expects exactly one argument",
             )
-        return cls(parse_type(args[0]))
+        return cls(TypeNode.single(parse_type(args[0])))
 
 
 @dataclass(frozen=True)

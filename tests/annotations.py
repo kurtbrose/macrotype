@@ -363,6 +363,11 @@ class ClassVarExample:
     y: ClassVar[int] = 0
 
 
+# ClassVar wrapping a container type to ensure inner TypeNode handling
+class ClassVarListExample:
+    items: ClassVar[list[int]] = []
+
+
 class OldGeneric(Generic[T]):
     value: T
 

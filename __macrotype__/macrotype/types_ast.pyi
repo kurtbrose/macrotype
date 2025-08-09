@@ -154,7 +154,7 @@ class FinalNode(SpecialFormNode):
 @dataclass(frozen=True)
 class ClassVarNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](ContainerNode[N], InClassExprNode):
     handles: ClassVar[tuple[Any, ...]]
-    inner: NodeLike[N]
+    inner: TypeNode
     def emit(self) -> Any: ...
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> ClassVarNode[N]: ...
@@ -162,7 +162,7 @@ class ClassVarNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](ContainerN
 @dataclass(frozen=True)
 class TypeGuardNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](ContainerNode[N], SpecialFormNode):
     handles: ClassVar[tuple[Any, ...]]
-    target: NodeLike[N]
+    target: TypeNode
     def emit(self) -> Any: ...
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> TypeGuardNode[N]: ...
