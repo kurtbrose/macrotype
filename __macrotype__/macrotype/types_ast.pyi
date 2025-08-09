@@ -170,7 +170,7 @@ class TypeGuardNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](Container
 @dataclass(frozen=True)
 class ConcatenateNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](ContainerNode[N]):
     handles: ClassVar[tuple[Any, ...]]
-    parts: list[NodeLike[N]]
+    parts: tuple[NodeLike[N], ...]
     def emit(self) -> Any: ...
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> ConcatenateNode[N]: ...
@@ -178,8 +178,8 @@ class ConcatenateNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](Contain
 @dataclass(frozen=True)
 class CallableNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](ContainerNode[N]):
     handles: ClassVar[tuple[Any, ...]]
-    args: NodeLike[N] | list[NodeLike[N]] | None
-    return_type: NodeLike[N]
+    args: TypeNode | list[TypeNode] | None
+    return_type: TypeNode
     def emit(self) -> Any: ...
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> CallableNode[N]: ...

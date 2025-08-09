@@ -107,6 +107,8 @@ FROZENSET_VAR: frozenset[str]
 SET_LIST_VAR: set[list[str]]
 # Tuple containing a nested list to exercise TypeNode in tuple items
 TUPLE_LIST_VAR: tuple[list[str], int]
+# List containing a callable to exercise TypeNode in callable parts
+CALLABLE_LIST_VAR: list[Callable[[int], str]]
 # Edge case: annotated constants with values should honor the annotation
 ANNOTATED_FINAL: Final[int] = 5
 ANNOTATED_CLASSVAR: int = 1

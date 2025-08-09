@@ -539,6 +539,8 @@ SET_LIST_VAR: set[list[str]]
 
 TUPLE_LIST_VAR: tuple[list[str], int]
 
+CALLABLE_LIST_VAR: list[Callable[[int], str]]
+
 GENERIC_DEQUE: deque[int]
 
 GENERIC_USERBOX: UserBox[int]

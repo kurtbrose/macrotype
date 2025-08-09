@@ -3,6 +3,7 @@ from typing import assert_type
 
 from macrotype.types_ast import (
     AtomNode,
+    CallableNode,
     ClassVarNode,
     DictNode,
     FrozenSetNode,
@@ -40,3 +41,11 @@ assert_type(fsn.element, TypeNode)
 
 tn: TupleNode[TypeExprNode] = TupleNode((TypeNode.single(AtomNode(int)),), True)
 assert_type(tn.items[0], TypeNode)
+
+cn: CallableNode[TypeExprNode] = CallableNode(
+    [TypeNode.single(AtomNode(int))],
+    TypeNode.single(AtomNode(str)),
+)
+assert_type(cn.return_type, TypeNode)
+if isinstance(cn.args, list):
+    assert_type(cn.args[0], TypeNode)

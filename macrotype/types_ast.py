@@ -503,7 +503,7 @@ class TypeGuardNode(Generic[N], ContainerNode[N], SpecialFormNode):
 @dataclass(frozen=True)
 class ConcatenateNode(Generic[N], ContainerNode[N]):
     handles: ClassVar[tuple[Any, ...]] = (typing.Concatenate,)
-    parts: list[NodeLike[N]]
+    parts: tuple[NodeLike[N], ...]
 
     def emit(self) -> TypeExpr:
         return self._apply_modifiers(typing.Concatenate[tuple(part.emit() for part in self.parts)])
@@ -521,14 +521,14 @@ class ConcatenateNode(Generic[N], ContainerNode[N]):
                 f"Concatenate last argument must be a ParamSpec or ellipsis: {last!r}",
                 hint="Use a ParamSpec variable or ... as the final argument",
             )
-        return cls([parse_type(arg) for arg in args])
+        return cls(tuple(parse_type(arg) for arg in args))
 
 
 @dataclass(frozen=True)
 class CallableNode(Generic[N], ContainerNode[N]):
     handles: ClassVar[tuple[Any, ...]] = (collections.abc.Callable,)
-    args: NodeLike[N] | list[NodeLike[N]] | None
-    return_type: NodeLike[N]
+    args: TypeNode | list[TypeNode] | None
+    return_type: TypeNode
 
     def emit(self) -> TypeExpr:
         if self.args is None:
@@ -542,19 +542,19 @@ class CallableNode(Generic[N], ContainerNode[N]):
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> "CallableNode[N]":
         if not args:
-            return cls(args=None, return_type=AtomNode(typing.Any))
+            return cls(args=None, return_type=TypeNode.single(AtomNode(typing.Any)))
         if len(args) != 2:
             raise InvalidTypeError(
                 f"Callable arguments invalid: {args}",
                 hint="Use Callable[[Arg, ...], Return]",
             )
         arg_list, ret = args
-        ret_node = parse_type(ret)
+        ret_node = TypeNode.single(parse_type(ret))
         if arg_list is Ellipsis:
             return cls(args=None, return_type=ret_node)
         if isinstance(arg_list, typing.ParamSpec) or get_origin(arg_list) is typing.Concatenate:
-            return cls(parse_type(arg_list), return_type=ret_node)
-        return cls([parse_type(a) for a in arg_list], return_type=ret_node)
+            return cls(TypeNode.single(parse_type(arg_list)), return_type=ret_node)
+        return cls([TypeNode.single(parse_type(a)) for a in arg_list], return_type=ret_node)
 
 
 @dataclass(frozen=True)
