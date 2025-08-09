@@ -15,6 +15,7 @@ from typing import Any, Callable, get_args, get_origin, get_type_hints
 
 from .types_ast import (
     InvalidTypeError,
+    TypeNode,
     UnpackNode,
     VarNode,
     find_typevars,
@@ -492,13 +493,24 @@ def _namedtuple_bases(
                         node = parse_type(param, globalns=globalns)
                     except Exception:
                         node = None
-                    if isinstance(node, UnpackNode):
-                        target = node.target
-                        if isinstance(target, VarNode):
-                            fmt = format_type_param(target.var)
-                        else:
-                            fmt = format_type(param, globalns=globalns)
-                    elif isinstance(param, (typing.TypeVar, typing.ParamSpec, typing.TypeVarTuple)):
+                    if node and len(node.alts) == 1:
+                        (inner,) = node.alts
+                        if isinstance(inner, UnpackNode):
+                            target = inner.target
+                            if isinstance(target, TypeNode) and len(target.alts) == 1:
+                                (t_inner,) = target.alts
+                                if isinstance(t_inner, VarNode):
+                                    fmt = format_type_param(t_inner.var)
+                                else:
+                                    fmt = format_type(param, globalns=globalns)
+                            elif isinstance(target, VarNode):
+                                fmt = format_type_param(target.var)
+                            else:
+                                fmt = format_type(param, globalns=globalns)
+                            type_params.append(fmt.text)
+                            used.update(fmt.used)
+                            continue
+                    if isinstance(param, (typing.TypeVar, typing.ParamSpec, typing.TypeVarTuple)):
                         fmt = format_type_param(param)
                     else:
                         fmt = format_type(param, globalns=globalns)
@@ -540,13 +552,24 @@ def _normal_class_bases(
                         node = parse_type(param, globalns=globalns)
                     except Exception:
                         node = None
-                    if isinstance(node, UnpackNode):
-                        target = node.target
-                        if isinstance(target, VarNode):
-                            fmt = format_type_param(target.var)
-                        else:
-                            fmt = format_type(param, globalns=globalns)
-                    elif isinstance(param, (typing.TypeVar, typing.ParamSpec, typing.TypeVarTuple)):
+                    if node and len(node.alts) == 1:
+                        (inner,) = node.alts
+                        if isinstance(inner, UnpackNode):
+                            target = inner.target
+                            if isinstance(target, TypeNode) and len(target.alts) == 1:
+                                (t_inner,) = target.alts
+                                if isinstance(t_inner, VarNode):
+                                    fmt = format_type_param(t_inner.var)
+                                else:
+                                    fmt = format_type(param, globalns=globalns)
+                            elif isinstance(target, VarNode):
+                                fmt = format_type_param(target.var)
+                            else:
+                                fmt = format_type(param, globalns=globalns)
+                            type_params.append(fmt.text)
+                            used.update(fmt.used)
+                            continue
+                    if isinstance(param, (typing.TypeVar, typing.ParamSpec, typing.TypeVarTuple)):
                         fmt = format_type_param(param)
                     else:
                         fmt = format_type(param, globalns=globalns)
@@ -1239,7 +1262,7 @@ class _ModuleBuilder:
             self._add(
                 PyiAlias(
                     name=name,
-                    value=f"NewType('{name}', {base_fmt.text})",
+                    value=f'NewType("{name}", {base_fmt.text})',
                     used_types=alias_used,
                     line=self.line_map.get(name),
                 )
@@ -1253,7 +1276,7 @@ class _ModuleBuilder:
             if isinstance(obj, alias_type):
                 alias_used = {alias_type}
                 if isinstance(obj, typing.TypeVar):
-                    args = [f"'{obj.__name__}'"]
+                    args = [f'"{obj.__name__}"']
                     if getattr(obj, "__covariant__", False):
                         args.append("covariant=True")
                     if getattr(obj, "__contravariant__", False):
@@ -1262,14 +1285,14 @@ class _ModuleBuilder:
                         args.append("infer_variance=True")
                     value = f"TypeVar({', '.join(args)})"
                 elif isinstance(obj, typing.ParamSpec):
-                    args = [f"'{obj.__name__}'"]
+                    args = [f'"{obj.__name__}"']
                     if getattr(obj, "__covariant__", False):
                         args.append("covariant=True")
                     if getattr(obj, "__contravariant__", False):
                         args.append("contravariant=True")
                     value = f"ParamSpec({', '.join(args)})"
                 else:
-                    value = f"{alias_type.__name__}('{obj.__name__}')"
+                    value = f'{alias_type.__name__}("{obj.__name__}")'
                 self._add(
                     PyiAlias(
                         name=name,
@@ -1363,11 +1386,21 @@ class _ModuleBuilder:
                 continue
             external_imports[modname].add(name)
 
-        lines = []
+        imports: list[tuple[str, list[str]]] = []
         if typing_names:
-            lines.append(f"from typing import {', '.join(typing_names)}")
-        for modname, names in sorted(external_imports.items()):
-            lines.append(f"from {modname} import {', '.join(sorted(names))}")
+            joined = ", ".join(typing_names)
+            if len(joined) > 88:
+                wrapped = [f"    {name}," for name in typing_names]
+                block = ["from typing import ("] + wrapped + [")"]
+            else:
+                block = [f"from typing import {joined}"]
+            imports.append(("typing", block))
+        for modname, names in external_imports.items():
+            line = f"from {modname} import {', '.join(sorted(names))}"
+            imports.append((modname, [line]))
+        lines: list[str] = []
+        for _mod, block in sorted(imports, key=lambda x: x[0]):
+            lines.extend(block)
         return lines
 
     def build(

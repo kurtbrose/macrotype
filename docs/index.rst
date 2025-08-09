@@ -4,7 +4,7 @@ Generic type handling
 ---------------------
 
 ``macrotype`` can parse generic classes that lack built‑in handlers.  In this
-case :func:`macrotype.types_ast.parse_type` produces a
+case :func:`macrotype.types_ast.parse_type` produces a ``TypeNode`` containing a
 ``GenericNode`` capturing the original class and its type arguments.  Libraries
 can customize the result by providing an ``on_generic`` callback::
 

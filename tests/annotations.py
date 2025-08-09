@@ -103,6 +103,12 @@ TUPLE_VAR: tuple[int, ...]
 # Variable using set and frozenset types to test container formatting
 SET_VAR: set[int]
 FROZENSET_VAR: frozenset[str]
+# Set containing a nested list to exercise TypeNode in set elements
+SET_LIST_VAR: set[list[str]]
+# Tuple containing a nested list to exercise TypeNode in tuple items
+TUPLE_LIST_VAR: tuple[list[str], int]
+# List containing a callable to exercise TypeNode in callable parts
+CALLABLE_LIST_VAR: list[Callable[[int], str]]
 # Edge case: annotated constants with values should honor the annotation
 ANNOTATED_FINAL: Final[int] = 5
 ANNOTATED_CLASSVAR: int = 1
@@ -142,6 +148,8 @@ ANNOTATED_OPTIONAL_META: Annotated[int | None, "meta"] = 0
 
 # Built-in generic without dedicated handler
 GENERIC_DEQUE: Deque[int]
+# Deque with nested list to exercise TypeNode inside GenericNode
+GENERIC_DEQUE_LIST: Deque[list[str]]
 
 
 # User-defined generic class to exercise GenericNode
@@ -337,9 +345,10 @@ class OptionDataclass:
 class InitVarExample:
     x: int
     init_only: InitVar[int]
+    init_list: InitVar[list[int]]
 
-    def __post_init__(self, init_only: int) -> None:
-        self.x += init_only
+    def __post_init__(self, init_only: int, init_list: list[int]) -> None:
+        self.x += init_only + len(init_list)
 
 
 @dataclass
@@ -355,6 +364,11 @@ class Outer:
 class ClassVarExample:
     x: int
     y: ClassVar[int] = 0
+
+
+# ClassVar wrapping a container type to ensure inner TypeNode handling
+class ClassVarListExample:
+    items: ClassVar[list[int]] = []
 
 
 class OldGeneric(Generic[T]):
@@ -554,6 +568,8 @@ def pragma_func(x: int) -> int:  # pyright: ignore
 
 # Dict without explicit value type should remain as written
 DICT_WITH_IMPLICIT_ANY: dict[int]  # type: ignore[type-arg]  # pyright: ignore[reportInvalidTypeArguments]
+# Dict with nested list to exercise TypeNode in dict key/value
+DICT_LIST_VALUE: dict[str, list[int]]
 # Generic container without type arguments should remain unparameterized
 UNPARAM_LIST: list
 

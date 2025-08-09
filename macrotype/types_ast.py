@@ -6,7 +6,7 @@ import dataclasses
 import enum
 import types
 import typing
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import (
     Any,
     Callable,
@@ -15,7 +15,6 @@ from typing import (
     TypeAliasType,
     TypeVar,
     TypeVarTuple,
-    Union,
     get_args,
     get_origin,
 )
@@ -49,9 +48,7 @@ class InvalidTypeError(TypeError):
 class BaseNode:
     """Base class for parsed type nodes."""
 
-    annotated_metadata: list[Any] = field(default_factory=list)
-    is_final: bool = False
-    is_required: bool | None = None
+    annotations: tuple[Any, ...] = ()
 
     # Registry mapping handled typing "things" to node classes
     _registry: ClassVar[dict[Any, type["BaseNode"]]] = {}
@@ -66,18 +63,13 @@ class BaseNode:
 
     def emit(self) -> TypeExpr:
         """Return the Python type expression represented by this node."""
-        raise NotImplementedError(f"{self.__class__.__name__} must implement emit()")
-
-    def _apply_modifiers(self, t: TypeExpr) -> TypeExpr:
-        if self.is_required is True:
-            t = typing.Required[t]
-        elif self.is_required is False:
-            t = typing.NotRequired[t]
-        if self.is_final:
-            t = typing.Final[t]
-        if self.annotated_metadata:
-            t = typing.Annotated[t, *self.annotated_metadata]
+        t = self._emit_core()
+        if self.annotations:
+            t = typing.Annotated[t, *self.annotations]
         return t
+
+    def _emit_core(self) -> TypeExpr:
+        raise NotImplementedError(f"{self.__class__.__name__} must implement _emit_core()")
 
 
 class TypeExprNode(BaseNode):
@@ -98,6 +90,46 @@ class SpecialFormNode(BaseNode):
     pass
 
 
+@dataclass(frozen=True)
+class TypeNode:
+    alts: frozenset[BaseNode] = frozenset()
+    ann: tuple[Any, ...] = ()
+    is_final: bool = False
+    is_required: bool | None = None
+
+    def emit(self, *, strict: bool = False) -> TypeExpr:
+        parts = []
+        for alt in self.alts:
+            t = alt._emit_core()
+            if alt.annotations:
+                t = typing.Annotated[t, *alt.annotations]
+            parts.append(t)
+        if not parts:
+            if strict:
+                raise InvalidTypeError("unspecified type")
+            combined: TypeExpr = typing.Any
+        elif len(parts) == 1:
+            combined = parts[0]
+        else:
+            parts.sort(key=lambda x: repr(x))
+            combined = typing.Union[tuple(parts)]
+        if self.is_required is True:
+            combined = typing.Required[combined]
+        elif self.is_required is False:
+            combined = typing.NotRequired[combined]
+        if self.is_final:
+            combined = typing.Final[combined]
+        if self.ann:
+            combined = typing.Annotated[combined, *self.ann]
+        return combined
+
+    @staticmethod
+    def single(form: BaseNode | "TypeNode") -> "TypeNode":
+        if isinstance(form, TypeNode):
+            return form
+        return TypeNode(alts=frozenset({form}))
+
+
 # ``N`` is used by container nodes and aliases to propagate their typing
 # context. It can either be the general ``TypeExprNode`` or the superset
 # ``InClassExprNode | TypeExprNode`` representing class-body contexts.
@@ -107,7 +139,7 @@ N = TypeVar("N", TypeExprNode, InClassExprNode | TypeExprNode)
 K = TypeVar("K", TypeExprNode, InClassExprNode | TypeExprNode)
 V = TypeVar("V", TypeExprNode, InClassExprNode | TypeExprNode)
 
-# ``Ctx`` is used with variadic containers such as ``UnionNode`` and ``TupleNode``.
+# ``Ctx`` is used with variadic containers such as ``TupleNode``.
 # Each element corresponds to one argument's context.
 Ctx = TypeVarTuple("Ctx")
 
@@ -130,8 +162,8 @@ class AtomNode(TypeExprNode):
 
     type_: Any
 
-    def emit(self) -> TypeExpr:
-        return self._apply_modifiers(self.type_)
+    def _emit_core(self) -> TypeExpr:
+        return self.type_
 
     @staticmethod
     def is_atom(type_: Any) -> bool:
@@ -164,8 +196,8 @@ class VarNode(TypeExprNode):
 
     var: typing.TypeVar | typing.ParamSpec | typing.TypeVarTuple
 
-    def emit(self) -> TypeExpr:
-        return self._apply_modifiers(self.var)
+    def _emit_core(self) -> TypeExpr:
+        return self.var
 
 
 @dataclass(frozen=True)
@@ -180,19 +212,19 @@ class GenericNode(ContainerNode[TypeExprNode]):
     """Node for generics without dedicated handlers."""
 
     origin: type[Any]
-    args: tuple[BaseNode, ...]
+    args: tuple[TypeNode, ...]
 
-    def emit(self) -> TypeExpr:
-        return self._apply_modifiers(self.origin[tuple(arg.emit() for arg in self.args)])
+    def _emit_core(self) -> TypeExpr:
+        return self.origin[tuple(arg.emit() for arg in self.args)]
 
 
 @dataclass(frozen=True)
 class LiteralNode(TypeExprNode):
     handles: ClassVar[tuple[Any, ...]] = (typing.Literal,)
-    values: list[int | str | bool | enum.Enum | None]
+    values: tuple[int | str | bool | enum.Enum | None, ...]
 
-    def emit(self) -> TypeExpr:
-        return self._apply_modifiers(typing.Literal[tuple(self.values)])
+    def _emit_core(self) -> TypeExpr:
+        return typing.Literal[self.values]
 
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> "LiteralNode":
@@ -205,17 +237,17 @@ class LiteralNode(TypeExprNode):
                     f"Invalid Literal value: {val!r}",
                     hint="Literal values must be int, str, bool, Enum, or None",
                 )
-        return cls(values=validated)
+        return cls(values=tuple(validated))
 
 
 @dataclass(frozen=True)
 class DictNode(Generic[K, V], ContainerNode[typing.Union[K, V]]):
     handles: ClassVar[tuple[Any, ...]] = (dict,)
-    key: NodeLike[K]
-    value: NodeLike[V]
+    key: TypeNode
+    value: TypeNode
 
-    def emit(self) -> TypeExpr:
-        return self._apply_modifiers(dict[self.key.emit(), self.value.emit()])
+    def _emit_core(self) -> TypeExpr:
+        return dict[self.key.emit(), self.value.emit()]
 
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> BaseNode:
@@ -233,11 +265,11 @@ class DictNode(Generic[K, V], ContainerNode[typing.Union[K, V]]):
                     hint="Use dict[key_type, value_type]",
                 )
             key = parse_type(args[0])
-            return GenericNode(dict, (key,))
+            return GenericNode(dict, (TypeNode.single(key),))
         if len(args) == 2:
             key = parse_type(args[0])
             val = parse_type(args[1])
-            return cls(key, val)
+            return cls(TypeNode.single(key), TypeNode.single(val))
         raise InvalidTypeError(
             f"Too many arguments to dict: {args}",
             hint="Use dict[key_type, value_type]",
@@ -247,11 +279,11 @@ class DictNode(Generic[K, V], ContainerNode[typing.Union[K, V]]):
 @dataclass(frozen=True)
 class ListNode(Generic[N], ContainerNode[N]):
     handles: ClassVar[tuple[Any, ...]] = (list,)
-    element: NodeLike[N]
+    element: TypeNode
     container_type: ClassVar[type] = list
 
-    def emit(self) -> TypeExpr:
-        return self._apply_modifiers(list[self.element.emit()])
+    def _emit_core(self) -> TypeExpr:
+        return list[self.element.emit()]
 
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> BaseNode:
@@ -264,7 +296,7 @@ class ListNode(Generic[N], ContainerNode[N]):
             return AtomNode(list)
         if len(args) == 1:
             elem = parse_type(args[0])
-            return cls(elem)
+            return cls(TypeNode.single(elem))
         raise InvalidTypeError(
             f"Too many arguments to list: {args}",
             hint="list accepts at most one type argument",
@@ -280,14 +312,14 @@ class TupleNode(Generic[*Ctx], ContainerNode[typing.Union[*Ctx]]):
     ``TupleNode[T]`` with ``variable=True``.
     """
 
-    items: tuple[BaseNode, ...]
+    items: tuple[TypeNode, ...]
     variable: bool = False
 
-    def emit(self) -> TypeExpr:
+    def _emit_core(self) -> TypeExpr:
         args = tuple(item.emit() for item in self.items)
         if self.variable:
             args += (Ellipsis,)
-        return self._apply_modifiers(tuple[args])
+        return tuple[args]
 
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> "TupleNode[N]":
@@ -297,27 +329,35 @@ class TupleNode(Generic[*Ctx], ContainerNode[typing.Union[*Ctx]]):
                     "tuple[T, ...] must have one or more arguments with Ellipsis in final position",
                     hint="Place Ellipsis at the end, e.g. tuple[int, ...]",
                 )
-            return cls(items=tuple(parse_type(arg) for arg in args[:-1]), variable=True)
+            return cls(
+                items=tuple(TypeNode.single(parse_type(arg)) for arg in args[:-1]),
+                variable=True,
+            )
         if len(args) == 1:
             first = parse_type(args[0])
-            if isinstance(first, VarNode) and isinstance(first.var, typing.TypeVarTuple):
-                raise InvalidTypeError(
-                    "TypeVarTuple must be unpacked in tuple", hint="Use Unpack[Ts]"
-                )
-            if isinstance(first, UnpackNode):
-                return cls(items=(first,), variable=False)
+            if len(first.alts) == 1:
+                (inner,) = first.alts
+                if isinstance(inner, VarNode) and isinstance(inner.var, typing.TypeVarTuple):
+                    raise InvalidTypeError(
+                        "TypeVarTuple must be unpacked in tuple", hint="Use Unpack[Ts]"
+                    )
+                if isinstance(inner, UnpackNode):
+                    return cls(items=(TypeNode.single(inner),), variable=False)
             return cls(items=(first,), variable=True)
-        return cls(items=tuple(parse_type(arg) for arg in args), variable=False)
+        return cls(
+            items=tuple(TypeNode.single(parse_type(arg)) for arg in args),
+            variable=False,
+        )
 
 
 @dataclass(frozen=True)
 class SetNode(Generic[N], ContainerNode[N]):
     handles: ClassVar[tuple[Any, ...]] = (set,)
-    element: NodeLike[N]
+    element: TypeNode
     container_type: ClassVar[type] = set
 
-    def emit(self) -> TypeExpr:
-        return self._apply_modifiers(set[self.element.emit()])
+    def _emit_core(self) -> TypeExpr:
+        return set[self.element.emit()]
 
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> BaseNode:
@@ -330,7 +370,7 @@ class SetNode(Generic[N], ContainerNode[N]):
             return AtomNode(set)
         if len(args) == 1:
             elem = parse_type(args[0])
-            return cls(elem)
+            return cls(TypeNode.single(elem))
         raise InvalidTypeError(
             f"Too many arguments to set: {args}",
             hint="set accepts at most one type argument",
@@ -340,11 +380,11 @@ class SetNode(Generic[N], ContainerNode[N]):
 @dataclass(frozen=True)
 class FrozenSetNode(Generic[N], ContainerNode[N]):
     handles: ClassVar[tuple[Any, ...]] = (frozenset,)
-    element: NodeLike[N]
+    element: TypeNode
     container_type: ClassVar[type] = frozenset
 
-    def emit(self) -> TypeExpr:
-        return self._apply_modifiers(frozenset[self.element.emit()])
+    def _emit_core(self) -> TypeExpr:
+        return frozenset[self.element.emit()]
 
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> BaseNode:
@@ -357,7 +397,7 @@ class FrozenSetNode(Generic[N], ContainerNode[N]):
             return AtomNode(frozenset)
         if len(args) == 1:
             elem = parse_type(args[0])
-            return cls(elem)
+            return cls(TypeNode.single(elem))
         raise InvalidTypeError(
             f"Too many arguments to frozenset: {args}",
             hint="frozenset accepts at most one type argument",
@@ -369,10 +409,10 @@ class InitVarNode(SpecialFormNode):
     handles: ClassVar[tuple[Any, ...]] = (dataclasses.InitVar,)
     """``dataclasses.InitVar`` wrapper."""
 
-    inner: TypeExprNode
+    inner: TypeNode
 
-    def emit(self) -> TypeExpr:
-        return self._apply_modifiers(dataclasses.InitVar[self.inner.emit()])
+    def _emit_core(self) -> TypeExpr:
+        return dataclasses.InitVar[self.inner.emit()]
 
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> "InitVarNode":
@@ -381,7 +421,7 @@ class InitVarNode(SpecialFormNode):
                 f"InitVar takes at most one argument: {args}",
                 hint="InitVar[T] accepts a single type argument",
             )
-        inner = parse_type_expr(args[0]) if args else AtomNode(typing.Any)
+        inner = parse_type_expr(args[0]) if args else TypeNode.single(AtomNode(typing.Any))
         return cls(inner)
 
 
@@ -390,7 +430,7 @@ class SelfNode(InClassExprNode):
     handles: ClassVar[tuple[Any, ...]] = (typing.Self,)
     """``typing.Self`` leaf node."""
 
-    def emit(self) -> TypeExpr:
+    def _emit_core(self) -> TypeExpr:
         return typing.Self
 
     @classmethod
@@ -404,32 +444,14 @@ class SelfNode(InClassExprNode):
 
 
 @dataclass(frozen=True)
-class FinalNode(SpecialFormNode):
-    handles: ClassVar[tuple[Any, ...]] = (typing.Final,)
-    """Bare ``typing.Final`` marker with inferred type."""
-
-    def emit(self) -> TypeExpr:
-        return self._apply_modifiers(typing.Final)
-
-    @classmethod
-    def for_args(cls, args: tuple[Any, ...]) -> "FinalNode":
-        if args:
-            raise InvalidTypeError(
-                f"Final takes no arguments: {args}",
-                hint="Use Final[T] with a type argument",
-            )
-        return cls()
-
-
-@dataclass(frozen=True)
 class ClassVarNode(Generic[N], ContainerNode[N], InClassExprNode):
     handles: ClassVar[tuple[Any, ...]] = (typing.ClassVar,)
     """``typing.ClassVar`` wrapper."""
 
-    inner: NodeLike[N]
+    inner: TypeNode
 
-    def emit(self) -> TypeExpr:
-        return self._apply_modifiers(typing.ClassVar[self.inner.emit()])
+    def _emit_core(self) -> TypeExpr:
+        return typing.ClassVar[self.inner.emit()]
 
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> "ClassVarNode[N]":
@@ -439,7 +461,7 @@ class ClassVarNode(Generic[N], ContainerNode[N], InClassExprNode):
                 hint="ClassVar[T] accepts a single type argument",
             )
         inner = parse_type(args[0]) if args else AtomNode(typing.Any)
-        return cls(inner)
+        return cls(TypeNode.single(inner))
 
 
 @dataclass(frozen=True)
@@ -447,10 +469,10 @@ class TypeGuardNode(Generic[N], ContainerNode[N], SpecialFormNode):
     handles: ClassVar[tuple[Any, ...]] = (typing.TypeGuard,)
     """``typing.TypeGuard`` wrapper."""
 
-    target: NodeLike[N]
+    target: TypeNode
 
-    def emit(self) -> TypeExpr:
-        return self._apply_modifiers(typing.TypeGuard[self.target.emit()])
+    def _emit_core(self) -> TypeExpr:
+        return typing.TypeGuard[self.target.emit()]
 
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> "TypeGuardNode[N]":
@@ -459,16 +481,16 @@ class TypeGuardNode(Generic[N], ContainerNode[N], SpecialFormNode):
                 f"TypeGuard requires a single argument: {args}",
                 hint="TypeGuard[T] expects exactly one argument",
             )
-        return cls(parse_type(args[0]))
+        return cls(TypeNode.single(parse_type(args[0])))
 
 
 @dataclass(frozen=True)
 class ConcatenateNode(Generic[N], ContainerNode[N]):
     handles: ClassVar[tuple[Any, ...]] = (typing.Concatenate,)
-    parts: list[NodeLike[N]]
+    parts: tuple[TypeNode, ...]
 
-    def emit(self) -> TypeExpr:
-        return self._apply_modifiers(typing.Concatenate[tuple(part.emit() for part in self.parts)])
+    def _emit_core(self) -> TypeExpr:
+        return typing.Concatenate[tuple(part.emit() for part in self.parts)]
 
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> "ConcatenateNode[N]":
@@ -483,67 +505,48 @@ class ConcatenateNode(Generic[N], ContainerNode[N]):
                 f"Concatenate last argument must be a ParamSpec or ellipsis: {last!r}",
                 hint="Use a ParamSpec variable or ... as the final argument",
             )
-        return cls([parse_type(arg) for arg in args])
+        return cls(tuple(TypeNode.single(parse_type(arg)) for arg in args))
 
 
 @dataclass(frozen=True)
 class CallableNode(Generic[N], ContainerNode[N]):
     handles: ClassVar[tuple[Any, ...]] = (collections.abc.Callable,)
-    args: NodeLike[N] | list[NodeLike[N]] | None
-    return_type: NodeLike[N]
+    args: TypeNode | tuple[TypeNode, ...] | None
+    return_type: TypeNode
 
-    def emit(self) -> TypeExpr:
+    def _emit_core(self) -> TypeExpr:
         if self.args is None:
-            t = typing.Callable[..., self.return_type.emit()]
-        elif isinstance(self.args, list):
-            t = typing.Callable[[a.emit() for a in self.args], self.return_type.emit()]
-        else:
-            t = typing.Callable[self.args.emit(), self.return_type.emit()]
-        return self._apply_modifiers(t)
+            return typing.Callable[..., self.return_type.emit()]
+        if isinstance(self.args, tuple):
+            return typing.Callable[[a.emit() for a in self.args], self.return_type.emit()]
+        return typing.Callable[self.args.emit(), self.return_type.emit()]
 
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> "CallableNode[N]":
         if not args:
-            return cls(args=None, return_type=AtomNode(typing.Any))
+            return cls(args=None, return_type=TypeNode.single(AtomNode(typing.Any)))
         if len(args) != 2:
             raise InvalidTypeError(
                 f"Callable arguments invalid: {args}",
                 hint="Use Callable[[Arg, ...], Return]",
             )
         arg_list, ret = args
-        ret_node = parse_type(ret)
+        ret_node = TypeNode.single(parse_type(ret))
         if arg_list is Ellipsis:
             return cls(args=None, return_type=ret_node)
         if isinstance(arg_list, typing.ParamSpec) or get_origin(arg_list) is typing.Concatenate:
-            return cls(parse_type(arg_list), return_type=ret_node)
-        return cls([parse_type(a) for a in arg_list], return_type=ret_node)
-
-
-@dataclass(frozen=True)
-class UnionNode(Generic[*Ctx], ContainerNode[typing.Union[*Ctx]]):
-    handles: ClassVar[tuple[Any, ...]] = (Union, types.UnionType)
-    """A ``typing.Union`` wrapper that is class-specific iff *any* arm is."""
-
-    # The concrete nodes that correspond to each context in ``*Ctx``.
-    options: tuple[BaseNode, ...]
-
-    def emit(self) -> TypeExpr:
-        return self._apply_modifiers(Union[tuple(opt.emit() for opt in self.options)])
-
-    @classmethod
-    def for_args(cls, args: tuple[Any, ...]) -> "UnionNode[*Ctx]":
-        return cls(tuple(parse_type(arg) for arg in args))
+            return cls(TypeNode.single(parse_type(arg_list)), return_type=ret_node)
+        return cls(tuple(TypeNode.single(parse_type(a)) for a in arg_list), return_type=ret_node)
 
 
 @dataclass(frozen=True)
 class UnpackNode(SpecialFormNode):
     handles: ClassVar[tuple[Any, ...]] = (typing.Unpack,)
     """``typing.Unpack`` wrapper."""
+    target: TypeNode
 
-    target: TupleNode | TypedDictNode | AtomNode | VarNode
-
-    def emit(self) -> TypeExpr:
-        return self._apply_modifiers(typing.Unpack[self.target.emit()])
+    def _emit_core(self) -> TypeExpr:
+        return typing.Unpack[self.target.emit()]
 
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> "UnpackNode":
@@ -556,11 +559,12 @@ class UnpackNode(SpecialFormNode):
         target_raw = args[0]
         target_node = parse_type_expr(target_raw)
 
-        if isinstance(target_node, (TupleNode, TypedDictNode)):
-            return cls(target_node)
-
-        if isinstance(target_node, VarNode) and isinstance(target_node.var, typing.TypeVarTuple):
-            return cls(target_node)
+        if len(target_node.alts) == 1:
+            (inner,) = target_node.alts
+            if isinstance(inner, (TupleNode, TypedDictNode)):
+                return cls(target_node)
+            if isinstance(inner, VarNode) and isinstance(inner.var, typing.TypeVarTuple):
+                return cls(target_node)
 
         raise InvalidTypeError(
             f"Invalid target for Unpack: {target_raw!r}",
@@ -568,11 +572,11 @@ class UnpackNode(SpecialFormNode):
         )
 
 
-def _parse_no_origin_type(typ: Any) -> BaseNode:
+def _parse_no_origin_type(typ: Any) -> TypeNode:
     if isinstance(typ, typing.ForwardRef):
         typ = typ.__forward_arg__
     if isinstance(typ, str):
-        globals_ = _eval_globals or {}
+        globals_ = _eval_globals if _eval_globals is not None else globals()
         try:
             resolved = eval(typ, globals_)
         except Exception as exc:
@@ -593,7 +597,7 @@ def _parse_no_origin_type(typ: Any) -> BaseNode:
                 hint=f"Use {typ.__qualname__}[...]",
             )
     if isinstance(typ, (typing.TypeVar, typing.ParamSpec, typing.TypeVarTuple)):
-        return VarNode(typ)
+        return TypeNode.single(VarNode(typ))
     if isinstance(typ, TypeAliasType):
         return parse_type(typ.__value__)
     if typ in {typing.Required, typing.NotRequired}:
@@ -601,6 +605,13 @@ def _parse_no_origin_type(typ: Any) -> BaseNode:
             f"{typ.__qualname__} requires a single argument",
             hint=f"Use {typ.__qualname__}[T] with a type argument",
         )
+    if typ is typing.Final:
+        if _strict:
+            raise InvalidTypeError(
+                "Final requires a single argument",
+                hint="Use Final[T] with a type argument",
+            )
+        return TypeNode(is_final=True)
     node_cls = BaseNode._registry.get(typ)
     if node_cls is not None:
         if node_cls is TupleNode:
@@ -609,21 +620,27 @@ def _parse_no_origin_type(typ: Any) -> BaseNode:
                     "tuple requires a type argument",
                     hint="Use tuple[T, ...] or tuple[T1, T2]",
                 )
-            return AtomNode(tuple)
-        return node_cls.for_args(())
+            return TypeNode.single(AtomNode(tuple))
+        return TypeNode.single(node_cls.for_args(()))
     if isinstance(typ, typing._TypedDictMeta):
-        return TypedDictNode(typ)
+        return TypeNode.single(TypedDictNode(typ))
     if isinstance(typ, dataclasses.InitVar):
-        return InitVarNode.for_args((typ.type,))
+        return TypeNode.single(InitVarNode.for_args((typ.type,)))
     if AtomNode.is_atom(typ):
-        return AtomNode(typ)
+        return TypeNode.single(AtomNode(typ))
     raise InvalidTypeError(
         f"Unrecognized type annotation: {typ!r}",
         hint="Use a valid type or typing construct",
     )
 
 
-def _parse_origin_type(origin: Any, args: tuple[Any, ...], raw: Any) -> BaseNode:
+def _parse_origin_type(origin: Any, args: tuple[Any, ...], raw: Any) -> TypeNode:
+    if origin in {typing.Union, types.UnionType}:
+        alts: set[BaseNode] = set()
+        for arg in args:
+            part = parse_type(arg)
+            alts.update(part.alts)
+        return TypeNode(alts=frozenset(alts))
     if origin is typing.Annotated:
         if not args:
             raise InvalidTypeError(
@@ -636,9 +653,12 @@ def _parse_origin_type(origin: Any, args: tuple[Any, ...], raw: Any) -> BaseNode
                 hint="Use Annotated[T, ...] with at least one metadata value",
             )
         base = parse_type(args[0])
-        return dataclasses.replace(
-            base, annotated_metadata=base.annotated_metadata + list(args[1:])
-        )
+        extra = tuple(args[1:])
+        if len(base.alts) != 1:
+            return dataclasses.replace(base, ann=base.ann + extra)
+        (form,) = base.alts
+        form = dataclasses.replace(form, annotations=form.annotations + extra)
+        return dataclasses.replace(base, alts=frozenset({form}))
     if origin is typing.Final:
         if len(args) != 1:
             raise InvalidTypeError(
@@ -665,7 +685,7 @@ def _parse_origin_type(origin: Any, args: tuple[Any, ...], raw: Any) -> BaseNode
         return dataclasses.replace(inner, is_required=False)
     node_cls = BaseNode._registry.get(origin)
     if node_cls is not None:
-        return node_cls.for_args(args)
+        return TypeNode.single(node_cls.for_args(args))
     if (
         not args
         and _strict
@@ -685,7 +705,7 @@ def _parse_origin_type(origin: Any, args: tuple[Any, ...], raw: Any) -> BaseNode
         or hasattr(origin, "__parameters__")
         or hasattr(raw, "__parameters__")
     ):
-        return GenericNode(origin, tuple(parse_type(a) for a in args))
+        return TypeNode.single(GenericNode(origin, tuple(parse_type(a) for a in args)))
     raise InvalidTypeError(
         f"Unsupported type annotation: {raw!r}",
         hint="Use a supported generic type or typing construct",
@@ -703,8 +723,8 @@ def parse_type(
     on_generic: Callable[[GenericNode], BaseNode] | None = None,
     strict: bool | None = None,
     globalns: dict[str, Any] | None = None,
-) -> BaseNode:
-    """Parse *typ* into a :class:`BaseNode`.
+) -> TypeNode:
+    """Parse *typ* into a :class:`TypeNode`.
 
     If *on_generic* is provided, it will be invoked with any ``GenericNode``
     produced during parsing, allowing custom post-processing of generic types.
@@ -722,15 +742,18 @@ def parse_type(
         _eval_globals = globalns
     try:
         if isinstance(typ, (typing.ParamSpecArgs, typing.ParamSpecKwargs)):
-            node = AtomNode(typ)
+            node = TypeNode.single(AtomNode(typ))
         else:
             origin = get_origin(typ)
             if origin is None:
                 node = _parse_no_origin_type(typ)
             else:
                 node = _parse_origin_type(origin, get_args(typ), typ)
-        if isinstance(node, GenericNode) and _on_generic_callback is not None:
-            return _on_generic_callback(node)
+        if _on_generic_callback is not None and len(node.alts) == 1:
+            (form,) = node.alts
+            if isinstance(form, GenericNode):
+                form = _on_generic_callback(form)
+                node = TypeNode.single(form)
         return node
     finally:
         if on_generic is not None:
@@ -746,22 +769,28 @@ def parse_type_expr(
     *,
     strict: bool | None = None,
     globalns: dict[str, Any] | None = None,
-) -> TypeExprNode:
-    """Parse *typ* ensuring it is a :class:`TypeExprNode`."""
+) -> TypeNode:
+    """Parse *typ* ensuring it contains only :class:`TypeExprNode` forms."""
 
     node = parse_type(typ, strict=strict, globalns=globalns)
     _reject_special(node)
-    return typing.cast(TypeExprNode, node)
+    return node
 
 
-def _reject_special(node: BaseNode) -> None:
+def _reject_special(node: BaseNode | TypeNode) -> None:
     """Recursively reject special-form or in-class nodes."""
 
-    if (
-        isinstance(node, (SpecialFormNode, InClassExprNode))
-        or node.is_final
-        or node.is_required is not None
-    ):
+    if isinstance(node, TypeNode):
+        if node.is_final or node.is_required is not None:
+            raise InvalidTypeError(
+                "Special form not allowed in this context",
+                hint="Use this type only in valid contexts",
+            )
+        for alt in node.alts:
+            _reject_special(alt)
+        return
+
+    if isinstance(node, (SpecialFormNode, InClassExprNode)):
         raise InvalidTypeError(
             "Special form not allowed in this context",
             hint="Use this type only in valid contexts",
@@ -770,11 +799,11 @@ def _reject_special(node: BaseNode) -> None:
     if dataclasses.is_dataclass(node):
         for field in dataclasses.fields(node):
             value = getattr(node, field.name)
-            if isinstance(value, BaseNode):
+            if isinstance(value, (BaseNode, TypeNode)):
                 _reject_special(value)
             elif isinstance(value, (list, tuple)):
                 for item in value:
-                    if isinstance(item, BaseNode):
+                    if isinstance(item, (BaseNode, TypeNode)):
                         _reject_special(item)
 
 
@@ -786,7 +815,7 @@ class TypeRenderInfo:
     used: set[type]
 
 
-def _format_node(node: BaseNode) -> TypeRenderInfo:
+def _format_node(node: BaseNode | TypeNode) -> TypeRenderInfo:
     return format_type(node.emit(), _skip_parse=True)
 
 
@@ -887,6 +916,7 @@ def _format_runtime_type(type_obj: Any) -> TypeRenderInfo:
     if origin in {types.UnionType, typing.Union}:
         arg_strs = [format_type(a) for a in args]
         used.update(*(a.used for a in arg_strs))
+        arg_strs.sort(key=lambda a: a.text)
         text = " | ".join(a.text for a in arg_strs)
         return TypeRenderInfo(text, used)
 
@@ -900,11 +930,18 @@ def _format_runtime_type(type_obj: Any) -> TypeRenderInfo:
 
     if origin is typing.Annotated:
         node = parse_type(type_obj)
-        base_node = dataclasses.replace(node, annotated_metadata=[])
-        base_fmt = format_type(base_node.emit())
         used.add(typing.Annotated)
+        if node.ann:
+            base_node = dataclasses.replace(node, ann=())
+            base_fmt = format_type(base_node.emit(), _skip_parse=True)
+            metadata = node.ann
+        else:
+            (form,) = node.alts
+            base_form = dataclasses.replace(form, annotations=())
+            base_fmt = format_type(TypeNode.single(base_form).emit(), _skip_parse=True)
+            metadata = form.annotations
         used.update(base_fmt.used)
-        metadata_str = ", ".join(repr(m) for m in node.annotated_metadata)
+        metadata_str = ", ".join(repr(m) for m in metadata)
         return TypeRenderInfo(f"Annotated[{base_fmt.text}, {metadata_str}]", used)
 
     if origin is typing.Literal:
@@ -1033,15 +1070,18 @@ def find_typevars(type_obj: Any) -> set[str]:
                 found.add(f"**{typ.__origin__.__name__}")
             elif isinstance(typ, typing.ParamSpecKwargs):
                 found.add(f"**{typ.__origin__.__name__}")
+        elif isinstance(node, TypeNode):
+            for alt in node.alts:
+                _collect(alt)
         else:
             if dataclasses.is_dataclass(node):
                 for field in dataclasses.fields(node):
                     value = getattr(node, field.name)
-                    if isinstance(value, BaseNode):
+                    if isinstance(value, (BaseNode, TypeNode)):
                         _collect(value)
                     elif isinstance(value, (list, tuple)):
                         for item in value:
-                            if isinstance(item, BaseNode):
+                            if isinstance(item, (BaseNode, TypeNode)):
                                 _collect(item)
 
     def _fallback(t: Any) -> set[str]:
