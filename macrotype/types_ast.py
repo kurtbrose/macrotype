@@ -48,7 +48,7 @@ class InvalidTypeError(TypeError):
 class BaseNode:
     """Base class for parsed type nodes."""
 
-    node_ann: tuple[Any, ...] = ()
+    annotations: tuple[Any, ...] = ()
 
     # Registry mapping handled typing "things" to node classes
     _registry: ClassVar[dict[Any, type["BaseNode"]]] = {}
@@ -64,8 +64,8 @@ class BaseNode:
     def emit(self) -> TypeExpr:
         """Return the Python type expression represented by this node."""
         t = self._emit_core()
-        if self.node_ann:
-            t = typing.Annotated[t, *self.node_ann]
+        if self.annotations:
+            t = typing.Annotated[t, *self.annotations]
         return t
 
     def _emit_core(self) -> TypeExpr:
@@ -101,8 +101,8 @@ class TypeNode:
         parts = []
         for alt in self.alts:
             t = alt._emit_core()
-            if alt.node_ann:
-                t = typing.Annotated[t, *alt.node_ann]
+            if alt.annotations:
+                t = typing.Annotated[t, *alt.annotations]
             parts.append(t)
         if not parts:
             if strict:
@@ -657,7 +657,7 @@ def _parse_origin_type(origin: Any, args: tuple[Any, ...], raw: Any) -> TypeNode
         if len(base.alts) != 1:
             return dataclasses.replace(base, ann=base.ann + extra)
         (form,) = base.alts
-        form = dataclasses.replace(form, node_ann=form.node_ann + extra)
+        form = dataclasses.replace(form, annotations=form.annotations + extra)
         return dataclasses.replace(base, alts=frozenset({form}))
     if origin is typing.Final:
         if len(args) != 1:
@@ -937,9 +937,9 @@ def _format_runtime_type(type_obj: Any) -> TypeRenderInfo:
             metadata = node.ann
         else:
             (form,) = node.alts
-            base_form = dataclasses.replace(form, node_ann=())
+            base_form = dataclasses.replace(form, annotations=())
             base_fmt = format_type(TypeNode.single(base_form).emit(), _skip_parse=True)
-            metadata = form.node_ann
+            metadata = form.annotations
         used.update(base_fmt.used)
         metadata_str = ", ".join(repr(m) for m in metadata)
         return TypeRenderInfo(f"Annotated[{base_fmt.text}, {metadata_str}]", used)
