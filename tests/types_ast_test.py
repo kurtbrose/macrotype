@@ -90,7 +90,7 @@ PARSINGS = {
     ),
     typing.Callable[[int, str], bool]: CallableNode([AtomNode(int), AtomNode(str)], AtomNode(bool)),
     typing.Callable[..., int]: CallableNode(None, AtomNode(int)),
-    typing.Annotated[int, "x"]: AtomNode(int, annotated_metadata=["x"]),
+    typing.Annotated[int, "x"]: AtomNode(int, node_ann=("x",)),
     dataclasses.InitVar: InitVarNode(AtomNode(typing.Any)),
     dataclasses.InitVar[int]: InitVarNode(AtomNode(int)),
     typing.Self: SelfNode(),
@@ -203,14 +203,14 @@ def test_typeguard_special_form() -> None:
 
 def test_annotated_nesting() -> None:
     nested = typing.Annotated[typing.Annotated[int, "a"], "b"]
-    expected = AtomNode(int, annotated_metadata=["a", "b"])
+    expected = AtomNode(int, node_ann=("a", "b"))
     assert parse_type(nested) == expected
     assert parse_type_expr(nested) == expected
 
 
 def test_annotated_classvar() -> None:
     ann = typing.Annotated[typing.ClassVar[int], "x"]
-    assert parse_type(ann) == ClassVarNode(AtomNode(int), annotated_metadata=["x"])
+    assert parse_type(ann) == ClassVarNode(AtomNode(int), node_ann=("x",))
     with pytest.raises(TypeError):
         parse_type_expr(ann)
 

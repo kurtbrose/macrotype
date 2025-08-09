@@ -168,14 +168,14 @@ def load_module_from_path(
 
     if name in sys.modules:
         module = sys.modules[name]
-        if getattr(module, "__file__", None) and not hasattr(
-            module, "__macrotype_header_pragmas__"
-        ):
-            header, comments, lines = _extract_source_info(Path(module.__file__).read_text())
-            module.__macrotype_header_pragmas__ = header
-            module.__macrotype_comments__ = comments
-            module.__macrotype_line_map__ = lines
-        return module
+        if getattr(module, "__file__", None) and Path(module.__file__).resolve() == path.resolve():
+            if not hasattr(module, "__macrotype_header_pragmas__"):
+                header, comments, lines = _extract_source_info(Path(module.__file__).read_text())
+                module.__macrotype_header_pragmas__ = header
+                module.__macrotype_comments__ = comments
+                module.__macrotype_line_map__ = lines
+            return module
+        del sys.modules[name]
 
     if not type_checking:
         spec = importlib.util.spec_from_file_location(name, path)
