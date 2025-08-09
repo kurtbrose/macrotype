@@ -98,6 +98,38 @@ class SpecialFormNode(BaseNode):
     pass
 
 
+@dataclass(frozen=True)
+class TypeNode:
+    alts: frozenset[BaseNode] = frozenset()
+    annotations: tuple[Any, ...] = ()
+    is_final: bool = False
+    is_required: bool | None = None
+
+    def emit(self, *, strict: bool = False) -> TypeExpr:
+        parts = [alt.emit() for alt in self.alts]
+        if not parts:
+            if strict:
+                raise InvalidTypeError("unspecified type")
+            combined: TypeExpr = typing.Any
+        elif len(parts) == 1:
+            combined = parts[0]
+        else:
+            combined = typing.Union[tuple(parts)]
+        if self.is_required is True:
+            combined = typing.Required[combined]
+        elif self.is_required is False:
+            combined = typing.NotRequired[combined]
+        if self.is_final:
+            combined = typing.Final[combined]
+        if self.annotations:
+            combined = typing.Annotated[combined, *self.annotations]
+        return combined
+
+    @staticmethod
+    def single(form: BaseNode) -> "TypeNode":
+        return TypeNode(alts=frozenset({form}))
+
+
 # ``N`` is used by container nodes and aliases to propagate their typing
 # context. It can either be the general ``TypeExprNode`` or the superset
 # ``InClassExprNode | TypeExprNode`` representing class-body contexts.
@@ -247,7 +279,7 @@ class DictNode(Generic[K, V], ContainerNode[typing.Union[K, V]]):
 @dataclass(frozen=True)
 class ListNode(Generic[N], ContainerNode[N]):
     handles: ClassVar[tuple[Any, ...]] = (list,)
-    element: NodeLike[N]
+    element: TypeNode
     container_type: ClassVar[type] = list
 
     def emit(self) -> TypeExpr:
@@ -264,7 +296,7 @@ class ListNode(Generic[N], ContainerNode[N]):
             return AtomNode(list)
         if len(args) == 1:
             elem = parse_type(args[0])
-            return cls(elem)
+            return cls(TypeNode.single(elem))
         raise InvalidTypeError(
             f"Too many arguments to list: {args}",
             hint="list accepts at most one type argument",
@@ -752,8 +784,18 @@ def parse_type_expr(
     return typing.cast(TypeExprNode, node)
 
 
-def _reject_special(node: BaseNode) -> None:
+def _reject_special(node: BaseNode | TypeNode) -> None:
     """Recursively reject special-form or in-class nodes."""
+
+    if isinstance(node, TypeNode):
+        if node.is_final or node.is_required is not None:
+            raise InvalidTypeError(
+                "Special form not allowed in this context",
+                hint="Use this type only in valid contexts",
+            )
+        for alt in node.alts:
+            _reject_special(alt)
+        return
 
     if (
         isinstance(node, (SpecialFormNode, InClassExprNode))
@@ -768,11 +810,11 @@ def _reject_special(node: BaseNode) -> None:
     if dataclasses.is_dataclass(node):
         for field in dataclasses.fields(node):
             value = getattr(node, field.name)
-            if isinstance(value, BaseNode):
+            if isinstance(value, (BaseNode, TypeNode)):
                 _reject_special(value)
             elif isinstance(value, (list, tuple)):
                 for item in value:
-                    if isinstance(item, BaseNode):
+                    if isinstance(item, (BaseNode, TypeNode)):
                         _reject_special(item)
 
 
@@ -1031,15 +1073,18 @@ def find_typevars(type_obj: Any) -> set[str]:
                 found.add(f"**{typ.__origin__.__name__}")
             elif isinstance(typ, typing.ParamSpecKwargs):
                 found.add(f"**{typ.__origin__.__name__}")
+        elif isinstance(node, TypeNode):
+            for alt in node.alts:
+                _collect(alt)
         else:
             if dataclasses.is_dataclass(node):
                 for field in dataclasses.fields(node):
                     value = getattr(node, field.name)
-                    if isinstance(value, BaseNode):
+                    if isinstance(value, (BaseNode, TypeNode)):
                         _collect(value)
                     elif isinstance(value, (list, tuple)):
                         for item in value:
-                            if isinstance(item, BaseNode):
+                            if isinstance(item, (BaseNode, TypeNode)):
                                 _collect(item)
 
     def _fallback(t: Any) -> set[str]:

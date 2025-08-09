@@ -31,6 +31,16 @@ class InClassExprNode(BaseNode): ...
 @dataclass(frozen=True, kw_only=True)
 class SpecialFormNode(BaseNode): ...
 
+@dataclass(frozen=True)
+class TypeNode:
+    alts: frozenset[BaseNode]
+    annotations: tuple[Any, ...]
+    is_final: bool
+    is_required: bool | None
+    def emit(self, *, strict: bool) -> Any: ...
+    @staticmethod
+    def single(form: BaseNode) -> TypeNode: ...
+
 N = TypeVar('N')
 
 K = TypeVar('K')
@@ -86,7 +96,7 @@ class DictNode[K: (TypeExprNode, InClassExprNode | TypeExprNode), V: (TypeExprNo
 @dataclass(frozen=True)
 class ListNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](ContainerNode[N]):
     handles: ClassVar[tuple[Any, ...]]
-    element: NodeLike[N]
+    element: TypeNode
     container_type: ClassVar[type]
     def emit(self) -> Any: ...
     @classmethod
@@ -204,7 +214,7 @@ def parse_type(typ: Any, *, on_generic: Callable[[GenericNode], BaseNode] | None
 
 def parse_type_expr(typ: Any, *, strict: bool | None, globalns: dict[str, Any] | None) -> TypeExprNode: ...
 
-def _reject_special(node: BaseNode) -> None: ...
+def _reject_special(node: BaseNode | TypeNode) -> None: ...
 
 @dataclass
 class TypeRenderInfo:
