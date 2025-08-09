@@ -114,7 +114,7 @@ class TupleNode[*Ctx](ContainerNode[Unpack[Ctx]]):
 @dataclass(frozen=True)
 class SetNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](ContainerNode[N]):
     handles: ClassVar[tuple[Any, ...]]
-    element: NodeLike[N]
+    element: TypeNode
     container_type: ClassVar[type]
     def emit(self) -> Any: ...
     @classmethod
@@ -123,7 +123,7 @@ class SetNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](ContainerNode[N
 @dataclass(frozen=True)
 class FrozenSetNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](ContainerNode[N]):
     handles: ClassVar[tuple[Any, ...]]
-    element: NodeLike[N]
+    element: TypeNode
     container_type: ClassVar[type]
     def emit(self) -> Any: ...
     @classmethod

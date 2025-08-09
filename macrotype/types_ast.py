@@ -345,7 +345,7 @@ class TupleNode(Generic[*Ctx], ContainerNode[typing.Union[*Ctx]]):
 @dataclass(frozen=True)
 class SetNode(Generic[N], ContainerNode[N]):
     handles: ClassVar[tuple[Any, ...]] = (set,)
-    element: NodeLike[N]
+    element: TypeNode
     container_type: ClassVar[type] = set
 
     def emit(self) -> TypeExpr:
@@ -362,7 +362,7 @@ class SetNode(Generic[N], ContainerNode[N]):
             return AtomNode(set)
         if len(args) == 1:
             elem = parse_type(args[0])
-            return cls(elem)
+            return cls(TypeNode.single(elem))
         raise InvalidTypeError(
             f"Too many arguments to set: {args}",
             hint="set accepts at most one type argument",
@@ -372,7 +372,7 @@ class SetNode(Generic[N], ContainerNode[N]):
 @dataclass(frozen=True)
 class FrozenSetNode(Generic[N], ContainerNode[N]):
     handles: ClassVar[tuple[Any, ...]] = (frozenset,)
-    element: NodeLike[N]
+    element: TypeNode
     container_type: ClassVar[type] = frozenset
 
     def emit(self) -> TypeExpr:
@@ -389,7 +389,7 @@ class FrozenSetNode(Generic[N], ContainerNode[N]):
             return AtomNode(frozenset)
         if len(args) == 1:
             elem = parse_type(args[0])
-            return cls(elem)
+            return cls(TypeNode.single(elem))
         raise InvalidTypeError(
             f"Too many arguments to frozenset: {args}",
             hint="frozenset accepts at most one type argument",
