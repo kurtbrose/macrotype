@@ -185,7 +185,7 @@ class CallableNode[N: (TypeExprNode, InClassExprNode | TypeExprNode)](ContainerN
 @dataclass(frozen=True)
 class UnpackNode(SpecialFormNode):
     handles: ClassVar[tuple[Any, ...]]
-    target: AtomNode | TupleNode | TypedDictNode | VarNode
+    target: TypeNode
     def _emit_core(self) -> Any: ...
     @classmethod
     def for_args(cls, args: tuple[Any, ...]) -> UnpackNode: ...

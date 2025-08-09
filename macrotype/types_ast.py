@@ -561,8 +561,7 @@ class CallableNode(Generic[N], ContainerNode[N]):
 class UnpackNode(SpecialFormNode):
     handles: ClassVar[tuple[Any, ...]] = (typing.Unpack,)
     """``typing.Unpack`` wrapper."""
-
-    target: TupleNode | TypedDictNode | AtomNode | VarNode
+    target: TypeNode
 
     def _emit_core(self) -> TypeExpr:
         return typing.Unpack[self.target.emit()]
@@ -581,9 +580,9 @@ class UnpackNode(SpecialFormNode):
         if len(target_node.alts) == 1:
             (inner,) = target_node.alts
             if isinstance(inner, (TupleNode, TypedDictNode)):
-                return cls(inner)
+                return cls(target_node)
             if isinstance(inner, VarNode) and isinstance(inner.var, typing.TypeVarTuple):
-                return cls(inner)
+                return cls(target_node)
 
         raise InvalidTypeError(
             f"Invalid target for Unpack: {target_raw!r}",

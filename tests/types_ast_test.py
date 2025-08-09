@@ -110,7 +110,7 @@ PARSINGS = {
     ),
     tuple[typing.Unpack[Ts]]: TypeNode.single(
         TupleNode(
-            (TypeNode.single(UnpackNode(VarNode(Ts))),),
+            (TypeNode.single(UnpackNode(TypeNode.single(VarNode(Ts)))),),
             False,
         )
     ),
@@ -140,16 +140,18 @@ PARSINGS = {
     typing.Self: TypeNode.single(SelfNode()),
     typing.Unpack[tuple[int, str]]: TypeNode.single(
         UnpackNode(
-            TupleNode(
-                (
-                    TypeNode.single(AtomNode(int)),
-                    TypeNode.single(AtomNode(str)),
-                ),
-                False,
+            TypeNode.single(
+                TupleNode(
+                    (
+                        TypeNode.single(AtomNode(int)),
+                        TypeNode.single(AtomNode(str)),
+                    ),
+                    False,
+                )
             )
         )
     ),
-    typing.Unpack[TD]: TypeNode.single(UnpackNode(TypedDictNode(TD))),
+    typing.Unpack[TD]: TypeNode.single(UnpackNode(TypeNode.single(TypedDictNode(TD)))),
     TD: TypeNode.single(TypedDictNode(TD)),
     typing.ClassVar: TypeNode.single(ClassVarNode(TypeNode.single(AtomNode(typing.Any)))),
     typing.ClassVar[int]: TypeNode.single(ClassVarNode(TypeNode.single(AtomNode(int)))),
@@ -164,7 +166,7 @@ PARSINGS = {
     T: TypeNode.single(VarNode(T)),
     P: TypeNode.single(VarNode(P)),
     Ts: TypeNode.single(VarNode(Ts)),
-    typing.Unpack[Ts]: TypeNode.single(UnpackNode(VarNode(Ts))),
+    typing.Unpack[Ts]: TypeNode.single(UnpackNode(TypeNode.single(VarNode(Ts)))),
     AliasListT: TypeNode.single(ListNode(TypeNode.single(VarNode(T)))),
     typing.Concatenate[int, P]: TypeNode.single(
         ConcatenateNode(

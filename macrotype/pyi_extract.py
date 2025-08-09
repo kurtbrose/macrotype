@@ -15,6 +15,7 @@ from typing import Any, Callable, get_args, get_origin, get_type_hints
 
 from .types_ast import (
     InvalidTypeError,
+    TypeNode,
     UnpackNode,
     VarNode,
     find_typevars,
@@ -496,7 +497,13 @@ def _namedtuple_bases(
                         (inner,) = node.alts
                         if isinstance(inner, UnpackNode):
                             target = inner.target
-                            if isinstance(target, VarNode):
+                            if isinstance(target, TypeNode) and len(target.alts) == 1:
+                                (t_inner,) = target.alts
+                                if isinstance(t_inner, VarNode):
+                                    fmt = format_type_param(t_inner.var)
+                                else:
+                                    fmt = format_type(param, globalns=globalns)
+                            elif isinstance(target, VarNode):
                                 fmt = format_type_param(target.var)
                             else:
                                 fmt = format_type(param, globalns=globalns)
@@ -549,7 +556,13 @@ def _normal_class_bases(
                         (inner,) = node.alts
                         if isinstance(inner, UnpackNode):
                             target = inner.target
-                            if isinstance(target, VarNode):
+                            if isinstance(target, TypeNode) and len(target.alts) == 1:
+                                (t_inner,) = target.alts
+                                if isinstance(t_inner, VarNode):
+                                    fmt = format_type_param(t_inner.var)
+                                else:
+                                    fmt = format_type(param, globalns=globalns)
+                            elif isinstance(target, VarNode):
                                 fmt = format_type_param(target.var)
                             else:
                                 fmt = format_type(param, globalns=globalns)

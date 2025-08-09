@@ -19,6 +19,7 @@ from macrotype.types_ast import (
     TypeExprNode,
     TypeGuardNode,
     TypeNode,
+    UnpackNode,
     VarNode,
 )
 
@@ -75,3 +76,8 @@ ccn: ConcatenateNode[TypeExprNode] = ConcatenateNode(
     (TypeNode.single(AtomNode(int)), TypeNode.single(VarNode(P)))
 )
 assert_type(ccn.parts[0], TypeNode)
+
+unpn: UnpackNode = UnpackNode(
+    TypeNode.single(TupleNode[TypeExprNode]((TypeNode.single(AtomNode(int)),), False))
+)
+assert_type(unpn.target, TypeNode)
