@@ -49,6 +49,11 @@ def main(argv: list[str] | None = None) -> int:
         "--stub-overlay-dir",
         help="Symlink generated stubs into this directory for type checkers",
     )
+    parser.add_argument(
+        "--fail-on-skip",
+        action="store_true",
+        help="Raise an error if any files are skipped",
+    )
     args = parser.parse_args(argv)
     command = "macrotype " + " ".join(argv)
     stub_overlay_dir = Path(args.stub_overlay_dir) if args.stub_overlay_dir else None
@@ -119,6 +124,7 @@ def main(argv: list[str] | None = None) -> int:
                 out_dir,
                 command=command,
                 stub_overlay_dir=overlay,
+                fail_on_skip=args.fail_on_skip,
             )
     return 0
 

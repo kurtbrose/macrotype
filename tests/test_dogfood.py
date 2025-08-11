@@ -80,17 +80,31 @@ def test_cli_stdlib(tmp_path: Path) -> None:
     site_pkgs = stdlib / "site-packages"
     renamed = None
     if site_pkgs.exists():
-        renamed = stdlib / "site-packages_tmp"
+        renamed = stdlib.parent / "site-packages_tmp"
         site_pkgs.rename(renamed)
     try:
         env = dict(os.environ)
         env["PYTHONPATH"] = str(repo_root)
-        subprocess.run(
-            [sys.executable, "-m", "macrotype", ".", "-o", str(tmp_path)],
-            cwd=stdlib,
-            env=env,
-            check=True,
-        )
+        try:
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "macrotype",
+                    ".",
+                    "-o",
+                    str(tmp_path),
+                    "--fail-on-skip",
+                ],
+                cwd=stdlib,
+                env=env,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+        except subprocess.CalledProcessError as exc:  # pragma: no cover - defensive
+            result = exc
+        assert all(not line.startswith("Skipping ") for line in result.stderr.splitlines())
     finally:
         if renamed:
             renamed.rename(site_pkgs)

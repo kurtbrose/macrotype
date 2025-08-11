@@ -289,6 +289,7 @@ def process_directory(
     *,
     command: str | None = None,
     stub_overlay_dir: Path | None = None,
+    fail_on_skip: bool = False,
 ) -> list[Path]:
     outputs = []
     for src in iter_python_files(directory):
@@ -303,6 +304,8 @@ def process_directory(
                 )
             )
         except (Exception, SystemExit) as exc:  # pragma: no cover - defensive
+            if fail_on_skip:
+                raise
             print(f"Skipping {src}: {exc}", file=sys.stderr)
     return outputs
 
