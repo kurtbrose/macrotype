@@ -58,15 +58,21 @@ def _tyname_of(obj: object) -> Ty:
         q = getattr(obj, "arg", None) or str(obj)
         return TyForward(qualname=q)
 
-    # Any / Never / NoReturn
+    # Any / Never / NoReturn / bare Final
     if obj is t.Any:
         return TyAny()
     if obj in (t.Never, t.NoReturn):
         return TyNever()
+    if obj is t.Final:
+        return TyAny()
 
-    # NoneType
-    if obj is type(None):  # noqa: E721
+    # None value / NoneType
+    if obj is None or obj is type(None):  # noqa: E721
         return TyName(module="builtins", name="None")
+
+    # Ellipsis literal
+    if obj is Ellipsis:
+        return TyName(module="builtins", name="Ellipsis")
 
     # TypeVar / ParamSpec / TypeVarTuple at use-site
     if isinstance(obj, t.TypeVar):
@@ -124,7 +130,16 @@ def to_ir(tp: object, env: Optional[ParseEnv] = None) -> Ty:
 
     # --- Union (X | Y) ---
     if origin in (t.Union, _types.UnionType):
-        return TyUnion(options=tuple(to_ir(a, env) for a in args))
+        opts: list[Ty] = []
+        for a in args:
+            ir = to_ir(a, env)
+            if isinstance(ir, TyUnion):
+                opts.extend(ir.options)
+            else:
+                opts.append(ir)
+        # Deduplicate and sort for order-insensitivity
+        uniq: dict[str, Ty] = {repr(o): o for o in opts}
+        return TyUnion(options=tuple(sorted(uniq.values(), key=repr)))
 
     # --- Annotated[T, ...] ---
     if origin is t.Annotated:
@@ -152,13 +167,12 @@ def to_ir(tp: object, env: Optional[ParseEnv] = None) -> Ty:
 
     # --- Tuple[...] ---
     if origin is tuple:
-        # tuple[int, str] vs tuple[T, ...]
-        if len(args) == 2 and args[1] is Ellipsis:
-            # Represent as application: tuple[T, Ellipsis]
-            return TyApp(
-                base=TyName(module="builtins", name="tuple"),
-                args=(to_ir(args[0], env), TyName(module="builtins", name="Ellipsis")),
+        # tuple[int, str] vs variadic tuple[T, ...]
+        if args and args[-1] is Ellipsis:
+            items = tuple(to_ir(a, env) for a in args[:-1]) + (
+                TyName(module="builtins", name="Ellipsis"),
             )
+            return TyApp(base=TyName(module="builtins", name="tuple"), args=items)
         return TyTuple(items=tuple(to_ir(a, env) for a in args))
 
     # --- Callable[...] ---
@@ -166,11 +180,12 @@ def to_ir(tp: object, env: Optional[ParseEnv] = None) -> Ty:
         if args and args[0] is Ellipsis:
             # Callable[..., R]
             return TyCallable(params=Ellipsis, ret=to_ir(args[1], env))
-        if args and isinstance(args[0], list | tuple):
+        if args and isinstance(args[0], (list, tuple)):
             params = tuple(to_ir(a, env) for a in args[0])
             ret = to_ir(args[1], env)
             return TyCallable(params=params, ret=ret)
-        # Fallback
+        if args:
+            return TyCallable(params=(to_ir(args[0], env),), ret=to_ir(args[1], env))
         return TyCallable(params=Ellipsis, ret=TyAny())
 
     # --- Unpack[...] (PEP 646) ---
@@ -194,7 +209,11 @@ def to_ir(tp: object, env: Optional[ParseEnv] = None) -> Ty:
     # --- ParamSpec at use-site inside Callable etc. (already handled as leaf) ---
 
     # --- Default: generic application ---
-    return TyApp(base=to_ir(origin, env), args=tuple(to_ir(a, env) for a in args))
+    if getattr(tp, "__module__", None) == "typing":
+        base = _tyname_of(tp)
+    else:
+        base = to_ir(origin, env)
+    return TyApp(base=base, args=tuple(to_ir(a, env) for a in args))
 
 
 # Notes:
