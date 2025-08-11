@@ -53,93 +53,94 @@ def norm(t: ResolvedTy, opts: NormOpts | None = None) -> NormalizedTy:
 
 
 def _norm(n: Ty, o: NormOpts) -> Ty:
-    # Leaves
-    if isinstance(n, (TyAny, TyNever)):
-        return n
+    match n:
+        case TyAny() | TyNever():
+            return n
 
-    if isinstance(n, TyName):
-        if o.typing_to_builtins:
-            key = (n.module, n.name)
-            if key in _TYPING_TO_BUILTINS:
-                mod, nm = _TYPING_TO_BUILTINS[key]
-                return TyName(module=mod, name=nm)
-        return n
+        case TyName(module=mod, name=name):
+            if o.typing_to_builtins:
+                key = (mod, name)
+                if key in _TYPING_TO_BUILTINS:
+                    m, k = _TYPING_TO_BUILTINS[key]
+                    return TyName(module=m, name=k)
+            return n
 
-    if isinstance(n, TyApp):
-        base = _norm(n.base, o)
-        args = tuple(_norm(a, o) for a in n.args)
+        case TyApp(base=base, args=args):
+            base_r = _norm(base, o)
+            args_r = tuple(_norm(a, o) for a in args)
+            # Variadic tuple canonical shape: base must be builtins.tuple, last arg Ellipsis => leave as-is
+            return TyApp(base=base_r, args=args_r)
 
-        # Variadic tuple canonical shape: base must be builtins.tuple, last arg Ellipsis => leave as-is
-        return TyApp(base=base, args=args)
+        case TyTuple(items=items):
+            return TyTuple(items=tuple(_norm(a, o) for a in items))
 
-    if isinstance(n, TyTuple):
-        return TyTuple(items=tuple(_norm(a, o) for a in n.items))
+        case TyUnion(options=opts):
+            # flatten
+            flat: list[Ty] = []
+            for x in opts:
+                x = _norm(x, o)
+                if isinstance(x, TyUnion):
+                    flat.extend(x.options)
+                else:
+                    flat.append(x)
 
-    if isinstance(n, TyUnion):
-        # flatten
-        flat: list[Ty] = []
-        for x in n.options:
-            x = _norm(x, o)
-            if isinstance(x, TyUnion):
-                flat.extend(x.options)
-            else:
-                flat.append(x)
+            # dedup by a structural key
+            if o.dedup_unions:
+                seen: set[str] = set()
+                uniq: list[Ty] = []
+                for x in flat:
+                    k = _key(x)
+                    if k not in seen:
+                        seen.add(k)
+                        uniq.append(x)
+                flat = uniq
 
-        # dedup by a structural key
-        if o.dedup_unions:
-            seen: set[str] = set()
-            uniq: list[Ty] = []
-            for x in flat:
-                k = _key(x)
-                if k not in seen:
-                    seen.add(k)
-                    uniq.append(x)
-            flat = uniq
+            if o.sort_unions:
+                flat = sorted(flat, key=_key)
 
-        if o.sort_unions:
-            flat = sorted(flat, key=_key)
+            if not flat:
+                return TyNever()  # Union[] → bottom (policy; rarely occurs)
+            if len(flat) == 1:
+                return flat[0]
+            return TyUnion(options=tuple(flat))
 
-        if not flat:
-            return TyNever()  # Union[] → bottom (policy; rarely occurs)
-        if len(flat) == 1:
-            return flat[0]
-        return TyUnion(options=tuple(flat))
+        case TyLiteral(values=vals):
+            # optional dedup/ordering (stable by repr key)
+            seen = set()
+            out = []
+            for v in vals:
+                r = repr(v)
+                if r not in seen:
+                    seen.add(r)
+                    out.append(v)
+            return TyLiteral(values=tuple(out))
 
-    if isinstance(n, TyLiteral):
-        # optional dedup/ordering (stable by repr key)
-        vals = n.values
-        # dedup preserving first occurrence
-        seen = set()
-        out = []
-        for v in vals:
-            r = repr(v)
-            if r not in seen:
-                seen.add(r)
-                out.append(v)
-        return TyLiteral(values=tuple(out))
+        case TyAnnotated(base=base, anno=anno):
+            base_n = _norm(base, o)
+            if o.drop_annotated_any and isinstance(base_n, TyAny):
+                return base_n
+            # merge nested Annotated: Annotated[Annotated[T, a], b] -> Annotated[T, a, b]
+            if isinstance(base_n, TyAnnotated):
+                return TyAnnotated(base=base_n.base, anno=base_n.anno + anno)
+            return TyAnnotated(base=base_n, anno=anno)
 
-    if isinstance(n, TyAnnotated):
-        base = _norm(n.base, o)
-        if o.drop_annotated_any and isinstance(base, TyAny):
-            return base
-        # merge nested Annotated: Annotated[Annotated[T, a], b] -> Annotated[T, a, b]
-        if isinstance(base, TyAnnotated):
-            return TyAnnotated(base=base.base, anno=base.anno + n.anno)
-        return TyAnnotated(base=base, anno=n.anno)
+        case TyCallable(params=Ellipsis, ret=ret):
+            return TyCallable(params=Ellipsis, ret=_norm(ret, o))
 
-    if isinstance(n, TyCallable):
-        if n.params is Ellipsis:
-            return TyCallable(params=Ellipsis, ret=_norm(n.ret, o))
-        return TyCallable(params=tuple(_norm(a, o) for a in n.params), ret=_norm(n.ret, o))
+        case TyCallable(params=params, ret=ret):
+            return TyCallable(
+                params=tuple(_norm(a, o) for a in params),
+                ret=_norm(ret, o),
+            )
 
-    if isinstance(n, TyClassVar):
-        return TyClassVar(inner=_norm(n.inner, o))
+        case TyClassVar(inner=inner):
+            return TyClassVar(inner=_norm(inner, o))
 
-    if isinstance(n, TyUnpack):
-        return TyUnpack(inner=_norm(n.inner, o))
+        case TyUnpack(inner=inner):
+            return TyUnpack(inner=_norm(inner, o))
 
-    # Default: return as-is
-    return n
+        case _:
+            return n
 
 
 def _key(n: Ty) -> str:
