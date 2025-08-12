@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import builtins
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 from .types_ir import (
     Ty,
-    TyAnnotated,
     TyAny,
     TyApp,
     TyCallable,
@@ -43,6 +42,22 @@ def emit_type(t: ValidatedTy, ctx: EmitCtx | None = None) -> str:
 
 
 def _emit(n: Ty, ctx: EmitCtx) -> str:
+    if n.annotations:
+        nodes = []
+        cur = n.annotations
+        while cur:
+            nodes.append(cur)
+            cur = cur.child
+        inner = _emit_no_annos(replace(n, annotations=None), ctx)
+        for node in reversed(nodes):
+            ctx.need("Annotated")
+            metas = ", ".join(repr(x) for x in node.annos)
+            inner = f"Annotated[{inner}, {metas}]"
+        return inner
+    return _emit_no_annos(n, ctx)
+
+
+def _emit_no_annos(n: Ty, ctx: EmitCtx) -> str:
     match n:
         case TyAny():
             # In stubs, 'Any' comes from typing (PEP 484). Import it once.
@@ -80,12 +95,6 @@ def _emit(n: Ty, ctx: EmitCtx) -> str:
         case TyLiteral(values=vals):
             ctx.need("Literal")
             return f"Literal[{', '.join(repr(v) for v in vals)}]"
-
-        case TyAnnotated(base=base, anno=ann):
-            ctx.need("Annotated")
-            inner = _emit(base, ctx)
-            metas = ", ".join(repr(x) for x in ann)
-            return f"Annotated[{inner}, {metas}]"
 
         case TyCallable(params=builtins.Ellipsis, ret=r):
             ctx.need("Callable")

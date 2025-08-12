@@ -4,14 +4,14 @@ import collections.abc as abc
 import enum
 import types as _types
 import typing as t
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Optional, get_args, get_origin
 
 from .types_ir import (
     LitVal,
     ParsedTy,
     Ty,
-    TyAnnotated,
+    TyAnnoTree,
     TyAny,
     TyApp,
     TyCallable,
@@ -143,7 +143,9 @@ def _to_ir(tp: object, env: ParseEnv) -> Ty:
     # --- Annotated[T, ...] ---
     if origin is t.Annotated:
         base, *meta = args
-        return TyAnnotated(base=_to_ir(base, env), anno=tuple(meta))
+        inner = _to_ir(base, env)
+        ann = TyAnnoTree(annos=tuple(meta), child=inner.annotations)
+        return replace(inner, annotations=ann)
 
     # --- Literal[...] ---
     if origin is t.Literal:

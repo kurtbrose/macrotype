@@ -6,7 +6,7 @@ import typing as t
 from macrotype.parse_type import to_ir
 from macrotype.types_ir import (
     Ty,
-    TyAnnotated,
+    TyAnnoTree,
     TyAny,
     TyApp,
     TyCallable,
@@ -136,7 +136,10 @@ CASES: list[tuple[object, Ty]] = [
         ),
     ),
     # Annotated
-    (t.Annotated[int, "x"], TyAnnotated(base=b("int"), anno=("x",))),
+    (
+        t.Annotated[int, "x"],
+        TyName(module="builtins", name="int", annotations=TyAnnoTree(annos=("x",))),
+    ),
     # ClassVar / Final / Required / NotRequired (IR unwraps Final/Req)
     (t.ClassVar[int], TyClassVar(inner=b("int"))),
     (t.Final[int], b("int")),  # Final is handled at the symbol layer

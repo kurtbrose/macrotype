@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from .types_ir import (
     ParsedTy,
     ResolvedTy,
     Ty,
-    TyAnnotated,
     TyAny,
     TyApp,
     TyCallable,
@@ -50,61 +49,64 @@ def resolve(t: ParsedTy, env: ResolveEnv) -> ResolvedTy:
 
 
 def _res(node: Ty, env: ResolveEnv) -> Ty:
+    ann = node.annotations
     match node:
         case TyAny() | TyNever() | TyParamSpec() | TyTypeVar() | TyTypeVarTuple():
-            return node
+            res = node
 
         case TyName(module=None, name=name):
             if fq := env.imports.get(name):
                 mod, _, nm = fq.rpartition(".")
-                return TyName(module=mod, name=nm)
-            return node
+                res = TyName(module=mod, name=nm)
+            else:
+                res = node
 
         case TyName(module="typing", name="Type"):
-            return TyName(module="builtins", name="type")
+            res = TyName(module="builtins", name="type")
 
         case TyName():
-            return node
+            res = node
 
         case TyForward(qualname=qn):
             if fq := env.imports.get(qn):
                 mod, _, nm = fq.rpartition(".")
-                return TyName(module=mod, name=nm)
-            return node  # leave unresolved
+                res = TyName(module=mod, name=nm)
+            else:
+                res = node  # leave unresolved
 
         case TyApp(base=base, args=args):
             base_r = _res(base, env)
             args_r = tuple(_res(a, env) for a in args)
             if isinstance(base_r, TyName) and base_r.module == "typing" and base_r.name == "Type":
                 base_r = TyName(module="builtins", name="type")
-            return TyApp(base=base_r, args=args_r)
+            res = TyApp(base=base_r, args=args_r)
 
         case TyTuple(items=items):
-            return TyTuple(items=tuple(_res(a, env) for a in items))
+            res = TyTuple(items=tuple(_res(a, env) for a in items))
 
         case TyUnion(options=opts):
-            return TyUnion(options=tuple(_res(a, env) for a in opts))
+            res = TyUnion(options=tuple(_res(a, env) for a in opts))
 
         case TyLiteral():
-            return node
-
-        case TyAnnotated(base=base, anno=anno):
-            return TyAnnotated(base=_res(base, env), anno=anno)
+            res = node
 
         case TyCallable(params=Ellipsis, ret=ret):
-            return TyCallable(params=Ellipsis, ret=_res(ret, env))
+            res = TyCallable(params=Ellipsis, ret=_res(ret, env))
 
         case TyCallable(params=params, ret=ret):
-            return TyCallable(
+            res = TyCallable(
                 params=tuple(_res(a, env) for a in params),
                 ret=_res(ret, env),
             )
 
         case TyClassVar(inner=inner):
-            return TyClassVar(_res(inner, env))
+            res = TyClassVar(_res(inner, env))
 
         case TyUnpack(inner=inner):
-            return TyUnpack(_res(inner, env))
+            res = TyUnpack(_res(inner, env))
 
         case _:
-            return node
+            res = node
+    if ann:
+        res = replace(res, annotations=ann)
+    return res

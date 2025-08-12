@@ -40,6 +40,21 @@ class Ty:
     """
 
     prov: Optional[Provenance] = field(default=None, compare=False, hash=False, repr=False)
+    annotations: Optional["TyAnnoTree"] = field(default=None, repr=False)
+
+
+@dataclass(frozen=True, kw_only=True)
+class TyAnnoTree:
+    annos: tuple[object, ...]
+    child: Optional["TyAnnoTree"] = None
+
+    def flatten(self) -> tuple[object, ...]:
+        parts = []
+        node: Optional[TyAnnoTree] = self
+        while node:
+            parts.extend(node.annos)
+            node = node.child
+        return tuple(parts)
 
 
 # ============================
@@ -131,20 +146,6 @@ class TyLiteral(Ty):
     """
 
     values: tuple[LitVal, ...]
-
-
-@dataclass(frozen=True, kw_only=True)
-class TyAnnotated(Ty):
-    """
-    Annotated type per PEP 593; metadata are arbitrary Python objects.
-
-    Examples:
-      - `Annotated[int, "units:ms"]`
-      - `typing.Annotated[str, SomeMarker()]`
-    """
-
-    base: Ty
-    anno: tuple[object, ...]
 
 
 @dataclass(frozen=True, kw_only=True)

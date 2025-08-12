@@ -5,7 +5,6 @@ from typing import Literal
 from .types_ir import (
     NormalizedTy,
     Ty,
-    TyAnnotated,
     TyAny,
     TyApp,
     TyCallable,
@@ -104,11 +103,6 @@ def _v(node: Ty, *, ctx: Context) -> None:
                 raise TypeValidationError("Empty union is invalid")
             for o in opts:
                 _v(o, ctx="other")
-            return
-
-        # Annotated: only base is type-checked; metadata are opaque
-        case TyAnnotated(base=b, anno=_):
-            _v(b, ctx=ctx)
             return
 
         # Callable forms:
