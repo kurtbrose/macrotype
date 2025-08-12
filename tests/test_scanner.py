@@ -5,7 +5,7 @@ import importlib
 import pytest
 
 from macrotype.scanner import scan_module
-from macrotype.symbols import AliasSymbol, ClassSymbol, FuncSymbol, Site, Symbol, VarSymbol
+from macrotype.types_ir import AliasSymbol, ClassSymbol, FuncSymbol, Site, Symbol, VarSymbol
 
 # ---- normalize to stable “shapes” (ignores file/line etc.) ----
 
