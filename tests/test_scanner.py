@@ -4,7 +4,7 @@ import importlib
 
 import pytest
 
-from macrotype.scanner import scan_module
+from macrotype.scanner import ModuleInfo, scan_module
 from macrotype.types_ir import AliasSymbol, ClassSymbol, FuncSymbol, Site, Symbol, VarSymbol
 
 # ---- normalize to stable “shapes” (ignores file/line etc.) ----
@@ -63,7 +63,11 @@ def sym_shape(sym: Symbol) -> dict:
 @pytest.fixture(scope="module")
 def idx():
     ann = importlib.import_module("tests.annotations")  # your big fixture module
-    shapes = [sym_shape(s) for s in scan_module(ann)]
+    mi = scan_module(ann)
+    assert isinstance(mi, ModuleInfo)
+    assert mi.mod is ann
+    assert mi.provenance == "tests.annotations"
+    shapes = [sym_shape(s) for s in mi.symbols]
     # index by key and name for convenience
     by_key = {s["key"]: s for s in shapes}
     by_name = {}
