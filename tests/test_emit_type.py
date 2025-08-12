@@ -3,7 +3,7 @@ from __future__ import annotations
 from macrotype.emit_type import EmitCtx, emit_type
 from macrotype.types_ir import (
     Ty,
-    TyAnnotated,
+    TyAnnoTree,
     TyAny,
     TyApp,
     TyCallable,
@@ -31,7 +31,20 @@ CASES: list[tuple[Ty, str, set[str]]] = [
     (TyUnion(options=(b("int"), b("None"))), "int | None", set()),
     (TyApp(base=b("list"), args=(b("str"),)), "list[str]", set()),
     (TyLiteral(values=(1, "x")), "Literal[1, 'x']", {"Literal"}),
-    (TyAnnotated(base=b("int"), anno=("x",)), "Annotated[int, 'x']", {"Annotated"}),
+    (
+        TyName(module="builtins", name="int", annotations=TyAnnoTree(annos=("x",))),
+        "Annotated[int, 'x']",
+        {"Annotated"},
+    ),
+    (
+        TyName(
+            module="builtins",
+            name="int",
+            annotations=TyAnnoTree(annos=("a",), child=TyAnnoTree(annos=("b",))),
+        ),
+        "Annotated[Annotated[int, 'b'], 'a']",
+        {"Annotated"},
+    ),
     (TyCallable(params=(b("int"),), ret=b("bool")), "Callable[[int], bool]", {"Callable"}),
     (TyCallable(params=..., ret=b("int")), "Callable[..., int]", {"Callable"}),
     (TyClassVar(inner=b("int")), "ClassVar[int]", {"ClassVar"}),

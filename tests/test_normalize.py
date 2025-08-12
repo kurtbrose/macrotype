@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from macrotype.normalize import norm
 from macrotype.types_ir import (
-    TyAnnotated,
+    TyAnnoTree,
     TyAny,
     TyApp,
     TyLiteral,
@@ -49,13 +49,21 @@ CASES = [
     ),
     # Annotated[Any, ...] drops to Any (default policy)
     (
-        TyAnnotated(base=TyAny(), anno=("x",)),
+        TyAny(annotations=TyAnnoTree(annos=("x",))),
         TyAny(),
     ),
-    # Merge nested Annotated
+    # Nested annotations preserved
     (
-        TyAnnotated(base=TyAnnotated(base=b("int"), anno=("a",)), anno=("b",)),
-        TyAnnotated(base=b("int"), anno=("a", "b")),
+        TyName(
+            module="builtins",
+            name="int",
+            annotations=TyAnnoTree(annos=("b",), child=TyAnnoTree(annos=("a",))),
+        ),
+        TyName(
+            module="builtins",
+            name="int",
+            annotations=TyAnnoTree(annos=("b",), child=TyAnnoTree(annos=("a",))),
+        ),
     ),
     # Literal dedup preserves first occurrence
     (
@@ -94,7 +102,11 @@ def test_idempotence() -> None:
     # quick fuzz over representative shapes
     reps = [
         TyUnion(options=(b("int"), TyUnion(options=(b("str"), b("int"))))),
-        TyAnnotated(base=TyAnnotated(base=b("int"), anno=("a",)), anno=("b",)),
+        TyName(
+            module="builtins",
+            name="int",
+            annotations=TyAnnoTree(annos=("b",), child=TyAnnoTree(annos=("a",))),
+        ),
         TyApp(base=typ("List"), args=(b("int"),)),
         TyLiteral(values=(1, 1, "x")),
     ]

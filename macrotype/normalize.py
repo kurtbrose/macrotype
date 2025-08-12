@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from .types_ir import (
     NormalizedTy,
     ResolvedTy,
     Ty,
-    TyAnnotated,
     TyAny,
     TyApp,
     TyCallable,
@@ -53,9 +52,12 @@ def norm(t: ResolvedTy, opts: NormOpts | None = None) -> NormalizedTy:
 
 
 def _norm(n: Ty, o: NormOpts) -> Ty:
+    ann = n.annotations
+    if ann and o.drop_annotated_any and isinstance(n, TyAny):
+        return TyAny()
     match n:
         case TyAny() | TyNever():
-            return n
+            res = n
 
         case TyName(module=mod, name=name):
             if o.typing_to_builtins:
@@ -63,16 +65,16 @@ def _norm(n: Ty, o: NormOpts) -> Ty:
                 if key in _TYPING_TO_BUILTINS:
                     m, k = _TYPING_TO_BUILTINS[key]
                     return TyName(module=m, name=k)
-            return n
+            res = n
 
         case TyApp(base=base, args=args):
             base_r = _norm(base, o)
             args_r = tuple(_norm(a, o) for a in args)
             # Variadic tuple canonical shape: base must be builtins.tuple, last arg Ellipsis => leave as-is
-            return TyApp(base=base_r, args=args_r)
+            res = TyApp(base=base_r, args=args_r)
 
         case TyTuple(items=items):
-            return TyTuple(items=tuple(_norm(a, o) for a in items))
+            res = TyTuple(items=tuple(_norm(a, o) for a in items))
 
         case TyUnion(options=opts):
             # flatten
@@ -99,10 +101,11 @@ def _norm(n: Ty, o: NormOpts) -> Ty:
                 flat = sorted(flat, key=_key)
 
             if not flat:
-                return TyNever()  # Union[] → bottom (policy; rarely occurs)
-            if len(flat) == 1:
-                return flat[0]
-            return TyUnion(options=tuple(flat))
+                res = TyNever()  # Union[] → bottom (policy; rarely occurs)
+            elif len(flat) == 1:
+                res = flat[0]
+            else:
+                res = TyUnion(options=tuple(flat))
 
         case TyLiteral(values=vals):
             # optional dedup/ordering (stable by repr key)
@@ -113,34 +116,28 @@ def _norm(n: Ty, o: NormOpts) -> Ty:
                 if r not in seen:
                     seen.add(r)
                     out.append(v)
-            return TyLiteral(values=tuple(out))
-
-        case TyAnnotated(base=base, anno=anno):
-            base_n = _norm(base, o)
-            if o.drop_annotated_any and isinstance(base_n, TyAny):
-                return base_n
-            # merge nested Annotated: Annotated[Annotated[T, a], b] -> Annotated[T, a, b]
-            if isinstance(base_n, TyAnnotated):
-                return TyAnnotated(base=base_n.base, anno=base_n.anno + anno)
-            return TyAnnotated(base=base_n, anno=anno)
+            res = TyLiteral(values=tuple(out))
 
         case TyCallable(params=Ellipsis, ret=ret):
-            return TyCallable(params=Ellipsis, ret=_norm(ret, o))
+            res = TyCallable(params=Ellipsis, ret=_norm(ret, o))
 
         case TyCallable(params=params, ret=ret):
-            return TyCallable(
+            res = TyCallable(
                 params=tuple(_norm(a, o) for a in params),
                 ret=_norm(ret, o),
             )
 
         case TyClassVar(inner=inner):
-            return TyClassVar(inner=_norm(inner, o))
+            res = TyClassVar(inner=_norm(inner, o))
 
         case TyUnpack(inner=inner):
-            return TyUnpack(inner=_norm(inner, o))
+            res = TyUnpack(inner=_norm(inner, o))
 
         case _:
-            return n
+            res = n
+    if ann:
+        res = replace(res, annotations=ann)
+    return res
 
 
 def _key(n: Ty) -> str:

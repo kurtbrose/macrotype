@@ -146,6 +146,8 @@ TYPED_LAMBDA: Callable[[int, int], int] = lambda a, b: a + b
 ANNOTATED_EXTRA: Annotated[str, "extra"] = "x"
 # Nested Annotated usage should merge metadata
 NESTED_ANNOTATED: Annotated[Annotated[int, "a"], "b"] = 3
+# Triple-nested Annotated should preserve structure
+TRIPLE_ANNOTATED: Annotated[Annotated[Annotated[int, "x"], "y"], "z"] = 4
 # Annotated union to ensure metadata is preserved with unions
 ANNOTATED_OPTIONAL_META: Annotated[int | None, "meta"] = 0
 
