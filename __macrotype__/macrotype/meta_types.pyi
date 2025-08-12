@@ -1,4 +1,4 @@
-# Generated via: macrotype macrotype -o __macrotype__/macrotype
+# Generated via: macrotype macrotype
 # Do not edit by hand
 from typing import Any, Callable, get_overloads, overload
 

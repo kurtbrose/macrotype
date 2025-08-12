@@ -2,7 +2,7 @@
 # Do not edit by hand
 from macrotype.scanner import ModuleInfo
 from macrotype.types.emit import EmitCtx
-from macrotype.types.ir import Symbol
+from macrotype.types.symbols import Symbol
 
 INDENT: str
 

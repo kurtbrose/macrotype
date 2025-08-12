@@ -1,4 +1,4 @@
-# Generated via: macrotype macrotype -o __macrotype__/macrotype
+# Generated via: macrotype macrotype
 # Do not edit by hand
 from collections.abc import Iterable
 from pathlib import Path

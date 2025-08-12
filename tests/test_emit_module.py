@@ -4,26 +4,12 @@ from types import ModuleType
 
 from macrotype.emit_module import emit_module
 from macrotype.scanner import ModuleInfo
-from macrotype.types.ir import (
-    AliasSymbol,
-    ClassSymbol,
-    FuncSymbol,
-    Site,
-    TyAny,
-    TyApp,
-    TyClassVar,
-    TyName,
-    ValidatedTy,
-    VarSymbol,
-)
+from macrotype.types.ir import TyAny, TyApp, TyClassVar, TyName
+from macrotype.types.symbols import AliasSymbol, ClassSymbol, FuncSymbol, Site, VarSymbol
 
 
 def b(name: str) -> TyName:  # builtins helper
     return TyName(module="builtins", name=name)
-
-
-def vt(t) -> ValidatedTy:
-    return ValidatedTy(t)
 
 
 # ---- table: ModuleInfo -> emitted lines ----
@@ -33,7 +19,7 @@ case1 = (
         mod=mod1,
         provenance="m1",
         symbols=[
-            VarSymbol(name="x", key="m1.x", site=Site(role="var", raw=None, validated=vt(TyAny()))),
+            VarSymbol(name="x", key="m1.x", site=Site(role="var", raw=None, ty=TyAny())),
         ],
     ),
     ["from typing import Any", "", "x: Any"],
@@ -45,21 +31,21 @@ case2 = (
         mod=mod2,
         provenance="m2",
         symbols=[
-            VarSymbol(name="v", key="m2.v", site=Site(role="var", raw=None, validated=vt(TyAny()))),
+            VarSymbol(name="v", key="m2.v", site=Site(role="var", raw=None, ty=TyAny())),
             AliasSymbol(
                 name="Alias",
                 key="m2.Alias",
                 value=Site(
                     role="alias_value",
                     raw=None,
-                    validated=vt(TyApp(base=b("list"), args=(b("int"),))),
+                    ty=TyApp(base=b("list"), args=(b("int"),)),
                 ),
             ),
             FuncSymbol(
                 name="f",
                 key="m2.f",
-                params=(Site(role="param", name="x", raw=None, validated=vt(b("int"))),),
-                ret=Site(role="return", raw=None, validated=vt(b("str"))),
+                params=(Site(role="param", name="x", raw=None, ty=b("int")),),
+                ret=Site(role="return", raw=None, ty=b("str")),
             ),
             ClassSymbol(
                 name="C",
@@ -73,7 +59,7 @@ case2 = (
                             role="var",
                             name="y",
                             raw=None,
-                            validated=vt(TyClassVar(inner=b("int"))),
+                            ty=TyClassVar(inner=b("int")),
                         ),
                     ),
                 ),

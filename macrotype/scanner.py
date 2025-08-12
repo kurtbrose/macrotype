@@ -5,11 +5,11 @@ import typing as t
 from dataclasses import dataclass, replace
 from types import ModuleType
 
-from .types.ir import (
+from .types.ir import Provenance
+from .types.symbols import (
     AliasSymbol,
     ClassSymbol,
     FuncSymbol,
-    Provenance,
     Site,
     Symbol,
     VarSymbol,
