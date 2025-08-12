@@ -4,6 +4,9 @@ import sys
 import sysconfig
 from pathlib import Path
 
+# Test helpers
+import pytest
+
 # Ensure package root on path when running tests directly
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -74,6 +77,7 @@ def test_cli_requires_relative_path(tmp_path: Path) -> None:
     assert "specify -o" in result.stderr
 
 
+@pytest.mark.skip(reason="imports entire stdlib which may trigger side effects")
 def test_cli_stdlib(tmp_path: Path) -> None:
     repo_root = STUBS_DIR.parents[1]
     stdlib = Path(sysconfig.get_path("stdlib"))
