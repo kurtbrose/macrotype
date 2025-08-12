@@ -77,6 +77,9 @@ AliasBoundU = TypeAliasType("AliasBoundU", list[U], type_params=(U,))
 
 MyList: TypeAlias = list[int]
 
+# Simple alias to builtin container
+Other = dict[str, int]
+
 # Edge case: alias referencing a forward-declared class
 ForwardAlias: TypeAlias = "FutureClass"
 
