@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from macrotype.emit_type import EmitCtx, emit_type
-from macrotype.types_ir import (
+from macrotype.types.emit import EmitCtx, emit
+from macrotype.types.ir import (
     Ty,
     TyAnnoTree,
     TyAny,
@@ -53,10 +53,10 @@ CASES: list[tuple[Ty, str, set[str]]] = [
 ]
 
 
-def test_emit_type_table():
+def test_emit_table():
     def try_emit(node):
         ctx = EmitCtx()
-        out = emit_type(node, ctx)
+        out = emit(node, ctx)
         return out, ctx.typing_needed
 
     assert CASES == [(n,) + try_emit(n) for n, _, __ in CASES]

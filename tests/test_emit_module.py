@@ -4,7 +4,7 @@ from types import ModuleType
 
 from macrotype.emit_module import emit_module
 from macrotype.scanner import ModuleInfo
-from macrotype.types_ir import (
+from macrotype.types.ir import (
     AliasSymbol,
     ClassSymbol,
     FuncSymbol,

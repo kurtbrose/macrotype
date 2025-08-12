@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from macrotype.types_ir import (
+from macrotype.types.ir import (
     TyApp,
     TyCallable,
     TyLiteral,
@@ -13,7 +13,7 @@ from macrotype.types_ir import (
     TyUnion,
     TyUnpack,
 )
-from macrotype.validate import TypeValidationError, validate
+from macrotype.types.validate import TypeValidationError, validate
 
 
 def b(name: str) -> TyName:

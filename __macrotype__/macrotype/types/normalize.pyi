@@ -1,7 +1,7 @@
-# Generated via: macrotype macrotype/normalize.py -o __macrotype__/macrotype/normalize.pyi
+# Generated via: macrotype macrotype
 # Do not edit by hand
 from dataclasses import dataclass
-from macrotype.types_ir import Ty
+from macrotype.types.ir import Ty
 
 @dataclass(frozen=True)
 class NormOpts:

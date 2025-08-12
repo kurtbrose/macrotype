@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from .types_ir import (
+from .ir import (
     NormalizedTy,
     Ty,
     TyAny,

@@ -287,7 +287,7 @@ class TyUnpack(Ty):
     inner: Ty
 
 
-ParsedTy = NewType("ParsedTy", Ty)  # output of parse.to_ir
+ParsedTy = NewType("ParsedTy", Ty)  # output of parse.parse
 ResolvedTy = NewType("ResolvedTy", Ty)  # output of resolve.resolve
 NormalizedTy = NewType("NormalizedTy", Ty)  # output of normalize.norm
 ValidatedTy = NewType("ValidatedTy", Ty)  # output of validate.validate

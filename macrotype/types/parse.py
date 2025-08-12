@@ -7,7 +7,7 @@ import typing as t
 from dataclasses import dataclass, replace
 from typing import Optional, get_args, get_origin
 
-from .types_ir import (
+from .ir import (
     LitVal,
     ParsedTy,
     Ty,
@@ -217,7 +217,7 @@ def _to_ir(tp: object, env: ParseEnv) -> Ty:
     return TyApp(base=base, args=tuple(_to_ir(a, env) for a in args))
 
 
-def to_ir(tp: object, env: Optional[ParseEnv] = None) -> ParsedTy:
+def parse(tp: object, env: Optional[ParseEnv] = None) -> ParsedTy:
     return ParsedTy(_to_ir(tp, env or ParseEnv()))
 
 

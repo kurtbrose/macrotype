@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from .emit_type import EmitCtx, emit_type
 from .scanner import ModuleInfo
-from .types_ir import AliasSymbol, ClassSymbol, FuncSymbol, Symbol, VarSymbol
+from .types.emit import EmitCtx, emit
+from .types.ir import AliasSymbol, ClassSymbol, FuncSymbol, Symbol, VarSymbol
 
 INDENT = "    "
 
@@ -10,7 +10,7 @@ INDENT = "    "
 def emit_module(mi: ModuleInfo) -> list[str]:
     """Format *mi* into ``.pyi`` lines.
 
-    This is a light wrapper around :func:`emit_type` that walks the ``ModuleInfo``
+    This is a light wrapper around :func:`emit` that walks the ``ModuleInfo``
     tree and formats each symbol.  It is intentionally dumb: no validation or
     reordering occurs here; we simply preserve the structure that earlier passes
     produced while collecting required ``typing`` imports via :class:`EmitCtx`.
@@ -37,10 +37,10 @@ def _emit_symbol(sym: Symbol, ctx: EmitCtx, *, indent: int) -> list[str]:
     pad = INDENT * indent
     match sym:
         case VarSymbol(site=site):
-            ty = emit_type(site.validated, ctx)
+            ty = emit(site.validated, ctx)
             return [f"{pad}{sym.name}: {ty}"]
         case AliasSymbol(value=site):
-            ty = emit_type(site.validated, ctx)
+            ty = emit(site.validated, ctx)
             return [f"{pad}type {sym.name} = {ty}"]
         case FuncSymbol(params=params, ret=ret, decorators=decos):
             pieces: list[str] = []
@@ -48,20 +48,20 @@ def _emit_symbol(sym: Symbol, ctx: EmitCtx, *, indent: int) -> list[str]:
                 pieces.append(f"{pad}@{d}")
             params_s: list[str] = []
             for p in params:
-                ann = emit_type(p.validated, ctx)
+                ann = emit(p.validated, ctx)
                 params_s.append(f"{p.name}: {ann}")
             param_str = ", ".join(params_s)
-            ret_str = f" -> {emit_type(ret.validated, ctx)}" if ret else ""
+            ret_str = f" -> {emit(ret.validated, ctx)}" if ret else ""
             pieces.append(f"{pad}def {sym.name}({param_str}){ret_str}: ...")
             return pieces
         case ClassSymbol(bases=bases, td_fields=fields, members=members):
             base_str = ""
             if bases:
-                base_str = f"({', '.join(emit_type(b.validated, ctx) for b in bases)})"
+                base_str = f"({', '.join(emit(b.validated, ctx) for b in bases)})"
             lines = [f"{pad}class {sym.name}{base_str}:"]
             if fields:
                 for f in fields:
-                    ty = emit_type(f.validated, ctx)
+                    ty = emit(f.validated, ctx)
                     lines.append(f"{pad}{INDENT}{f.name}: {ty}")
             if members:
                 for m in members:

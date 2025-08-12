@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from macrotype.normalize import norm
-from macrotype.types_ir import (
+from macrotype.types.ir import (
     TyAnnoTree,
     TyAny,
     TyApp,
@@ -10,6 +9,7 @@ from macrotype.types_ir import (
     TyTuple,
     TyUnion,
 )
+from macrotype.types.normalize import norm
 
 
 def b(name: str) -> TyName:  # builtins

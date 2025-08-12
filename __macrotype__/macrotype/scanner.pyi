@@ -1,8 +1,8 @@
-# Generated via: macrotype macrotype/scanner.py -o __macrotype__/macrotype/scanner.pyi
+# Generated via: macrotype macrotype
 # Do not edit by hand
 from collections.abc import Mapping
 from dataclasses import dataclass
-from macrotype.types_ir import ClassSymbol, FuncSymbol, Provenance, Symbol
+from macrotype.types.ir import ClassSymbol, FuncSymbol, Provenance, Symbol
 from typing import Any, Callable
 
 ModuleType = module

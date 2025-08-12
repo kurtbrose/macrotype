@@ -5,7 +5,7 @@ import typing as t
 from dataclasses import dataclass, replace
 from types import ModuleType
 
-from .types_ir import (
+from .types.ir import (
     AliasSymbol,
     ClassSymbol,
     FuncSymbol,
