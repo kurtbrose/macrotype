@@ -1,8 +1,8 @@
-# Generated via: macrotype macrotype -o /tmp/tmp.H5RxRdggo7
+# Generated via: macrotype macrotype
 # Do not edit by hand
-from macrotype.emit_type import EmitCtx
 from macrotype.scanner import ModuleInfo
-from macrotype.types_ir import Symbol
+from macrotype.types.emit import EmitCtx
+from macrotype.types.symbols import Symbol
 
 INDENT: str
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from .types_ir import (
+from .ir import (
     NormalizedTy,
     Ty,
     TyAny,
@@ -18,7 +18,6 @@ from .types_ir import (
     TyTypeVarTuple,
     TyUnion,
     TyUnpack,
-    ValidatedTy,
 )
 
 
@@ -30,9 +29,9 @@ class TypeValidationError(TypeError):
 Context = Literal["top", "tuple_items", "call_params", "concat_args", "other"]
 
 
-def validate(t: NormalizedTy) -> ValidatedTy:
+def validate(t: NormalizedTy) -> Ty:
     _v(t, ctx="top")
-    return ValidatedTy(t)
+    return t
 
 
 def _v(node: Ty, *, ctx: Context) -> None:

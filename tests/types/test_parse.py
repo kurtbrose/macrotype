@@ -3,8 +3,7 @@ from __future__ import annotations
 import enum
 import typing as t
 
-from macrotype.parse_type import to_ir
-from macrotype.types_ir import (
+from macrotype.types.ir import (
     Ty,
     TyAnnoTree,
     TyAny,
@@ -22,6 +21,7 @@ from macrotype.types_ir import (
     TyUnion,
     TyUnpack,
 )
+from macrotype.types.parse import parse
 
 
 # ----- helpers -----
@@ -173,11 +173,11 @@ if AliasListT is not None:
 
 
 def test_parse_table_driven():
-    assert CASES == [(src, to_ir(src)) for src, _ in CASES]
+    assert CASES == [(src, parse(src)) for src, _ in CASES]
 
 
 def test_user_generic_application():
-    got = to_ir(Box[int])
+    got = parse(Box[int])
     assert isinstance(got, TyApp)
     assert isinstance(got.base, TyName)
     assert got.base.name == "Box" and got.base.module == Box.__module__
@@ -185,6 +185,6 @@ def test_user_generic_application():
 
 
 def test_union_order_insensitive():
-    a = to_ir(int | str)
-    b = to_ir(str | int)
+    a = parse(int | str)
+    b = parse(str | int)
     assert a == b

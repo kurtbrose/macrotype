@@ -1,13 +1,13 @@
-# Generated via: macrotype macrotype/validate.py -o __macrotype__/macrotype/validate.pyi
+# Generated via: macrotype macrotype
 # Do not edit by hand
-from macrotype.types_ir import Ty, TyApp
+from macrotype.types.ir import Ty, TyApp
 from typing import Literal, Literal
 
 class TypeValidationError(TypeError): ...
 
 Context = Literal
 
-def validate(t: NormalizedTy) -> ValidatedTy: ...
+def validate(t: NormalizedTy) -> Ty: ...
 
 def _v(node: Ty, *, ctx: Literal['top', 'tuple_items', 'call_params', 'concat_args', 'other']) -> None: ...
 

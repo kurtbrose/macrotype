@@ -1,0 +1,1 @@
+__macrotype__/macrotype/resolve.pyi

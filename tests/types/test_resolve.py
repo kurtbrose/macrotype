@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import typing as t
 
-from macrotype.parse_type import to_ir
-from macrotype.resolve import ResolveEnv, resolve
-from macrotype.types_ir import (
+from macrotype.types.ir import (
     Ty,
     TyApp,
     TyCallable,
@@ -12,6 +10,8 @@ from macrotype.types_ir import (
     TyName,
     TyUnion,
 )
+from macrotype.types.parse import parse
+from macrotype.types.resolve import ResolveEnv, resolve
 
 
 def b(name: str) -> TyName:
@@ -75,11 +75,11 @@ CASES: list[tuple[object, Ty]] = [
 
 
 def test_resolve_table_driven():
-    got = [(src, resolve(to_ir(src), ENV)) for src, _ in CASES]
+    got = [(src, resolve(parse(src), ENV)) for src, _ in CASES]
     assert CASES == got
 
 
 def test_unresolved_forward_remains():
     # Not in imports map → stays TyForward
-    ty = resolve(to_ir("MissingType"), ENV)
+    ty = resolve(parse("MissingType"), ENV)
     assert isinstance(ty, TyForward) and ty.qualname == "MissingType"

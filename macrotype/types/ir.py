@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import enum
 from dataclasses import dataclass, field
-from typing import Literal, NewType, Optional, TypeAlias
+from typing import NewType, Optional, TypeAlias
 
 # =========================
 # Shared helpers / metadata
@@ -287,63 +287,6 @@ class TyUnpack(Ty):
     inner: Ty
 
 
-ParsedTy = NewType("ParsedTy", Ty)  # output of parse.to_ir
+ParsedTy = NewType("ParsedTy", Ty)  # output of parse.parse
 ResolvedTy = NewType("ResolvedTy", Ty)  # output of resolve.resolve
 NormalizedTy = NewType("NormalizedTy", Ty)  # output of normalize.norm
-ValidatedTy = NewType("ValidatedTy", Ty)  # output of validate.validate
-
-
-@dataclass(frozen=True, kw_only=True)
-class Symbol:
-    """
-    Base class for all top-level or nested declarations.
-    - Subclassed by VarSymbol, FuncSymbol, ClassSymbol, AliasSymbol
-    - `prov` is non-semantic and used only for diagnostics
-    """
-
-    name: str
-    key: str  # e.g. "mymod.MyClass.__init__"
-    prov: Optional[Provenance] = field(default=None, compare=False, hash=False, repr=False)
-
-
-@dataclass(frozen=True, kw_only=True)
-class Site:
-    role: Literal["var", "return", "param", "base", "alias_value", "td_field"]
-    name: Optional[str] = None
-    index: Optional[int] = None
-    raw: object
-    parsed: Optional[ParsedTy] = None
-    resolved: Optional[ResolvedTy] = None
-    normalized: Optional[NormalizedTy] = None
-    validated: Optional[ValidatedTy] = None
-
-
-@dataclass(frozen=True, kw_only=True)
-class VarSymbol(Symbol):
-    site: Site
-    initializer: object | Ellipsis = Ellipsis
-    flags: dict[str, bool] = field(default_factory=dict)  # final, classvar
-
-
-@dataclass(frozen=True, kw_only=True)
-class FuncSymbol(Symbol):
-    params: tuple[Site, ...]
-    ret: Optional[Site]
-    decorators: tuple[str, ...] = ()
-    overload_index: Optional[int] = None
-    flags: dict[str, bool] = field(default_factory=dict)  # e.g., staticmethod, classmethod
-
-
-@dataclass(frozen=True, kw_only=True)
-class ClassSymbol(Symbol):
-    bases: tuple[Site, ...]
-    td_fields: tuple[Site, ...] = ()
-    is_typeddict: bool = False
-    td_total: Optional[bool] = None
-    members: tuple[Symbol, ...] = ()  # nested Var/Func/Class
-    flags: dict[str, bool] = field(default_factory=dict)  # e.g., protocol, abstract
-
-
-@dataclass(frozen=True, kw_only=True)
-class AliasSymbol(Symbol):
-    value: Optional[Site]

@@ -3,7 +3,7 @@ from __future__ import annotations
 import builtins
 from dataclasses import dataclass, field, replace
 
-from .types_ir import (
+from .ir import (
     Ty,
     TyAny,
     TyApp,
@@ -18,7 +18,6 @@ from .types_ir import (
     TyTypeVarTuple,
     TyUnion,
     TyUnpack,
-    ValidatedTy,
 )
 
 
@@ -36,7 +35,7 @@ class EmitCtx:
             self.typing_needed.update(names)
 
 
-def emit_type(t: ValidatedTy, ctx: EmitCtx | None = None) -> str:
+def emit(t: Ty, ctx: EmitCtx | None = None) -> str:
     ctx = ctx or EmitCtx()
     return _emit(t, ctx)
 

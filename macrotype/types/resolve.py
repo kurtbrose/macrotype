@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 
-from .types_ir import (
+from .ir import (
     ParsedTy,
     ResolvedTy,
     Ty,
