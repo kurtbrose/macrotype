@@ -1,5 +1,3 @@
-# Generated via: macrotype tests/annotations.py -o tests/annotations.pyi
-# Do not edit by hand
 # pyright: basic
 from abc import ABC, abstractmethod
 from collections import deque
@@ -28,10 +26,10 @@ from typing import (
     Protocol,
     Required,
     Self,
+    TypedDict,
     TypeGuard,
     TypeVar,
     TypeVarTuple,
-    TypedDict,
     Unpack,
     final,
     overload,
@@ -66,6 +64,8 @@ type AliasNumberLikeList[NumberLike] = list[NumberLike]
 type AliasBoundU[U] = list[U]
 
 MyList = list[int]
+
+Other = dict
 
 ForwardAlias = FutureClass
 
@@ -104,18 +104,17 @@ BOOL_TRUE: bool
 BOOL_FALSE: bool
 
 def mult(a, b: int): ...
-
 def takes_optional(x): ...
 
 UNTYPED_LAMBDA: function
 
 TYPED_LAMBDA: Callable[[int, int], int]
 
-ANNOTATED_EXTRA: Annotated[str, 'extra']
+ANNOTATED_EXTRA: Annotated[str, "extra"]
 
-NESTED_ANNOTATED: Annotated[int, 'a', 'b']
+NESTED_ANNOTATED: Annotated[int, "a", "b"]
 
-ANNOTATED_OPTIONAL_META: Annotated[None | int, 'meta']
+ANNOTATED_OPTIONAL_META: Annotated[None | int, "meta"]
 
 class UserBox[T]: ...
 
@@ -126,13 +125,13 @@ class Basic:
     union: int | str
     pipe_union: int | str
     func: Callable[[int, str], bool]
-    annotated: Annotated[int, 'meta']
+    annotated: Annotated[int, "meta"]
     pattern: Pattern[str]
     uid: UserId
-    lit_attr: Literal['a', 'b']
+    lit_attr: Literal["a", "b"]
     def copy[T](self, param: T) -> T: ...
     def curry[**P](self, f: Callable[P, int]) -> Callable[P, int]: ...
-    def literal_method(self, flag: Literal['on', 'off']) -> Literal[1, 0]: ...
+    def literal_method(self, flag: Literal["on", "off"]) -> Literal[1, 0]: ...
     @classmethod
     def cls_method(cls, value: int) -> Basic: ...
     @classmethod
@@ -208,10 +207,8 @@ class GeneratedInt:
 
 @overload
 def over(x: int) -> int: ...
-
 @overload
 def over(x: str) -> str: ...
-
 @dataclass
 class Point:
     x: int
@@ -287,8 +284,8 @@ class Permission(IntFlag):
     EXECUTE = 4
 
 class StrEnum(str, Enum):
-    A = 'a'
-    B = 'b'
+    A = "a"
+    B = "b"
 
 class NamedPoint(NamedTuple):
     x: int
@@ -316,21 +313,13 @@ class Info(TypedDict):
     age: int
 
 def with_kwargs(**kwargs: Unpack[Info]) -> Info: ...
-
 def sum_of(*args: tuple[int, ...]) -> int: ...
-
 def dict_echo(**kwargs: dict[str, Any]) -> dict[str, Any]: ...
-
 def use_params[**P](func: Callable[P, int], *args: P.args, **kwargs: P.kwargs) -> int: ...
-
 def do_nothing() -> None: ...
-
 def always_raises() -> NoReturn: ...
-
 def never_returns() -> Never: ...
-
 def is_str_list(val: list[object]) -> TypeGuard[list[str]]: ...
-
 def is_int(val: object) -> TypeGuard[int]: ...
 
 PLAIN_FINAL_VAR: Final[int]
@@ -350,9 +339,7 @@ def echo_literal(value: LiteralString) -> LiteralString: ...
 NONE_VAR: None
 
 async def async_add_one(x: int) -> int: ...
-
 async def gen_range(n: int) -> AsyncIterator[int]: ...
-
 @final
 class FinalClass: ...
 
@@ -361,24 +348,15 @@ class HasFinalMethod:
     def do_final(self) -> None: ...
 
 def final_func(x: int) -> int: ...
-
 def pragma_func(x: int) -> int: ...  # pyright: ignore
-
 def pos_only_func(a: int, b: str, /) -> None: ...
-
 def kw_only_func(*, x: int, y: str) -> None: ...
-
 def pos_and_kw(a: int, /, b: int, *, c: int) -> None: ...
-
 def iter_sequence(seq: Sequence[int]) -> Iterator[int]: ...
-
 def simple_wrap(fn: Callable[[int], int]) -> Callable[[int], int]: ...
-
 def double_wrapped(x: int) -> int: ...
-
 def cached_add(a: int, b: int) -> int: ...
-
-def annotated_fn(x: Annotated[int, 'inp']) -> Annotated[str, 'out']: ...
+def annotated_fn(x: Annotated[int, "inp"]) -> Annotated[str, "out"]: ...
 
 class FutureClass: ...
 
@@ -395,9 +373,7 @@ class WrappedDescriptors:
     def wrapped_cached(self) -> int: ...
 
 def make_emitter(name: str): ...
-
 def emitted_a(x: int) -> int: ...
-
 def make_emitter_cls(name: str): ...
 
 class EmittedCls:
@@ -409,18 +385,15 @@ class FixedModuleCls: ...
 
 class EmittedMap:
     @overload
-    def __getitem__(self, key: Literal['a']) -> Literal[1]: ...
+    def __getitem__(self, key: Literal["a"]) -> Literal[1]: ...
     @overload
-    def __getitem__(self, key: Literal['b']) -> Literal[2]: ...
+    def __getitem__(self, key: Literal["b"]) -> Literal[2]: ...
 
 def path_passthrough(p: Path) -> Path: ...
-
 @overload
 def loop_over(x: bytearray) -> str: ...
-
 @overload
 def loop_over(x: bytes) -> str: ...
-
 def as_tuple[*Ts](*args: Unpack[Ts]) -> tuple[Unpack[Ts]]: ...
 
 class Variadic[*Ts]:
@@ -428,34 +401,24 @@ class Variadic[*Ts]:
     def to_tuple(self) -> tuple[Unpack[Ts]]: ...
 
 def prepend_one[**P](fn: Callable[Concatenate[int, P], int]) -> Callable[P, int]: ...
-
 @overload
 def special_neg(val: Literal[0]) -> Literal[0]: ...
-
 @overload
 def special_neg(val: Literal[1]) -> Literal[-1]: ...
-
 @overload
 def special_neg(val: int) -> int: ...
-
 @overload
 def parse_int_or_none(val: None) -> None: ...
-
 @overload
 def parse_int_or_none(val: None | str) -> None | int: ...
-
 @overload
 def times_two(val: Literal[3], factor: Literal[2]) -> Literal[6]: ...
-
 @overload
 def times_two(val: int, factor: int) -> int: ...
-
 @overload
 def bool_gate(flag: Literal[True]) -> Literal[1]: ...
-
 @overload
 def bool_gate(flag: Literal[False]) -> Literal[0]: ...
-
 @overload
 def bool_gate(flag: bool) -> int: ...
 
