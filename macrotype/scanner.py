@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import inspect
-import types
 import typing as t
-from dataclasses import replace
+from dataclasses import dataclass, replace
+from types import ModuleType
 
 from .types_ir import (
     AliasSymbol,
@@ -14,6 +14,15 @@ from .types_ir import (
     Symbol,
     VarSymbol,
 )
+
+
+@dataclass
+class ModuleInfo:
+    """Scanned representation of a Python module."""
+
+    mod: ModuleType  # Original loaded module
+    symbols: list[Symbol]
+    provenance: str  # module name or synthetic name
 
 
 def _is_dunder(name: str) -> bool:
@@ -38,20 +47,25 @@ def _mk_key(parent_key: str | None, modname: str, name: str) -> str:
     return f"{modname}.{name}"
 
 
-def _get_modname(glb_or_mod: types.ModuleType | t.Mapping[str, t.Any]) -> str:
-    if isinstance(glb_or_mod, types.ModuleType):
+def _get_modname(glb_or_mod: ModuleType | t.Mapping[str, t.Any]) -> str:
+    if isinstance(glb_or_mod, ModuleType):
         return glb_or_mod.__name__
     return glb_or_mod.get("__name__", "<module>")  # type: ignore[union-attr]
 
 
-def _get_globals(glb_or_mod: types.ModuleType | t.Mapping[str, t.Any]) -> dict[str, t.Any]:
-    return vars(glb_or_mod) if isinstance(glb_or_mod, types.ModuleType) else dict(glb_or_mod)
+def _get_globals(glb_or_mod: ModuleType | t.Mapping[str, t.Any]) -> dict[str, t.Any]:
+    return vars(glb_or_mod) if isinstance(glb_or_mod, ModuleType) else dict(glb_or_mod)
 
 
-def scan_module(glb_or_mod: types.ModuleType | t.Mapping[str, t.Any]) -> list[Symbol]:
+def scan_module(glb_or_mod: ModuleType | t.Mapping[str, t.Any]) -> ModuleInfo:
     modname = _get_modname(glb_or_mod)
     glb = _get_globals(glb_or_mod)
-    mod_file = glb_or_mod.__file__ if isinstance(glb_or_mod, types.ModuleType) else None
+    if isinstance(glb_or_mod, ModuleType):
+        mod = glb_or_mod
+    else:
+        mod = ModuleType(modname)
+        mod.__dict__.update(glb)
+    mod_file = getattr(mod, "__file__", None)
 
     syms: list[Symbol] = []
 
@@ -106,7 +120,7 @@ def scan_module(glb_or_mod: types.ModuleType | t.Mapping[str, t.Any]) -> list[Sy
         site = Site(role="var", name=name, raw=rann)
         syms.append(VarSymbol(name=name, key=key, prov=prov, site=site))
 
-    return syms
+    return ModuleInfo(mod=mod, symbols=syms, provenance=modname)
 
 
 def _scan_function(fn: t.Callable, *, modname: str, parent_key: str | None) -> FuncSymbol:
