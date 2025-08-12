@@ -29,7 +29,6 @@ macrotype-check = "macrotype.typecheck:main"
 [project.optional-dependencies]
 test = ["mypy", "pyright", "ruff", "pytest"]
 build = ["build", "twine"]
-doc = ["sphinx", "sphinx-rtd-theme"]
 
 [tool.ruff]
 target-version = "py312"
