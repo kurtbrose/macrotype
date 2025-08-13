@@ -115,129 +115,132 @@ def _litval_of(val: object) -> LitVal:
 # ---------- Main parser ----------
 
 
-def _to_ir(tp: object, env: ParseEnv) -> TyRoot:
+def _to_ir(tp: object, env: ParseEnv) -> Ty:
     """Parse a Python typing object into IR. Non-strict; preserves opaque bits."""
 
     origin = get_origin(tp)
     if origin is None:
-        if tp is t.ClassVar:
-            return TyRoot(ty=TyAny(), is_classvar=True)
-        if tp is t.Final:
-            return TyRoot(ty=TyAny(), is_final=True)
-        if tp is t.Required:
-            return TyRoot(ty=TyAny(), is_required=True)
-        if tp is t.NotRequired:
-            return TyRoot(ty=TyAny(), is_required=False)
-        return TyRoot(ty=_tyname_of(tp))
+        if tp in (t.ClassVar, t.Final, t.Required, t.NotRequired):
+            raise ValueError("Qualifiers like ClassVar/Final are only valid at the root")
+        return _tyname_of(tp)
 
     args = get_args(tp)
+
+    if origin in (t.ClassVar, t.Final, t.Required, t.NotRequired):
+        raise ValueError("Qualifiers like ClassVar/Final are only valid at the root")
 
     if origin in (t.Union, _types.UnionType):
         opts: list[Ty] = []
         for a in args:
-            ir = _to_ir(a, env)
-            opts.append(ir.ty)
+            opts.append(_to_ir(a, env))
         uniq: dict[str, Ty] = {repr(o): o for o in opts}
-        return TyRoot(ty=TyUnion(options=tuple(sorted(uniq.values(), key=repr))))
+        return TyUnion(options=tuple(sorted(uniq.values(), key=repr)))
 
     if origin is t.Annotated:
         base, *meta = args
         inner = _to_ir(base, env)
-        ann = TyAnnoTree(annos=tuple(meta), child=inner.ty.annotations)
-        return TyRoot(
-            ty=replace(inner.ty, annotations=ann),
-            is_final=inner.is_final,
-            is_required=inner.is_required,
-            is_classvar=inner.is_classvar,
-        )
+        ann = TyAnnoTree(annos=tuple(meta), child=None)
+        return replace(inner, annotations=_append_ann_child(inner.annotations, ann))
 
     if origin is t.Literal:
-        return TyRoot(ty=TyLiteral(values=tuple(_litval_of(a) for a in args)))
-
-    if origin is t.ClassVar:
-        (inner,) = args or (t.Any,)
-        inner_tt = _to_ir(inner, env)
-        return TyRoot(
-            ty=inner_tt.ty,
-            is_final=inner_tt.is_final,
-            is_required=inner_tt.is_required,
-            is_classvar=True,
-        )
-
-    if origin is t.Final:
-        inner = args[0] if args else t.Any
-        inner_tt = _to_ir(inner, env)
-        return TyRoot(
-            ty=inner_tt.ty,
-            is_final=True,
-            is_required=inner_tt.is_required,
-            is_classvar=inner_tt.is_classvar,
-        )
-
-    if origin in (t.Required, t.NotRequired):
-        (inner,) = args or (t.Any,)
-        inner_tt = _to_ir(inner, env)
-        req = True if origin is t.Required else False
-        return TyRoot(
-            ty=inner_tt.ty,
-            is_final=inner_tt.is_final,
-            is_required=req,
-            is_classvar=inner_tt.is_classvar,
-        )
+        return TyLiteral(values=tuple(_litval_of(a) for a in args))
 
     if origin is tuple:
         if args and args[-1] is Ellipsis:
-            items = tuple(_to_ir(a, env).ty for a in args[:-1]) + (
+            items = tuple(_to_ir(a, env) for a in args[:-1]) + (
                 TyName(module="builtins", name="Ellipsis"),
             )
-            return TyRoot(ty=TyApp(base=TyName(module="builtins", name="tuple"), args=items))
-        return TyRoot(ty=TyTuple(items=tuple(_to_ir(a, env).ty for a in args)))
+            return TyApp(base=TyName(module="builtins", name="tuple"), args=items)
+        return TyTuple(items=tuple(_to_ir(a, env) for a in args))
 
     if origin in (t.Callable, abc.Callable):
         if args and args[0] is Ellipsis:
-            return TyRoot(ty=TyCallable(params=Ellipsis, ret=_to_ir(args[1], env).ty))
+            return TyCallable(params=Ellipsis, ret=_to_ir(args[1], env))
         if args and isinstance(args[0], (list, tuple)):
-            params = tuple(_to_ir(a, env).ty for a in args[0])
-            ret = _to_ir(args[1], env).ty
-            return TyRoot(ty=TyCallable(params=params, ret=ret))
+            params = tuple(_to_ir(a, env) for a in args[0])
+            ret = _to_ir(args[1], env)
+            return TyCallable(params=params, ret=ret)
         if args:
-            return TyRoot(
-                ty=TyCallable(
-                    params=(_to_ir(args[0], env).ty,),
-                    ret=_to_ir(args[1], env).ty,
-                )
-            )
-        return TyRoot(ty=TyCallable(params=Ellipsis, ret=TyAny()))
+            return TyCallable(params=(_to_ir(args[0], env),), ret=_to_ir(args[1], env))
+        return TyCallable(params=Ellipsis, ret=TyAny())
 
     if origin is t.Unpack:
         (inner,) = args
-        return TyRoot(ty=TyUnpack(inner=_to_ir(inner, env).ty))
+        return TyUnpack(inner=_to_ir(inner, env))
 
     if getattr(t, "Concatenate", None) is origin:
-        return TyRoot(
-            ty=TyApp(
-                base=TyName(module="typing", name="Concatenate"),
-                args=tuple(_to_ir(a, env).ty for a in args),
-            )
+        return TyApp(
+            base=TyName(module="typing", name="Concatenate"),
+            args=tuple(_to_ir(a, env) for a in args),
         )
 
     if origin is type:
-        return TyRoot(
-            ty=TyApp(
-                base=TyName(module="builtins", name="type"),
-                args=tuple(_to_ir(a, env).ty for a in args),
-            )
+        return TyApp(
+            base=TyName(module="builtins", name="type"),
+            args=tuple(_to_ir(a, env) for a in args),
         )
 
     if getattr(tp, "__module__", None) == "typing":
         base = _tyname_of(tp)
     else:
-        base = _to_ir(origin, env).ty
-    return TyRoot(ty=TyApp(base=base, args=tuple(_to_ir(a, env).ty for a in args)))
+        base = _to_ir(origin, env)
+    return TyApp(base=base, args=tuple(_to_ir(a, env) for a in args))
+
+
+def _push_ann(tree: TyAnnoTree | None, ann: object) -> tuple[TyAnnoTree | None, object]:
+    """Peel successive Annotated wrappers into a tree."""
+    while get_origin(ann) is t.Annotated:
+        base, *meta = get_args(ann)
+        tree = TyAnnoTree(annos=tuple(meta), child=tree)
+        ann = base
+    return tree, ann
+
+
+def _append_ann_child(tree: TyAnnoTree | None, child: TyAnnoTree | None) -> TyAnnoTree | None:
+    """Append one annotation tree to another."""
+    if tree is None:
+        return child
+    if child is None:
+        return tree
+    return replace(tree, child=_append_ann_child(tree.child, child))
+
+
+def parse_root(tp: object, env: Optional[ParseEnv] = None) -> TyRoot:
+    env = env or ParseEnv()
+    ann_tree: TyAnnoTree | None = None
+    obj = tp
+    qualifiers: set[object] = set()
+    valid_qualifiers = {t.Final, t.ClassVar, t.Required, t.NotRequired}
+    while True:
+        origin = get_origin(obj)
+        if origin is t.Annotated:
+            ann_tree, obj = _push_ann(ann_tree, obj)
+        elif origin in valid_qualifiers:
+            args = get_args(obj)
+            obj = args[0] if args else t.Any
+            qualifiers.add(origin)
+        elif obj in valid_qualifiers:
+            qualifiers.add(obj)
+            obj = t.Any
+        else:
+            break
+
+    ty = _to_ir(obj, env)
+    ty = replace(ty, annotations=_append_ann_child(ty.annotations, ann_tree))
+    return TyRoot(
+        ty=ty,
+        is_final=t.Final in qualifiers,
+        is_required=True
+        if t.Required in qualifiers
+        else False
+        if t.NotRequired in qualifiers
+        else None,
+        is_classvar=t.ClassVar in qualifiers,
+    )
 
 
 def parse(tp: object, env: Optional[ParseEnv] = None) -> ParsedTy:
-    return ParsedTy(_to_ir(tp, env or ParseEnv()))
+    return ParsedTy(parse_root(tp, env))
 
 
 # Notes:

@@ -3,6 +3,8 @@ from __future__ import annotations
 import enum
 import typing as t
 
+import pytest
+
 from macrotype.types.ir import (
     Ty,
     TyAnnoTree,
@@ -20,7 +22,7 @@ from macrotype.types.ir import (
     TyUnion,
     TyUnpack,
 )
-from macrotype.types.parse import parse
+from macrotype.types.parse import _append_ann_child, parse
 
 
 # ----- helpers -----
@@ -197,7 +199,20 @@ def test_user_generic_application():
     assert got.args == (b("int"),)
 
 
+def test_append_ann_child():
+    inner = TyAnnoTree(annos=("a",))
+    outer = TyAnnoTree(annos=("b",))
+    merged = _append_ann_child(inner, outer)
+    assert merged.annos == ("a",)
+    assert merged.child and merged.child.annos == ("b",)
+
+
 def test_union_order_insensitive():
     a = parse(int | str)
     b = parse(str | int)
     assert a == b
+
+
+def test_inner_final_disallowed():
+    with pytest.raises(ValueError):
+        parse(list[t.Final[int]])
