@@ -71,6 +71,8 @@ Other = dict
 
 ForwardAlias = FutureClass
 
+CallableP = Callable[P, int]
+
 type StrList = list[str]
 
 type Alias0[T] = list[T]

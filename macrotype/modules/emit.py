@@ -6,6 +6,8 @@ from typing import Annotated, Any, ForwardRef, Iterable, get_args, get_origin
 
 INDENT = "    "
 
+import typing as t
+
 from .scanner import ModuleInfo
 from .symbols import AliasSymbol, ClassSymbol, FuncSymbol, Symbol, VarSymbol
 
@@ -22,6 +24,8 @@ def emit_module(mi: ModuleInfo) -> list[str]:
 
     lines: list[str] = []
     for sym in mi.symbols:
+        if not sym.emit:
+            continue
         lines.extend(_emit_symbol(sym, name_map, indent=0))
         lines.append("")
     if lines and lines[-1] == "":
@@ -33,6 +37,7 @@ def emit_module(mi: ModuleInfo) -> list[str]:
         for a in atoms.values()
         if getattr(a, "__module__", None) == "typing" or a is Callable
     }
+    typing_names.update(_collect_typing_names(mi.symbols))
 
     pre: list[str] = []
     if typing_names:
@@ -41,6 +46,24 @@ def emit_module(mi: ModuleInfo) -> list[str]:
             pre.append("")
 
     return pre + lines
+
+
+def _collect_typing_names(symbols: Iterable[Symbol]) -> set[str]:
+    names: set[str] = set()
+    for sym in symbols:
+        if not sym.emit:
+            continue
+        match sym:
+            case AliasSymbol(flags=flags):
+                if flags.get("is_typevar"):
+                    names.add("TypeVar")
+                if flags.get("is_paramspec"):
+                    names.add("ParamSpec")
+                if flags.get("is_typevartuple"):
+                    names.add("TypeVarTuple")
+            case ClassSymbol(members=members):
+                names.update(_collect_typing_names(members))
+    return names
 
 
 def _add_comment(line: str, comment: str | None) -> str:
@@ -54,6 +77,8 @@ def collect_all_annotations(mi: ModuleInfo) -> list[Any]:
     annos: list[Any] = []
 
     def visit(sym: Symbol):
+        if not sym.emit:
+            return
         match sym:
             case VarSymbol(site=site):
                 annos.append(site.annotation)
@@ -179,6 +204,8 @@ def stringify_annotation(ann: Any, name_map: dict[int, str]) -> str:
 
 
 def _emit_symbol(sym: Symbol, name_map: dict[int, str], *, indent: int) -> list[str]:
+    if not sym.emit:
+        return []
     pad = INDENT * indent
 
     match sym:
@@ -188,9 +215,20 @@ def _emit_symbol(sym: Symbol, name_map: dict[int, str], *, indent: int) -> list[
             line = _add_comment(line, sym.comment or site.comment)
             return [line]
 
-        case AliasSymbol(value=site):
-            ty = stringify_annotation(site.annotation, name_map)
-            line = f"{pad}type {sym.name} = {ty}"
+        case AliasSymbol(value=site, type_params=params, flags=flags):
+            if flags.get("is_typevar"):
+                line = f"{pad}{sym.name} = {_stringify_typevar(site.annotation, name_map)}"
+            elif flags.get("is_paramspec"):
+                line = f"{pad}{sym.name} = {_stringify_paramspec(site.annotation)}"
+            elif flags.get("is_typevartuple"):
+                line = f"{pad}{sym.name} = {_stringify_typevartuple(site.annotation)}"
+            elif flags.get("is_typealias"):
+                ty = stringify_annotation(site.annotation, name_map)
+                line = f"{pad}{sym.name} = {ty}"
+            else:
+                ty = stringify_annotation(site.annotation, name_map)
+                param_str = f"[{', '.join(params)}]" if params else ""
+                line = f"{pad}type {sym.name}{param_str} = {ty}"
             line = _add_comment(line, sym.comment or site.comment)
             return [line]
 
@@ -232,3 +270,33 @@ def _emit_symbol(sym: Symbol, name_map: dict[int, str], *, indent: int) -> list[
 
         case _:
             raise NotImplementedError(f"Unsupported symbol: {type(sym).__name__}")
+
+
+def _stringify_typevar(tv: t.TypeVar, name_map: dict[int, str]) -> str:
+    args = [f'"{tv.__name__}"']
+    if getattr(tv, "__covariant__", False):
+        args.append("covariant=True")
+    if getattr(tv, "__contravariant__", False):
+        args.append("contravariant=True")
+    if getattr(tv, "__infer_variance__", False):
+        args.append("infer_variance=True")
+    bound = getattr(tv, "__bound__", None)
+    if bound is not None:
+        args.append(f"bound={stringify_annotation(bound, name_map)}")
+    constraints = getattr(tv, "__constraints__", ())
+    if constraints:
+        args.extend(stringify_annotation(c, name_map) for c in constraints)
+    return f"TypeVar({', '.join(args)})"
+
+
+def _stringify_paramspec(ps: t.ParamSpec) -> str:
+    args = [f'"{ps.__name__}"']
+    if getattr(ps, "__covariant__", False):
+        args.append("covariant=True")
+    if getattr(ps, "__contravariant__", False):
+        args.append("contravariant=True")
+    return f"ParamSpec({', '.join(args)})"
+
+
+def _stringify_typevartuple(tv: t.TypeVarTuple) -> str:
+    return f'TypeVarTuple("{tv.__name__}")'

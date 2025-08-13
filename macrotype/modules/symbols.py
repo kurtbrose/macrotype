@@ -11,6 +11,7 @@ class Symbol:
 
     name: str
     comment: str | None = None
+    emit: bool = True
 
 
 @dataclass(kw_only=True)
@@ -51,3 +52,5 @@ class ClassSymbol(Symbol):
 @dataclass(kw_only=True)
 class AliasSymbol(Symbol):
     value: Optional[Site]
+    type_params: tuple[str, ...] = ()
+    flags: dict[str, bool] = field(default_factory=dict)
