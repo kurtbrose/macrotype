@@ -1,0 +1,9 @@
+# Generated via: macrotype macrotype
+# Do not edit by hand
+from pathlib import Path
+
+def _default_output_path(path: Path, cwd: Path, *, is_file: bool) -> Path: ...
+
+def main(argv: None | list[str]) -> int: ...
+
+def check_main(argv: None | list[str]) -> int: ...

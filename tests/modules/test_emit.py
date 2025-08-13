@@ -3,10 +3,10 @@ from __future__ import annotations
 import builtins
 from types import ModuleType
 
-from macrotype.modules.emit_module import emit_module
+from macrotype.modules.emit import emit_module
 from macrotype.modules.scanner import ModuleInfo
-from macrotype.modules.symbols import AliasSymbol, ClassSymbol, FuncSymbol, Site, VarSymbol
 from macrotype.types.ir import TyAny, TyApp, TyRoot, TyType
+from macrotype.modules.symbols import AliasSymbol, ClassSymbol, FuncSymbol, Site, VarSymbol
 
 
 def b(name: str) -> TyType:  # builtins helper
@@ -18,9 +18,8 @@ mod1 = ModuleType("m1")
 case1 = (
     ModuleInfo(
         mod=mod1,
-        provenance="m1",
         symbols=[
-            VarSymbol(name="x", key="m1.x", site=Site(role="var", raw=None, ty=TyRoot(ty=TyAny()))),
+            VarSymbol(name="x", site=Site(role="var", raw=None, ty=TyRoot(ty=TyAny()))),
         ],
     ),
     ["from typing import Any", "", "x: Any"],
@@ -30,12 +29,10 @@ mod2 = ModuleType("m2")
 case2 = (
     ModuleInfo(
         mod=mod2,
-        provenance="m2",
         symbols=[
-            VarSymbol(name="v", key="m2.v", site=Site(role="var", raw=None, ty=TyRoot(ty=TyAny()))),
+            VarSymbol(name="v", site=Site(role="var", raw=None, ty=TyRoot(ty=TyAny()))),
             AliasSymbol(
                 name="Alias",
-                key="m2.Alias",
                 value=Site(
                     role="alias_value",
                     raw=None,
@@ -44,18 +41,15 @@ case2 = (
             ),
             FuncSymbol(
                 name="f",
-                key="m2.f",
                 params=(Site(role="param", name="x", raw=None, ty=TyRoot(ty=b("int"))),),
                 ret=Site(role="return", raw=None, ty=TyRoot(ty=b("str"))),
             ),
             ClassSymbol(
                 name="C",
-                key="m2.C",
                 bases=(),
                 members=(
                     VarSymbol(
                         name="y",
-                        key="m2.C.y",
                         site=Site(
                             role="var",
                             name="y",

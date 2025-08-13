@@ -7,24 +7,11 @@ from typing import Literal, Optional
 from ..types.ir import TyRoot
 
 
-@dataclass(frozen=True)
-class Provenance:
-    """Non-semantic source info (for diagnostics), e.g. module/file/line."""
-
-    module: str
-    qualname: str
-    file: Optional[str] = None
-    line: Optional[int] = None
-
-
 @dataclass(frozen=True, kw_only=True)
 class Symbol:
     """Base class for all top-level or nested declarations."""
 
     name: str
-    key: str  # e.g. "mymod.MyClass.__init__"
-    prov: Optional[Provenance] = field(default=None, compare=False, hash=False, repr=False)
-
 
 @dataclass(frozen=True, kw_only=True)
 class Site:
@@ -33,7 +20,6 @@ class Site:
     index: Optional[int] = None
     raw: object
     ty: Optional[TyRoot] = None
-    prov: Optional[Provenance] = field(default=None, compare=False, hash=False, repr=False)
 
 
 @dataclass(frozen=True, kw_only=True)

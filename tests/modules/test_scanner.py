@@ -38,7 +38,7 @@ def _raw_sig(obj: object) -> str:
 
 
 def sym_shape(sym: Symbol) -> dict:
-    base = {"kind": type(sym).__name__, "name": sym.name, "key": sym.key}
+    base = {"kind": type(sym).__name__, "name": sym.name}
     match sym:
         case VarSymbol(site=site):
             base["site"] = site_shape(site)
@@ -66,10 +66,9 @@ def idx():
     mi = scan_module(ann)
     assert isinstance(mi, ModuleInfo)
     assert mi.mod is ann
-    assert mi.provenance == "tests.annotations"
     shapes = [sym_shape(s) for s in mi.symbols]
     # index by key and name for convenience
-    by_key = {s["key"]: s for s in shapes}
+    by_key = {s["name"]: s for s in shapes}
     by_name = {}
     for s in shapes:
         by_name.setdefault(s["name"], []).append(s)
@@ -86,11 +85,11 @@ def get(idx, key: str) -> dict:
 
 
 def test_module_var_and_func(idx):
-    X = get(idx, "tests.annotations.GLOBAL")
+    X = get(idx, "GLOBAL")
     assert X["kind"] == "VarSymbol"
     assert X["site"]["raw"] in {"int", "builtins.int"}  # relaxed
 
-    f = get(idx, "tests.annotations.mult")
+    f = get(idx, "mult")
     assert f["kind"] == "FuncSymbol"
     # Only annotated params become sites; ‘a’ is unannotated in your code
     names = [p["name"] for p in f["params"]]
@@ -98,7 +97,7 @@ def test_module_var_and_func(idx):
 
 
 def test_basic_class_members(idx):
-    C = get(idx, "tests.annotations.Basic")
+    C = get(idx, "Basic")
     assert C["kind"] == "ClassSymbol"
     # has nested members: property, methods, nested class
     member_names = [n for (n, _k) in C["members"]]
@@ -106,24 +105,24 @@ def test_basic_class_members(idx):
 
 
 def test_typeddict_fields(idx):
-    TD = get(idx, "tests.annotations.SampleDict")
+    TD = get(idx, "SampleDict")
     assert TD["is_typeddict"] is True
     fields = [f["name"] for f in TD["td_fields"]]
     assert fields == ["name", "age"]
 
 
 def test_aliases(idx):
-    other = get(idx, "tests.annotations.Other")
+    other = get(idx, "Other")
     assert other["kind"] == "AliasSymbol"
     assert "dict" in other["value"]["raw"]
 
-    mylist = get(idx, "tests.annotations.MyList")
+    mylist = get(idx, "MyList")
     assert mylist["kind"] == "AliasSymbol"
     assert "list" in mylist["value"]["raw"]
 
 
 def test_function_sites(idx):
-    f = get(idx, "tests.annotations.annotated_fn")
+    f = get(idx, "annotated_fn")
     ps = f["params"]
     assert len(ps) == 1
     assert ps[0]["raw"] in {"int", "builtins.int"}
@@ -131,28 +130,28 @@ def test_function_sites(idx):
 
 
 def test_nested_classes(idx):
-    Outer = get(idx, "tests.annotations.Outer")
+    Outer = get(idx, "Outer")
     names = [n for (n, _k) in Outer["members"]]
     assert "Inner" in names
 
 
 def test_overloads_present(idx):
     # We just see the function symbol; overload grouping can be later
-    over = get(idx, "tests.annotations.over")
+    over = get(idx, "over")
     assert over["kind"] == "FuncSymbol"
     # You can assert #params/ret sites from annotations: 1 ret
     assert over["ret"] is not None
 
 
 def test_async_functions(idx):
-    af = get(idx, "tests.annotations.async_add_one")
+    af = get(idx, "async_add_one")
     assert af["kind"] == "FuncSymbol"
     assert af["ret"]["raw"] in {"int", "builtins.int"}
 
 
 def test_properties_detected_as_functions_or_vars(idx):
     # At scan stage we treat decorators later; here we just ensure function symbol exists
-    w = get(idx, "tests.annotations.WrappedDescriptors")
+    w = get(idx, "WrappedDescriptors")
     members = dict(w["members"])
     assert "wrapped_prop" in members
     assert "wrapped_static" in members
@@ -160,33 +159,25 @@ def test_properties_detected_as_functions_or_vars(idx):
 
 
 def test_variadic_things_dont_crash(idx):
-    vnt = get(idx, "tests.annotations.VarNamedTuple")
+    vnt = get(idx, "VarNamedTuple")
     assert vnt["kind"] == "ClassSymbol"
     # not asserting exact shape; scan shouldn’t crash
 
 
 def test_simple_alias_to_foreign(idx):
-    sin = get(idx, "tests.annotations.SIN_ALIAS")
+    sin = get(idx, "SIN_ALIAS")
     assert sin["kind"] == "AliasSymbol"
     # raw repr will show it's a function object
 
 
 def test_class_vars_scanned(idx):
-    cv = get(idx, "tests.annotations.ClassVarExample")
+    cv = get(idx, "ClassVarExample")
     names = [n for (n, _k) in cv["members"]]
     assert "y" in names
 
 
 def test_td_inheritance(idx):
-    sub = get(idx, "tests.annotations.SubTD")
+    sub = get(idx, "SubTD")
     assert sub["kind"] == "ClassSymbol"
     # td base shows up as a base site
     assert any(b["role"] == "base" for b in sub["bases"])
-
-
-def test_site_provenance():
-    ann = importlib.import_module("tests.annotations")
-    mi = scan_module(ann)
-    sym = next(s for s in mi.symbols if s.name == "SITE_PROV_VAR")
-    assert sym.prov is not None
-    assert sym.site.prov is sym.prov
