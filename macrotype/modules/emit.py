@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import types
 from collections.abc import Callable
-from typing import Annotated, Any, ForwardRef, Iterable, Literal, Union, get_args, get_origin
+from typing import Annotated, Any, ForwardRef, Iterable, get_args, get_origin
 
 INDENT = "    "
 
@@ -135,23 +135,13 @@ def stringify_annotation(ann: Any, name_map: dict[int, str]) -> str:
         return ann.__forward_arg__
 
     if isinstance(ann, str):
-        return ann  # literal forward ref
+        return repr(ann)
 
     origin = get_origin(ann)
     args = get_args(ann)
 
-    if origin in (types.UnionType, Union):
+    if origin is types.UnionType:
         return " | ".join(stringify_annotation(arg, name_map) for arg in args)
-
-    if origin is Literal:
-        inner_parts: list[str] = []
-        for arg in args:
-            if isinstance(arg, str):
-                inner_parts.append(repr(arg))
-            else:
-                inner_parts.append(stringify_annotation(arg, name_map))
-        return f"Literal[{', '.join(inner_parts)}]"
-
 
     if origin is Callable:
         if not args:

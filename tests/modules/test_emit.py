@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from types import ModuleType
-from typing import Annotated, Any, Callable, ClassVar, Literal
+from typing import Annotated, Any, Callable, ClassVar, Literal, Union
 
 from macrotype.modules.emit import emit_module
 from macrotype.modules.scanner import ModuleInfo
@@ -106,7 +106,7 @@ case4 = (
         "",
         "nested: list[Callable[[int], str]]",
         "",
-        "combo: Callable[[int], str] | Callable[..., bool]",
+        "combo: Union[Callable[[int], str], Callable[..., bool]]",
     ],
 )
 
@@ -145,7 +145,24 @@ case6 = (
     ],
 )
 
-CASES = [case1, case2, case3, case4, case5, case6]
+mod7 = ModuleType("m7")
+case7 = (
+    ModuleInfo(
+        mod=mod7,
+        symbols=[
+            VarSymbol(name="u", site=Site(role="var", annotation=Union[int, str])),
+            VarSymbol(name="s", site=Site(role="var", annotation="A")),
+        ],
+    ),
+    [
+        "from typing import Union",
+        "",
+        "u: Union[int, str]",
+        "",
+        "s: 'A'",
+    ],
+)
+CASES = [case1, case2, case3, case4, case5, case6, case7]
 
 
 def test_emit_module_table() -> None:
