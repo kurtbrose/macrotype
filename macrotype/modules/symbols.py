@@ -5,29 +5,31 @@ from types import EllipsisType
 from typing import Literal, Optional
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class Symbol:
     """Base class for all top-level or nested declarations."""
 
     name: str
+    comment: str | None = None
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class Site:
     role: Literal["var", "return", "param", "base", "alias_value", "td_field"]
     name: Optional[str] = None
     index: Optional[int] = None
     annotation: object
+    comment: str | None = None
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class VarSymbol(Symbol):
     site: Site
     initializer: object | EllipsisType = Ellipsis
     flags: dict[str, bool] = field(default_factory=dict)  # final, classvar
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class FuncSymbol(Symbol):
     params: tuple[Site, ...]
     ret: Optional[Site]
@@ -35,7 +37,7 @@ class FuncSymbol(Symbol):
     flags: dict[str, bool] = field(default_factory=dict)  # e.g., staticmethod, classmethod
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class ClassSymbol(Symbol):
     bases: tuple[Site, ...]
     td_fields: tuple[Site, ...] = ()
@@ -45,6 +47,6 @@ class ClassSymbol(Symbol):
     flags: dict[str, bool] = field(default_factory=dict)  # e.g., protocol, abstract
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class AliasSymbol(Symbol):
     value: Optional[Site]
