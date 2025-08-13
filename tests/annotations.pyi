@@ -123,6 +123,8 @@ ANNOTATED_OPTIONAL_META: Annotated[None | int, 'meta']
 
 ANNOTATED_FINAL_META: Final[Annotated[int, 'meta']]
 
+ANNOTATED_WRAP_GENERIC: Annotated[list[Annotated[int, 'inner']], 'outer']
+
 class UserBox[T]: ...
 
 class Basic:

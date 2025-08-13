@@ -152,6 +152,8 @@ TRIPLE_ANNOTATED: Annotated[Annotated[Annotated[int, "x"], "y"], "z"] = 4
 ANNOTATED_OPTIONAL_META: Annotated[int | None, "meta"] = 0
 # Annotated combined with Final wrapper to verify root handling
 ANNOTATED_FINAL_META: Annotated[Final[int], "meta"] = 2
+# Outer Annotated around a generic with inner Annotated element
+ANNOTATED_WRAP_GENERIC: Annotated[list[Annotated[int, "inner"]], "outer"] = []
 
 # Built-in generic without dedicated handler
 GENERIC_DEQUE: Deque[int]

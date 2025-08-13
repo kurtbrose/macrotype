@@ -139,8 +139,8 @@ def _to_ir(tp: object, env: ParseEnv) -> Ty:
     if origin is t.Annotated:
         base, *meta = args
         inner = _to_ir(base, env)
-        ann = TyAnnoTree(annos=tuple(meta), child=inner.annotations)
-        return replace(inner, annotations=ann)
+        ann = TyAnnoTree(annos=tuple(meta), child=None)
+        return replace(inner, annotations=_append_ann_child(inner.annotations, ann))
 
     if origin is t.Literal:
         return TyLiteral(values=tuple(_litval_of(a) for a in args))
@@ -196,6 +196,15 @@ def _push_ann(tree: TyAnnoTree | None, ann: object) -> tuple[TyAnnoTree | None, 
     return tree, ann
 
 
+def _append_ann_child(tree: TyAnnoTree | None, child: TyAnnoTree | None) -> TyAnnoTree | None:
+    """Append one annotation tree to another."""
+    if tree is None:
+        return child
+    if child is None:
+        return tree
+    return replace(tree, child=_append_ann_child(tree.child, child))
+
+
 def parse_root(tp: object, env: Optional[ParseEnv] = None) -> TyRoot:
     env = env or ParseEnv()
     ann_tree: TyAnnoTree | None = None
@@ -218,7 +227,7 @@ def parse_root(tp: object, env: Optional[ParseEnv] = None) -> TyRoot:
 
     ty = _to_ir(obj, env)
     if ann_tree:
-        ty = replace(ty, annotations=ann_tree)
+        ty = replace(ty, annotations=_append_ann_child(ty.annotations, ann_tree))
     return TyRoot(
         ty=ty,
         is_final=t.Final in qualifiers,

@@ -22,7 +22,7 @@ from macrotype.types.ir import (
     TyUnion,
     TyUnpack,
 )
-from macrotype.types.parse import parse
+from macrotype.types.parse import _append_ann_child, parse
 
 
 # ----- helpers -----
@@ -197,6 +197,14 @@ def test_user_generic_application():
     assert isinstance(got.base, TyName)
     assert got.base.name == "Box" and got.base.module == Box.__module__
     assert got.args == (b("int"),)
+
+
+def test_append_ann_child():
+    inner = TyAnnoTree(annos=("a",))
+    outer = TyAnnoTree(annos=("b",))
+    merged = _append_ann_child(inner, outer)
+    assert merged.annos == ("a",)
+    assert merged.child and merged.child.annos == ("b",)
 
 
 def test_union_order_insensitive():
