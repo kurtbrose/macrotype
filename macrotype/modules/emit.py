@@ -207,15 +207,16 @@ def _emit_symbol(sym: Symbol, name_map: dict[int, str], *, indent: int) -> list[
             pieces.append(line)
             return pieces
 
-        case ClassSymbol(bases=bases, td_fields=fields, members=members):
+        case ClassSymbol(bases=bases, td_fields=fields, members=members, decorators=decos):
             base_str = ""
             if bases:
                 base_str = (
                     f"({', '.join(stringify_annotation(b.annotation, name_map) for b in bases)})"
                 )
+            lines = [f"{pad}@{d}" for d in decos]
             first = f"{pad}class {sym.name}{base_str}:"
             first = _add_comment(first, sym.comment)
-            lines = [first]
+            lines.append(first)
             if fields:
                 for f in fields:
                     ty = stringify_annotation(f.annotation, name_map)

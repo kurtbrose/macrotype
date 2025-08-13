@@ -6,6 +6,7 @@ import typing as t
 from types import ModuleType
 
 from .add_comment_transform import add_comments
+from .dataclass_transform import transform_dataclasses
 from .emit import emit_module
 from .scanner import ModuleInfo, scan_module
 
@@ -14,8 +15,16 @@ def from_module(glb_or_mod: ModuleType | t.Mapping[str, t.Any]) -> ModuleInfo:
     """Scan *glb_or_mod* into a ModuleInfo and attach comments."""
 
     mi = scan_module(glb_or_mod)
+    transform_dataclasses(mi)
     add_comments(mi)
     return mi
 
 
-__all__ = ["ModuleInfo", "add_comments", "from_module", "emit_module", "scan_module"]
+__all__ = [
+    "ModuleInfo",
+    "add_comments",
+    "from_module",
+    "emit_module",
+    "scan_module",
+    "transform_dataclasses",
+]
