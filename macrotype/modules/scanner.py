@@ -153,7 +153,6 @@ def _scan_function(fn: t.Callable, *, modname: str, parent_key: str | None) -> F
         params=tuple(params),
         ret=ret,
         decorators=tuple(decos),
-        overload_index=None,
     )
 
 

@@ -1,1 +1,0 @@
-__macrotype__/macrotype/typecheck.pyi

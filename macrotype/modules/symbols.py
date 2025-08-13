@@ -48,7 +48,6 @@ class FuncSymbol(Symbol):
     params: tuple[Site, ...]
     ret: Optional[Site]
     decorators: tuple[str, ...] = ()
-    overload_index: Optional[int] = None
     flags: dict[str, bool] = field(default_factory=dict)  # e.g., staticmethod, classmethod
 
 
