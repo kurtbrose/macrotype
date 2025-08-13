@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, ForwardRef, get_args, get_origin
+import types
+from typing import Any, ForwardRef, Literal, Union, get_args, get_origin
 
 INDENT = "    "
 
@@ -116,6 +117,9 @@ def build_name_map(atoms: set[Any], context: dict[str, Any]) -> dict[Any, str]:
 
 def stringify_annotation(ann: Any, name_map: dict[Any, str]) -> str:
     """Emit string form of a type annotation."""
+    if ann is Ellipsis:
+        return "..."
+
     if isinstance(ann, ForwardRef):
         return ann.__forward_arg__
 
@@ -124,6 +128,18 @@ def stringify_annotation(ann: Any, name_map: dict[Any, str]) -> str:
 
     origin = get_origin(ann)
     args = get_args(ann)
+
+    if origin in (types.UnionType, Union):
+        return " | ".join(stringify_annotation(arg, name_map) for arg in args)
+
+    if origin is Literal:
+        inner_parts: list[str] = []
+        for arg in args:
+            if isinstance(arg, str):
+                inner_parts.append(repr(arg))
+            else:
+                inner_parts.append(stringify_annotation(arg, name_map))
+        return f"Literal[{', '.join(inner_parts)}]"
 
     if origin:
         name = name_map.get(origin, getattr(origin, "__name__", repr(origin)))
