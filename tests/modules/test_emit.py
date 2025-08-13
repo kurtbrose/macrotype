@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from types import ModuleType
-from typing import Any, Callable, ClassVar, Literal
+from typing import Annotated, Any, Callable, ClassVar, Literal
 
 from macrotype.modules.emit import emit_module
 from macrotype.modules.scanner import ModuleInfo
@@ -109,7 +109,43 @@ case4 = (
         "combo: Callable[[int], str] | Callable[..., bool]",
     ],
 )
-CASES = [case1, case2, case3, case4]
+
+mod5 = ModuleType("m5")
+case5 = (
+    ModuleInfo(
+        mod=mod4,
+        symbols=[
+            VarSymbol(
+                name="ann",
+                site=Site(role="var", annotation=Annotated[int, "meta"]),
+            ),
+        ],
+    ),
+    ["from typing import Annotated", "", "ann: Annotated[int, 'meta']"],
+)
+
+mod6 = ModuleType("m6")
+case6 = (
+    ModuleInfo(
+        mod=mod5,
+        symbols=[
+            VarSymbol(
+                name="nested",
+                site=Site(
+                    role="var",
+                    annotation=Annotated[Annotated[int, "inner"], "outer"],
+                ),
+            ),
+        ],
+    ),
+    [
+        "from typing import Annotated",
+        "",
+        "nested: Annotated[int, 'inner', 'outer']",
+    ],
+)
+
+CASES = [case1, case2, case3, case4, case5, case6]
 
 
 def test_emit_module_table() -> None:

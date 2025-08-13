@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import types
 from collections.abc import Callable
-from typing import Any, ForwardRef, Iterable, Literal, Union, get_args, get_origin
+from typing import Annotated, Any, ForwardRef, Iterable, Literal, Union, get_args, get_origin
 
 INDENT = "    "
 
@@ -152,6 +152,7 @@ def stringify_annotation(ann: Any, name_map: dict[int, str]) -> str:
                 inner_parts.append(stringify_annotation(arg, name_map))
         return f"Literal[{', '.join(inner_parts)}]"
 
+
     if origin is Callable:
         if not args:
             return "Callable"
@@ -162,6 +163,16 @@ def stringify_annotation(ann: Any, name_map: dict[int, str]) -> str:
             return f"{name}[..., {ret_str}]"
         params_str = ", ".join(stringify_annotation(p, name_map) for p in params)
         return f"{name}[[{params_str}], {ret_str}]"
+
+    if origin is Annotated:
+        first, *metas = args
+        parts = [stringify_annotation(first, name_map)]
+        for meta in metas:
+            if isinstance(meta, str):
+                parts.append(repr(meta))
+            else:
+                parts.append(stringify_annotation(meta, name_map))
+        return f"Annotated[{', '.join(parts)}]"
 
     if origin:
         name = name_map.get(id(origin), getattr(origin, "__name__", repr(origin)))
