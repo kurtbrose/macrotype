@@ -6,7 +6,7 @@ from pathlib import Path
 from threading import Event
 from typing import Iterable
 
-from . import stubgen
+from .. import stubgen
 
 
 def _snapshot(paths: Iterable[Path]) -> dict[Path, float]:

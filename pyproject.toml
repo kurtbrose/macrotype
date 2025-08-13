@@ -24,7 +24,7 @@ where = ["."]
 
 [project.scripts]
 macrotype = "macrotype.cli:main"
-macrotype-check = "macrotype.typecheck:main"
+macrotype-check = "macrotype.cli:check_main"
 
 [project.optional-dependencies]
 test = ["mypy", "pyright", "ruff", "pytest"]
