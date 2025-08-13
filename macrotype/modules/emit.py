@@ -43,6 +43,12 @@ def emit_module(mi: ModuleInfo) -> list[str]:
     return pre + lines
 
 
+def _add_comment(line: str, comment: str | None) -> str:
+    if comment:
+        return f"{line}  # {comment}"
+    return line
+
+
 def collect_all_annotations(mi: ModuleInfo) -> list[Any]:
     """Walk ModuleInfo and collect all annotations."""
     annos: list[Any] = []
@@ -178,11 +184,15 @@ def _emit_symbol(sym: Symbol, name_map: dict[int, str], *, indent: int) -> list[
     match sym:
         case VarSymbol(site=site):
             ty = stringify_annotation(site.annotation, name_map)
-            return [f"{pad}{sym.name}: {ty}"]
+            line = f"{pad}{sym.name}: {ty}"
+            line = _add_comment(line, sym.comment or site.comment)
+            return [line]
 
         case AliasSymbol(value=site):
             ty = stringify_annotation(site.annotation, name_map)
-            return [f"{pad}type {sym.name} = {ty}"]
+            line = f"{pad}type {sym.name} = {ty}"
+            line = _add_comment(line, sym.comment or site.comment)
+            return [line]
 
         case FuncSymbol(params=params, ret=ret, decorators=decos):
             pieces: list[str] = []
@@ -192,7 +202,9 @@ def _emit_symbol(sym: Symbol, name_map: dict[int, str], *, indent: int) -> list[
                 f"{p.name}: {stringify_annotation(p.annotation, name_map)}" for p in params
             ]
             ret_str = f" -> {stringify_annotation(ret.annotation, name_map)}" if ret else ""
-            pieces.append(f"{pad}def {sym.name}({', '.join(param_strs)}){ret_str}: ...")
+            line = f"{pad}def {sym.name}({', '.join(param_strs)}){ret_str}: ..."
+            line = _add_comment(line, sym.comment)
+            pieces.append(line)
             return pieces
 
         case ClassSymbol(bases=bases, td_fields=fields, members=members):
@@ -201,11 +213,15 @@ def _emit_symbol(sym: Symbol, name_map: dict[int, str], *, indent: int) -> list[
                 base_str = (
                     f"({', '.join(stringify_annotation(b.annotation, name_map) for b in bases)})"
                 )
-            lines = [f"{pad}class {sym.name}{base_str}:"]
+            first = f"{pad}class {sym.name}{base_str}:"
+            first = _add_comment(first, sym.comment)
+            lines = [first]
             if fields:
                 for f in fields:
                     ty = stringify_annotation(f.annotation, name_map)
-                    lines.append(f"{pad}{INDENT}{f.name}: {ty}")
+                    line = f"{pad}{INDENT}{f.name}: {ty}"
+                    line = _add_comment(line, f.comment)
+                    lines.append(line)
             if members:
                 for m in members:
                     lines.extend(_emit_symbol(m, name_map, indent=indent + 1))

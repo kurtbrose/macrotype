@@ -109,9 +109,13 @@ BOOL_FALSE: bool
 
 SITE_PROV_VAR: int
 
+COMMENTED_VAR: int  # pragma: var
+
 def mult(a, b: int): ...
 
 def takes_optional(x): ...
+
+def commented_func(x: int) -> None: ...  # pragma: func
 
 UNTYPED_LAMBDA: function
 

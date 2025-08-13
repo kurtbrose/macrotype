@@ -134,6 +134,9 @@ BOOL_FALSE = False
 SITE_PROV_VAR: int = 1
 
 
+COMMENTED_VAR: int = 1  # pragma: var
+
+
 # Unannotated parameters infer type from default values
 def mult(a, b=1):
     return a * b
@@ -142,6 +145,10 @@ def mult(a, b=1):
 # Defaults of ``None`` do not refine "Any"
 def takes_optional(x=None):
     return x
+
+
+def commented_func(x: int) -> None:  # pragma: func
+    pass
 
 
 # Edge case: lambda expressions should be treated as variables, not functions

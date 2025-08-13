@@ -5,14 +5,17 @@ from __future__ import annotations
 import typing as t
 from types import ModuleType
 
+from .add_comment_transform import add_comments
 from .emit import emit_module
 from .scanner import ModuleInfo, scan_module
 
 
 def from_module(glb_or_mod: ModuleType | t.Mapping[str, t.Any]) -> ModuleInfo:
-    """Scan *glb_or_mod* into a ModuleInfo."""
+    """Scan *glb_or_mod* into a ModuleInfo and attach comments."""
 
-    return scan_module(glb_or_mod)
+    mi = scan_module(glb_or_mod)
+    add_comments(mi)
+    return mi
 
 
-__all__ = ["ModuleInfo", "from_module", "emit_module", "scan_module"]
+__all__ = ["ModuleInfo", "add_comments", "from_module", "emit_module", "scan_module"]

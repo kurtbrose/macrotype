@@ -5,14 +5,7 @@ import typing as t
 from dataclasses import dataclass, replace
 from types import ModuleType
 
-from .symbols import (
-    AliasSymbol,
-    ClassSymbol,
-    FuncSymbol,
-    Site,
-    Symbol,
-    VarSymbol,
-)
+from .symbols import AliasSymbol, ClassSymbol, FuncSymbol, Site, Symbol, VarSymbol
 
 
 @dataclass
@@ -170,4 +163,5 @@ def _scan_class(cls: type) -> ClassSymbol:
         is_typeddict=is_td,
         td_total=td_total,
         members=tuple(members),
+        comment=None,
     )
