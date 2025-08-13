@@ -226,8 +226,7 @@ def parse_root(tp: object, env: Optional[ParseEnv] = None) -> TyRoot:
             break
 
     ty = _to_ir(obj, env)
-    if ann_tree:
-        ty = replace(ty, annotations=_append_ann_child(ty.annotations, ann_tree))
+    ty = replace(ty, annotations=_append_ann_child(ty.annotations, ann_tree))
     return TyRoot(
         ty=ty,
         is_final=t.Final in qualifiers,
