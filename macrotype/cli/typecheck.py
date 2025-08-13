@@ -6,8 +6,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-from . import stubgen
-from .cli import DEFAULT_OUT_DIR, _default_output_path
+from .. import stubgen
+from . import DEFAULT_OUT_DIR, _default_output_path
 from .watch import watch_and_run
 
 
@@ -54,7 +54,7 @@ def main(argv: list[str] | None = None) -> int:
         cmd = [
             sys.executable,
             "-m",
-            "macrotype.typecheck",
+            "macrotype.cli.typecheck",
             *[a for a in cli_argv if a not in {"-w", "--watch"}],
         ]
         if tool_args:

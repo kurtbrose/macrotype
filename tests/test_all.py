@@ -41,6 +41,7 @@ def test_cli_stdout(tmp_path, src: str, expected: str) -> None:
 @pytest.mark.parametrize("src, expected", CASES)
 def test_stub_generation_matches_expected(src: str, expected: str) -> None:
     src_path = Path(__file__).with_name(src)
+    sys.modules.pop(f"tests.{src_path.stem}", None)
     loaded = load_module_from_path(src_path)
     module = PyiModule.from_module(loaded)
     generated = module.render()
@@ -54,6 +55,7 @@ def test_stub_generation_matches_expected(src: str, expected: str) -> None:
 @pytest.mark.parametrize("src, expected", CASES)
 def test_process_file(tmp_path, src: str, expected: str) -> None:
     src_path = Path(__file__).with_name(src)
+    sys.modules.pop(f"tests.{src_path.stem}", None)
     dest = tmp_path / f"out_{src_path.stem}.pyi"
     process_file(src_path, dest)
     expected_lines = Path(__file__).with_name(expected).read_text().splitlines()[2:]

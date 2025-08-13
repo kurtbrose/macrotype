@@ -4,7 +4,7 @@ import threading
 import time
 from pathlib import Path
 
-from macrotype.watch import watch_and_run
+from macrotype.cli.watch import watch_and_run
 
 
 def test_watch_and_run_regenerates(tmp_path: Path) -> None:
