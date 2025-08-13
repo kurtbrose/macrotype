@@ -83,6 +83,9 @@ Other = dict[str, int]
 # Edge case: alias referencing a forward-declared class
 ForwardAlias: TypeAlias = "FutureClass"
 
+# Type alias for callable using ParamSpec
+CallableP: TypeAlias = Callable[P, int]
+
 # PEP 695 ``type`` statements
 type StrList = list[str]
 type Alias0[T] = list[T]
