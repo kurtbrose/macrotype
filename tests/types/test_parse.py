@@ -17,7 +17,6 @@ from macrotype.types.ir import (
     TyNever,
     TyParamSpec,
     TyRoot,
-    TyTuple,
     TyTypeVar,
     TyTypeVarTuple,
     TyUnion,
@@ -44,7 +43,9 @@ def r(
     classvar: bool = False,
     annotations: TyAnnoTree | None = None,
 ) -> TyRoot:
-    return TyRoot(ty=ty, is_final=final, is_required=required, is_classvar=classvar, annotations=annotations)
+    return TyRoot(
+        ty=ty, is_final=final, is_required=required, is_classvar=classvar, annotations=annotations
+    )
 
 
 # ----- fixtures used in tests -----
@@ -108,9 +109,9 @@ CASES: list[tuple[object, TyRoot]] = [
         ),
     ),
     # tuples
-    (tuple[()], r(TyTuple(items=()))),
-    (tuple[int], r(TyTuple(items=(b("int"),)))),
-    (tuple[int, str], r(TyTuple(items=(b("int"), b("str"))))),
+    (tuple[()], r(TyApp(base=b("tuple"), args=()))),
+    (tuple[int], r(TyApp(base=b("tuple"), args=(b("int"),)))),
+    (tuple[int, str], r(TyApp(base=b("tuple"), args=(b("int"), b("str"))))),
     # variadic as application with Ellipsis marker
     (tuple[int, ...], r(TyApp(base=b("tuple"), args=(b("int"), b("Ellipsis"))))),
     (
@@ -121,7 +122,12 @@ CASES: list[tuple[object, TyRoot]] = [
     (t.Unpack[Ts], r(TyUnpack(inner=TyTypeVarTuple(name="Ts")))),
     (
         tuple[t.Unpack[Ts]],
-        r(TyTuple(items=(TyUnpack(inner=TyTypeVarTuple(name="Ts")),))),
+        r(
+            TyApp(
+                base=b("tuple"),
+                args=(TyUnpack(inner=TyTypeVarTuple(name="Ts")),),
+            )
+        ),
     ),
     # sets
     (set[int], r(TyApp(base=b("set"), args=(b("int"),)))),

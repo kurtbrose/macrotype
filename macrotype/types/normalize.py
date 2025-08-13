@@ -13,7 +13,6 @@ from .ir import (
     TyName,
     TyNever,
     TyRoot,
-    TyTuple,
     TyUnion,
     TyUnpack,
 )
@@ -81,9 +80,6 @@ def _norm(n: Ty, o: NormOpts) -> Ty:
             args_r = tuple(_norm(a, o) for a in args)
             # Variadic tuple canonical shape: base must be builtins.tuple, last arg Ellipsis => leave as-is
             res = TyApp(base=base_r, args=args_r)
-
-        case TyTuple(items=items):
-            res = TyTuple(items=tuple(_norm(a, o) for a in items))
 
         case TyUnion(options=opts):
             # flatten

@@ -15,7 +15,6 @@ from .ir import (
     TyNever,
     TyParamSpec,
     TyRoot,
-    TyTuple,
     TyTypeVar,
     TyTypeVarTuple,
     TyUnion,
@@ -89,9 +88,6 @@ def _res(node: Ty, env: ResolveEnv) -> Ty:
             if isinstance(base_r, TyName) and base_r.module == "typing" and base_r.name == "Type":
                 base_r = TyName(module="builtins", name="type")
             res = TyApp(base=base_r, args=args_r)
-
-        case TyTuple(items=items):
-            res = TyTuple(items=tuple(_res(a, env) for a in items))
 
         case TyUnion(options=opts):
             res = TyUnion(options=tuple(_res(a, env) for a in opts))

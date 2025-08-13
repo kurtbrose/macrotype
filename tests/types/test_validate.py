@@ -9,7 +9,6 @@ from macrotype.types.ir import (
     TyName,
     TyParamSpec,
     TyRoot,
-    TyTuple,
     TyTypeVarTuple,
     TyUnion,
     TyUnpack,
@@ -30,7 +29,7 @@ GOOD = [
     b("int"),
     TyUnion(options=(b("int"), b("str"))),
     TyLiteral(values=(1, "x", (True, 2))),
-    TyTuple(items=(b("int"), b("str"))),
+    TyApp(base=b("tuple"), args=(b("int"), b("str"))),
     TyApp(base=b("tuple"), args=(b("int"), b("Ellipsis"))),  # tuple[int, ...]
     TyApp(base=b("tuple"), args=(b("int"), b("str"), b("Ellipsis"))),  # tuple[int, str, ...]
     TyCallable(params=..., ret=b("int")),  # Callable[..., int]
@@ -40,7 +39,10 @@ GOOD = [
         params=(TyApp(base=typ("Concatenate"), args=(b("int"), TyParamSpec(name="P"))),),
         ret=b("int"),
     ),  # Callable[Concatenate[int, P], int]
-    TyTuple(items=(TyUnpack(inner=TyTypeVarTuple(name="Ts")),)),  # tuple[Unpack[Ts]]
+    TyApp(
+        base=b("tuple"),
+        args=(TyUnpack(inner=TyTypeVarTuple(name="Ts")),),
+    ),  # tuple[Unpack[Ts]]
 ]
 
 

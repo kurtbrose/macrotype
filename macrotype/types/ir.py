@@ -82,19 +82,6 @@ class TyApp(Ty):
 
 
 @dataclass(frozen=True, kw_only=True)
-class TyTuple(Ty):
-    """
-    Tuple type (fixed-length). Variadic `tuple[T, ...]` is modeled as
-    `TyApp(TyName("builtins","tuple"), (T, TyName("builtins","Ellipsis"))).`
-
-    Examples:
-      - `tuple[int, str]`
-    """
-
-    items: tuple[Ty, ...]
-
-
-@dataclass(frozen=True, kw_only=True)
 class TyUnion(Ty):
     """
     Union type (already canonicalized in normalization).

@@ -21,7 +21,6 @@ from .ir import (
     TyNever,
     TyParamSpec,
     TyRoot,
-    TyTuple,
     TyTypeVar,
     TyTypeVarTuple,
     TyUnion,
@@ -146,12 +145,10 @@ def _to_ir(tp: object, env: ParseEnv) -> Ty:
         return TyLiteral(values=tuple(_litval_of(a) for a in args))
 
     if origin is tuple:
-        if args and args[-1] is Ellipsis:
-            items = tuple(_to_ir(a, env) for a in args[:-1]) + (
-                TyName(module="builtins", name="Ellipsis"),
-            )
-            return TyApp(base=TyName(module="builtins", name="tuple"), args=items)
-        return TyTuple(items=tuple(_to_ir(a, env) for a in args))
+        return TyApp(
+            base=TyName(module="builtins", name="tuple"),
+            args=tuple(_to_ir(a, env) for a in args),
+        )
 
     if origin in (t.Callable, abc.Callable):
         if args and args[0] is Ellipsis:
@@ -226,7 +223,7 @@ def parse_root(tp: object, env: Optional[ParseEnv] = None) -> TyRoot:
             obj = _missing
         else:
             break
-    
+
     ty = _to_ir(obj, env) if obj is not _missing else None
     return TyRoot(
         ty=ty,

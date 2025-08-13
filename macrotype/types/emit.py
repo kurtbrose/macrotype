@@ -13,7 +13,6 @@ from .ir import (
     TyNever,
     TyParamSpec,
     TyRoot,
-    TyTuple,
     TyTypeVar,
     TyTypeVarTuple,
     TyUnion,
@@ -103,11 +102,8 @@ def _emit_no_annos(n: Ty, ctx: EmitCtx) -> str:
             return " | ".join(_emit(o, ctx) for o in opts)
 
         case TyApp(base=base, args=args):
-            # tuple variadic printed as 'tuple[T, ...]' by virtue of Ellipsis name
+            # tuple variadic printed as 'tuple[T, Ellipsis]' via Ellipsis name
             return f"{_emit(base, ctx)}[{', '.join(_emit(a, ctx) for a in args)}]"
-
-        case TyTuple(items=items):
-            return f"tuple[{', '.join(_emit(i, ctx) for i in items)}]"
 
         case TyLiteral(values=vals):
             ctx.need("Literal")

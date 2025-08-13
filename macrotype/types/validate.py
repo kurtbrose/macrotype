@@ -13,7 +13,6 @@ from .ir import (
     TyNever,
     TyParamSpec,
     TyRoot,
-    TyTuple,
     TyTypeVar,
     TyTypeVarTuple,
     TyUnion,
@@ -56,16 +55,8 @@ def _v(node: Ty, *, ctx: Context) -> None:
                 _validate_literal_value(v)
             return
 
-        # Tuple (fixed-length)
-        case TyTuple(items=items):
-            for it in items:
-                _v(it, ctx="tuple_items")
-            return
-
-        # tuple[T, ...] (variadic) or tuple[T1, ..., Tk, ...]
+        # tuple[...] forms (fixed-length or variadic)
         case TyApp(base=TyName(module="builtins", name="tuple"), args=args):
-            if not args:
-                raise TypeValidationError("tuple[...] must have at least one argument")
             # Ellipsis, if present, must be last; only one allowed
             ell_count = sum(
                 1

@@ -1,7 +1,7 @@
 # Generated via: macrotype macrotype
 # Do not edit by hand
-from macrotype.types.ir import NormalizedTy, Ty, TyApp, TyRoot
-from typing import Literal
+from macrotype.types.ir import Ty, TyApp, TyRoot
+from typing import Literal, Literal
 
 class TypeValidationError(TypeError): ...
 
