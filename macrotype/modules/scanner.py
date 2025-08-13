@@ -144,25 +144,26 @@ def _scan_class(cls: type) -> ClassSymbol:
         raw = attr
         while hasattr(raw, "__wrapped__"):
             raw = raw.__wrapped__
+        decorators = ()
+        fn = None
         if inspect.isfunction(raw):
-            members.append(_scan_function(raw))
+            fn = raw
         elif isinstance(raw, staticmethod):
             fn = raw.__func__
-            mem = _scan_function(fn)
-            mem = replace(mem, decorators=mem.decorators + ("staticmethod",))
-            members.append(mem)
+            decorators = ("staticmethod",)
         elif isinstance(raw, classmethod):
             fn = raw.__func__
-            mem = _scan_function(fn)
-            mem = replace(mem, decorators=mem.decorators + ("classmethod",))
-            members.append(mem)
+            decorators = ("classmethod",)
         elif isinstance(raw, property):
-            if raw.fget is not None:
-                mem = _scan_function(raw.fget)
-                mem = replace(mem, decorators=mem.decorators + ("property",))
-                members.append(mem)
+            fn = raw.fget
+            decorators = ("property",)
         elif inspect.isclass(raw) and raw.__qualname__.startswith(cls.__qualname__ + "."):
             members.append(_scan_class(raw))
+        
+        if fn:
+            mem = _scan_function(fn)
+            mem = replace(mem, decorators=mem.decorators + decorators)
+            members.append(mem)
 
     return ClassSymbol(
         name=name.split(".")[-1],
