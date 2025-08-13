@@ -127,6 +127,9 @@ UNANNOTATED_CONST = 42
 BOOL_TRUE = True
 BOOL_FALSE = False
 
+# Variable to test Site provenance handling
+SITE_PROV_VAR: int = 1
+
 
 # Unannotated parameters infer type from default values
 def mult(a, b=1):

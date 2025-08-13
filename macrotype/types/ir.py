@@ -4,21 +4,6 @@ import enum
 from dataclasses import dataclass, field
 from typing import NewType, Optional, TypeAlias
 
-# =========================
-# Shared helpers / metadata
-# =========================
-
-
-@dataclass(frozen=True)
-class Provenance:
-    """Non-semantic source info (for diagnostics), e.g. module/file/line."""
-
-    module: str
-    qualname: str
-    file: Optional[str] = None
-    line: Optional[int] = None
-
-
 # Literal value shape per PEP 586: primitives, Enums, and nested tuples thereof.
 LitPrim: TypeAlias = int | bool | str | bytes | None | enum.Enum
 LitVal: TypeAlias = LitPrim | tuple["LitVal", ...]
@@ -39,15 +24,8 @@ class TyRoot:
 
 @dataclass(frozen=True, kw_only=True)
 class Ty:
-    """
-    Base IR node (type-level AST).
+    """Base IR node (type-level AST)."""
 
-    Notes:
-    - `prov` is non-semantic metadata; excluded from equality/hash.
-    - Passes should ignore it unless producing diagnostics.
-    """
-
-    prov: Optional[Provenance] = field(default=None, compare=False, hash=False, repr=False)
     annotations: Optional["TyAnnoTree"] = field(default=None, repr=False)
 
 

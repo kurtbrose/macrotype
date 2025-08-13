@@ -105,6 +105,8 @@ BOOL_TRUE: bool
 
 BOOL_FALSE: bool
 
+SITE_PROV_VAR: int
+
 def mult(a, b: int): ...
 
 def takes_optional(x): ...

@@ -1,10 +1,17 @@
 # Generated via: macrotype macrotype
 # Do not edit by hand
 from dataclasses import dataclass
-from macrotype.types.ir import Provenance, TyRoot
+from macrotype.types.ir import TyRoot
 from typing import Literal
 
 EllipsisType = ellipsis
+
+@dataclass(frozen=True)
+class Provenance:
+    module: str
+    qualname: str
+    file: None | str
+    line: None | int
 
 @dataclass(frozen=True, kw_only=True)
 class Symbol:
@@ -19,6 +26,7 @@ class Site:
     index: None | int
     raw: object
     ty: None | TyRoot
+    prov: None | Provenance
 
 @dataclass(frozen=True, kw_only=True)
 class VarSymbol(Symbol):

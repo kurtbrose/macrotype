@@ -182,3 +182,11 @@ def test_td_inheritance(idx):
     assert sub["kind"] == "ClassSymbol"
     # td base shows up as a base site
     assert any(b["role"] == "base" for b in sub["bases"])
+
+
+def test_site_provenance():
+    ann = importlib.import_module("tests.annotations")
+    mi = scan_module(ann)
+    sym = next(s for s in mi.symbols if s.name == "SITE_PROV_VAR")
+    assert sym.prov is not None
+    assert sym.site.prov is sym.prov
