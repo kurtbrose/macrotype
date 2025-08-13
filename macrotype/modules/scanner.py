@@ -134,9 +134,7 @@ def _scan_class(cls: type) -> ClassSymbol:
             continue
         site = Site(role="var", name=fname, raw=rann)
         init_val = cls.__dict__.get(fname, Ellipsis)
-        members.append(
-            VarSymbol(name=fname, site=site, initializer=init_val)
-        )
+        members.append(VarSymbol(name=fname, site=site, initializer=init_val))
 
     for mname, attr in cls.__dict__.items():
         if _is_dunder(mname):
@@ -159,7 +157,7 @@ def _scan_class(cls: type) -> ClassSymbol:
             decorators = ("property",)
         elif inspect.isclass(raw) and raw.__qualname__.startswith(cls.__qualname__ + "."):
             members.append(_scan_class(raw))
-        
+
         if fn:
             mem = _scan_function(fn)
             mem = replace(mem, decorators=mem.decorators + decorators)

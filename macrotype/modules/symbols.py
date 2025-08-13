@@ -13,6 +13,7 @@ class Symbol:
 
     name: str
 
+
 @dataclass(frozen=True, kw_only=True)
 class Site:
     role: Literal["var", "return", "param", "base", "alias_value", "td_field"]
