@@ -7,7 +7,6 @@ from macrotype.types.ir import (
     TyLiteral,
     TyName,
     TyRoot,
-    TyTuple,
     TyUnion,
 )
 from macrotype.types.normalize import norm
@@ -73,12 +72,12 @@ CASES = [
     ),
     # Tuple elements normalized recursively
     (
-        TyTuple(items=(typ("List"),)),
-        TyTuple(items=(b("list"),)),
+        TyApp(base=b("tuple"), args=(typ("List"),)),
+        TyApp(base=b("tuple"), args=(b("list"),)),
     ),
     (
-        TyTuple(items=(TyApp(base=typ("List"), args=(b("int"),)),)),
-        TyTuple(items=(TyApp(base=b("list"), args=(b("int"),)),)),
+        TyApp(base=b("tuple"), args=(TyApp(base=typ("List"), args=(b("int"),)),)),
+        TyApp(base=b("tuple"), args=(TyApp(base=b("list"), args=(b("int"),)),)),
     ),
 ]
 
