@@ -179,7 +179,7 @@ class Basic:
     simple: list[str]
     mapping: dict[str, int]
     optional: Optional[int]
-    union: Union[int, str]
+    union: Union[int, str]  # typing.Union should remain unaltered
     pipe_union: int | str
     func: Callable[[int, str], bool]
     annotated: Annotated[int, "meta"]
