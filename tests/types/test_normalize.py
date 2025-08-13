@@ -1,23 +1,32 @@
 from __future__ import annotations
 
+import builtins
+import typing as t
+from types import EllipsisType
+
 from macrotype.types.ir import (
     TyAnnoTree,
     TyAny,
     TyApp,
     TyLiteral,
-    TyName,
+    TyNever,
     TyRoot,
+    TyType,
     TyUnion,
 )
 from macrotype.types.normalize import norm
 
 
-def b(name: str) -> TyName:  # builtins
-    return TyName(module="builtins", name=name)
+def b(name: str) -> TyType:  # builtins
+    if name == "Ellipsis":
+        return TyType(type_=EllipsisType)
+    if name == "None":
+        return TyType(type_=type(None))
+    return TyType(type_=getattr(builtins, name))
 
 
-def typ(name: str) -> TyName:  # typing
-    return TyName(module="typing", name=name)
+def typ(name: str) -> TyType:  # typing
+    return TyType(type_=getattr(t, name))
 
 
 # ---- table: (ResolvedTy -> NormalizedTy) ----
@@ -35,7 +44,7 @@ CASES = [
     # Empty union → Never (policy)
     (
         TyUnion(options=()),
-        b("Never"),  # we'll create as TyNever via norm; see assertion below
+        TyNever(),
     ),
     # typing.List -> list
     (
@@ -54,14 +63,12 @@ CASES = [
     ),
     # Nested annotations preserved
     (
-        TyName(
-            module="builtins",
-            name="int",
+        TyType(
+            type_=int,
             annotations=TyAnnoTree(annos=("b",), child=TyAnnoTree(annos=("a",))),
         ),
-        TyName(
-            module="builtins",
-            name="int",
+        TyType(
+            type_=int,
             annotations=TyAnnoTree(annos=("b",), child=TyAnnoTree(annos=("a",))),
         ),
     ),
@@ -86,24 +93,16 @@ def test_normalize_table() -> None:
     got: list[tuple[object, object]] = []
     for src, exp in CASES:
         n = norm(TyRoot(ty=src))
-        if isinstance(src, TyUnion) and len(src.options) == 0:
-            assert repr(n.ty) == "TyNever()", "Empty union should normalize to Never"
-        else:
-            got.append((src, n.ty))
-    # Compare remaining
-    expected = [
-        pair for pair in CASES if not (isinstance(pair[0], TyUnion) and len(pair[0].options) == 0)
-    ]
-    assert expected == got
+        got.append((src, n.ty))
+    assert CASES == got
 
 
 def test_idempotence() -> None:
     # quick fuzz over representative shapes
     reps = [
         TyUnion(options=(b("int"), TyUnion(options=(b("str"), b("int"))))),
-        TyName(
-            module="builtins",
-            name="int",
+        TyType(
+            type_=int,
             annotations=TyAnnoTree(annos=("b",), child=TyAnnoTree(annos=("a",))),
         ),
         TyApp(base=typ("List"), args=(b("int"),)),

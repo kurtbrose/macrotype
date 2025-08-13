@@ -5,6 +5,7 @@ import enum
 import types as _types
 import typing as t
 from dataclasses import dataclass, replace
+from types import EllipsisType
 from typing import Optional, get_args, get_origin
 
 from .ir import (
@@ -17,10 +18,10 @@ from .ir import (
     TyCallable,
     TyForward,
     TyLiteral,
-    TyName,
     TyNever,
     TyParamSpec,
     TyRoot,
+    TyType,
     TyTypeVar,
     TyTypeVarTuple,
     TyUnion,
@@ -47,7 +48,7 @@ class ParseEnv:
 # ---------- Helpers ----------
 
 
-def _tyname_of(obj: object) -> Ty:
+def _tytype_of(obj: object) -> Ty:
     # ForwardRef-like strings (e.g., "User")
     if isinstance(obj, str):
         return TyForward(qualname=obj)
@@ -65,11 +66,11 @@ def _tyname_of(obj: object) -> Ty:
 
     # None value / NoneType
     if obj is None or obj is type(None):  # noqa: E721
-        return TyName(module="builtins", name="None")
+        return TyType(type_=type(None))
 
     # Ellipsis literal
     if obj is Ellipsis:
-        return TyName(module="builtins", name="Ellipsis")
+        return TyType(type_=EllipsisType)
 
     # TypeVar / ParamSpec / TypeVarTuple at use-site
     if isinstance(obj, t.TypeVar):
@@ -87,14 +88,8 @@ def _tyname_of(obj: object) -> Ty:
     if hasattr(obj, "__class__") and obj.__class__ is t.TypeVarTuple:
         return TyTypeVarTuple(name=obj.__name__)  # type: ignore[attr-defined]
 
-    # Classes / aliases → TyName(module, qualname)
-    mod = getattr(obj, "__module__", None)
-    qn = getattr(obj, "__qualname__", None) or getattr(obj, "__name__", None)
-    if mod and qn:
-        return TyName(module=mod, name=qn)
-
-    # Fallback (opaque)
-    return TyName(module=None, name=repr(obj))
+    # Classes / aliases → TyType(obj)
+    return TyType(type_=obj)
 
 
 def _maybe_to_ir(tp: object | None, env: Optional[ParseEnv] = None) -> Ty | None:
@@ -121,7 +116,7 @@ def _to_ir(tp: object, env: ParseEnv) -> Ty:
     if origin is None:
         if tp in (t.ClassVar, t.Final, t.Required, t.NotRequired):
             raise ValueError("Qualifiers like ClassVar/Final are only valid at the root")
-        return _tyname_of(tp)
+        return _tytype_of(tp)
 
     args = get_args(tp)
 
@@ -146,7 +141,7 @@ def _to_ir(tp: object, env: ParseEnv) -> Ty:
 
     if origin is tuple:
         return TyApp(
-            base=TyName(module="builtins", name="tuple"),
+            base=TyType(type_=tuple),
             args=tuple(_to_ir(a, env) for a in args),
         )
 
@@ -167,18 +162,18 @@ def _to_ir(tp: object, env: ParseEnv) -> Ty:
 
     if getattr(t, "Concatenate", None) is origin:
         return TyApp(
-            base=TyName(module="typing", name="Concatenate"),
+            base=TyType(type_=t.Concatenate),
             args=tuple(_to_ir(a, env) for a in args),
         )
 
     if origin is type:
         return TyApp(
-            base=TyName(module="builtins", name="type"),
+            base=TyType(type_=type),
             args=tuple(_to_ir(a, env) for a in args),
         )
 
     if getattr(tp, "__module__", None) == "typing":
-        base = _tyname_of(tp)
+        base = _tytype_of(tp)
     else:
         base = _to_ir(origin, env)
     return TyApp(base=base, args=tuple(_to_ir(a, env) for a in args))
@@ -246,6 +241,6 @@ def parse(tp: object, env: Optional[ParseEnv] = None) -> ParsedTy:
 #
 #     Final, ClassVar, Required, NotRequired are modeled via flags on ``TyRoot``.
 #
-#     Unknown/future typing.Foo[...] falls back to ``TyApp(TyName("typing","Foo"), args_ir)`` — lossless, pass‑through.
+#     Unknown/future typing.Foo[...] falls back to ``TyApp(TyType(type_=typing.Foo), args_ir)`` — lossless, pass-through.
 #
 #     Forward references handled both as strings and ``typing.ForwardRef``.

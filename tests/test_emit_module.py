@@ -1,15 +1,16 @@
 from __future__ import annotations
 
+import builtins
 from types import ModuleType
 
 from macrotype.emit_module import emit_module
 from macrotype.scanner import ModuleInfo
-from macrotype.types.ir import TyAny, TyApp, TyName, TyRoot
+from macrotype.types.ir import TyAny, TyApp, TyRoot, TyType
 from macrotype.types.symbols import AliasSymbol, ClassSymbol, FuncSymbol, Site, VarSymbol
 
 
-def b(name: str) -> TyName:  # builtins helper
-    return TyName(module="builtins", name=name)
+def b(name: str) -> TyType:  # builtins helper
+    return TyType(type_=getattr(builtins, name))
 
 
 # ---- table: ModuleInfo -> emitted lines ----

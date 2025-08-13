@@ -51,18 +51,12 @@ class TyNever(Ty):
 
 
 @dataclass(frozen=True, kw_only=True)
-class TyName(Ty):
+class TyType(Ty):
     """
-    A named (possibly-qualified) type without applied parameters.
-
-    Examples:
-      - `int` → TyName("builtins", "int")
-      - `typing.Sequence` → TyName("typing", "Sequence")
-      - `MyClass` → TyName("mymod", "MyClass")
+    A (possibly annotated) regular python type, like int, MyClass, or Sequence.
     """
 
-    module: Optional[str]
-    name: str
+    type_: type
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -71,7 +65,7 @@ class TyApp(Ty):
     Generic application (type constructor applied to type arguments).
 
     Examples:
-      - `list[int]` → TyApp(base=TyName("builtins","list"), args=(TyName("builtins","int"),))
+      - `list[int]` → TyApp(base=TyType(type_=list), args=(TyType(type_=int),))
       - `dict[str, bool]`
       - `Box[T]` where `Box` is user generic
       - `type[Foo]` / `typing.Type[Foo]`

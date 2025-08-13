@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import builtins
 import enum
 import typing as t
+from types import EllipsisType
 
 import pytest
 
@@ -13,10 +15,10 @@ from macrotype.types.ir import (
     TyCallable,
     TyForward,
     TyLiteral,
-    TyName,
     TyNever,
     TyParamSpec,
     TyRoot,
+    TyType,
     TyTypeVar,
     TyTypeVarTuple,
     TyUnion,
@@ -26,12 +28,16 @@ from macrotype.types.parse import _append_ann_child, parse
 
 
 # ----- helpers -----
-def b(name: str) -> TyName:
-    return TyName(module="builtins", name=name)
+def b(name: str) -> TyType:
+    if name == "Ellipsis":
+        return TyType(type_=EllipsisType)
+    if name == "None":
+        return TyType(type_=type(None))
+    return TyType(type_=getattr(builtins, name))
 
 
-def typ(name: str) -> TyName:
-    return TyName(module="typing", name=name)
+def typ(name: str) -> TyType:
+    return TyType(type_=getattr(t, name))
 
 
 # Wrap expected types in TyRoot with qualifier flags
@@ -171,7 +177,7 @@ CASES: list[tuple[object, TyRoot]] = [
     # Annotated
     (
         t.Annotated[int, "x"],
-        r(TyName(module="builtins", name="int"), annotations=TyAnnoTree(annos=("x",))),
+        r(TyType(type_=int), annotations=TyAnnoTree(annos=("x",))),
     ),
     # ClassVar / Final / Required / NotRequired
     (t.ClassVar[int], r(b("int"), classvar=True)),
@@ -192,7 +198,7 @@ CASES: list[tuple[object, TyRoot]] = [
     # forward ref by string
     ("User", r(TyForward(qualname="User"))),
     # collections.abc generics parse (kept as names/apps; normalization can fold later)
-    (t.Deque[int], r(TyApp(base=typ("Deque"), args=(b("int"),)))),
+    (t.Deque[int], r(TyApp(base=TyType(type_=t.Deque[int]), args=(b("int"),)))),
 ]
 
 # Optional cases depending on runtime features
@@ -200,7 +206,7 @@ if AliasListT is not None:
     CASES.append(
         (
             AliasListT[int],
-            r(TyApp(base=TyName(module=__name__, name="AliasListT"), args=(b("int"),))),
+            r(TyApp(base=TyType(type_=AliasListT), args=(b("int"),))),
         )
     )
 
@@ -212,8 +218,8 @@ def test_parse_table_driven():
 def test_user_generic_application():
     got = parse(Box[int]).ty
     assert isinstance(got, TyApp)
-    assert isinstance(got.base, TyName)
-    assert got.base.name == "Box" and got.base.module == Box.__module__
+    assert isinstance(got.base, TyType)
+    assert got.base.type_ is Box
     assert got.args == (b("int"),)
 
 

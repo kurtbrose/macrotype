@@ -1,14 +1,18 @@
 from __future__ import annotations
 
+import builtins
+import typing as t
+from types import EllipsisType
+
 import pytest
 
 from macrotype.types.ir import (
     TyApp,
     TyCallable,
     TyLiteral,
-    TyName,
     TyParamSpec,
     TyRoot,
+    TyType,
     TyTypeVarTuple,
     TyUnion,
     TyUnpack,
@@ -16,12 +20,16 @@ from macrotype.types.ir import (
 from macrotype.types.validate import TypeValidationError, validate
 
 
-def b(name: str) -> TyName:
-    return TyName(module="builtins", name=name)
+def b(name: str) -> TyType:
+    if name == "Ellipsis":
+        return TyType(type_=EllipsisType)
+    if name == "None":
+        return TyType(type_=type(None))
+    return TyType(type_=getattr(builtins, name))
 
 
-def typ(name: str) -> TyName:
-    return TyName(module="typing", name=name)
+def typ(name: str) -> TyType:
+    return TyType(type_=getattr(t, name))
 
 
 # -------- GOOD CASES (should pass) --------

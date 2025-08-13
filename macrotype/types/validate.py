@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import typing as t
+from types import EllipsisType
 from typing import Literal
 
 from .ir import (
@@ -9,10 +11,10 @@ from .ir import (
     TyApp,
     TyCallable,
     TyLiteral,
-    TyName,
     TyNever,
     TyParamSpec,
     TyRoot,
+    TyType,
     TyTypeVar,
     TyTypeVarTuple,
     TyUnion,
@@ -40,13 +42,11 @@ def _v(node: Ty, *, ctx: Context) -> None:
             return
 
         # Names: only special-case Ellipsis outside allowed spots
-        case TyName(module="builtins", name="Ellipsis"):
-            if ctx not in ("tuple_items", "concat_args"):
+        case TyType(type_=tp):
+            if tp is EllipsisType and ctx not in ("tuple_items", "concat_args"):
                 raise TypeValidationError(
                     "Ellipsis is only valid in tuple[...] or Concatenate[...] contexts"
                 )
-            return
-        case TyName():
             return
 
         # Literal values must be PEP-586 legal (we assume parser kept them legal)
@@ -56,19 +56,11 @@ def _v(node: Ty, *, ctx: Context) -> None:
             return
 
         # tuple[...] forms (fixed-length or variadic)
-        case TyApp(base=TyName(module="builtins", name="tuple"), args=args):
+        case TyApp(base=TyType(type_=tuple), args=args):
             # Ellipsis, if present, must be last; only one allowed
-            ell_count = sum(
-                1
-                for a in args
-                if isinstance(a, TyName) and a.module == "builtins" and a.name == "Ellipsis"
-            )
+            ell_count = sum(1 for a in args if isinstance(a, TyType) and a.type_ is EllipsisType)
             if ell_count:
-                if not (
-                    isinstance(args[-1], TyName)
-                    and args[-1].module == "builtins"
-                    and args[-1].name == "Ellipsis"
-                ):
+                if not (isinstance(args[-1], TyType) and args[-1].type_ is EllipsisType):
                     raise TypeValidationError("In tuple[...,], Ellipsis must be the final argument")
                 if ell_count > 1:
                     raise TypeValidationError("Only one Ellipsis allowed in tuple[...]")
@@ -119,9 +111,8 @@ def _v(node: Ty, *, ctx: Context) -> None:
             if (
                 len(ps) == 1
                 and isinstance(ps[0], TyApp)
-                and isinstance(ps[0].base, TyName)
-                and ps[0].base.module == "typing"
-                and ps[0].base.name == "Concatenate"
+                and isinstance(ps[0].base, TyType)
+                and ps[0].base.type_ is t.Concatenate
             ):
                 _validate_concatenate(ps[0])
             else:
@@ -166,11 +157,7 @@ def _validate_literal_value(v: object) -> None:
 
 def _validate_concatenate(node: TyApp) -> None:
     # typing.Concatenate[head..., P] — last arg must be ParamSpec; heads are regular types (no Unpack)
-    assert (
-        isinstance(node.base, TyName)
-        and node.base.module == "typing"
-        and node.base.name == "Concatenate"
-    )
+    assert isinstance(node.base, TyType) and node.base.type_ is t.Concatenate
     if not node.args:
         raise TypeValidationError("Concatenate[...] must have at least one argument")
     *heads, tail = node.args
