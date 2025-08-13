@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import typing as t
 from dataclasses import dataclass, replace
 
 from .ir import (
@@ -10,9 +11,9 @@ from .ir import (
     TyApp,
     TyCallable,
     TyLiteral,
-    TyName,
     TyNever,
     TyRoot,
+    TyType,
     TyUnion,
     TyUnpack,
 )
@@ -35,12 +36,12 @@ class NormOpts:
 _DEFAULT = NormOpts()
 
 _TYPING_TO_BUILTINS = {
-    ("typing", "List"): ("builtins", "list"),
-    ("typing", "Dict"): ("builtins", "dict"),
-    ("typing", "Tuple"): ("builtins", "tuple"),
-    ("typing", "Set"): ("builtins", "set"),
-    ("typing", "FrozenSet"): ("builtins", "frozenset"),
-    ("typing", "Type"): ("builtins", "type"),
+    t.List: list,
+    t.Dict: dict,
+    t.Tuple: tuple,
+    t.Set: set,
+    t.FrozenSet: frozenset,
+    t.Type: type,
 }
 
 
@@ -67,12 +68,9 @@ def _norm(n: Ty, o: NormOpts) -> Ty:
         case TyAny() | TyNever():
             res = n
 
-        case TyName(module=mod, name=name):
-            if o.typing_to_builtins:
-                key = (mod, name)
-                if key in _TYPING_TO_BUILTINS:
-                    m, k = _TYPING_TO_BUILTINS[key]
-                    return TyName(module=m, name=k)
+        case TyType(type_=tp):
+            if o.typing_to_builtins and tp in _TYPING_TO_BUILTINS:
+                return TyType(type_=_TYPING_TO_BUILTINS[tp])
             res = n
 
         case TyApp(base=base, args=args):

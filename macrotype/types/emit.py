@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import builtins
 from dataclasses import dataclass, field, replace
+from types import EllipsisType
 
 from .ir import (
     Ty,
@@ -9,10 +10,10 @@ from .ir import (
     TyApp,
     TyCallable,
     TyLiteral,
-    TyName,
     TyNever,
     TyParamSpec,
     TyRoot,
+    TyType,
     TyTypeVar,
     TyTypeVarTuple,
     TyUnion,
@@ -83,19 +84,21 @@ def _emit_no_annos(n: Ty, ctx: EmitCtx) -> str:
             ctx.need("Never")
             return "Never"
 
-        case TyName(module=None, name=nm):
-            return nm
-        case TyName(module="builtins", name=nm):
-            return nm
-        case TyName(module="typing", name=nm):
-            # If caller passed e.g. TyName("typing","Type"), you can either keep it qualified
-            # or map via prefer_from_typing.
-            if ctx.prefer_from_typing:
-                ctx.need(nm)
-                return nm
-            return f"typing.{nm}"
-        case TyName(module=m, name=nm):
-            return f"{m}.{nm}"
+        case TyType(type_=tp):
+            if tp is type(None):
+                return "None"
+            if tp is EllipsisType:
+                return "Ellipsis"
+            mod = getattr(tp, "__module__", None)
+            name = getattr(tp, "__qualname__", getattr(tp, "__name__", repr(tp)))
+            if mod in (None, "builtins"):
+                return name
+            if mod == "typing":
+                if ctx.prefer_from_typing:
+                    ctx.need(name)
+                    return name
+                return f"typing.{name}"
+            return f"{mod}.{name}"
 
         case TyUnion(options=opts):
             # opts should already be normalized (flat/sorted)

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import builtins
 import typing as t
 
 from macrotype.types.ir import (
@@ -7,19 +8,17 @@ from macrotype.types.ir import (
     TyApp,
     TyCallable,
     TyForward,
-    TyName,
+    TyType,
     TyUnion,
 )
 from macrotype.types.parse import parse
 from macrotype.types.resolve import ResolveEnv, resolve
 
 
-def b(name: str) -> TyName:
-    return TyName(module="builtins", name=name)
-
-
-def typ(name: str) -> TyName:
-    return TyName(module="typing", name=name)
+def b(name: str) -> TyType:
+    if name == "None":
+        return TyType(type_=type(None))
+    return TyType(type_=getattr(builtins, name))
 
 
 # A tiny user generic to exercise qualification/no-op paths
@@ -32,12 +31,16 @@ class Box(t.Generic[T]):  # noqa: D401
     pass
 
 
+class User:
+    pass
+
+
 # ----- resolution environment -----
 ENV = ResolveEnv(
     module="mymod.test",
     imports={
-        "User": "pkg.models.User",
-        "Box": f"{Box.__module__}.Box",  # allow qualifying bare 'Box' if it ever appears
+        "User": User,
+        "Box": Box,  # allow qualifying bare 'Box' if it ever appears
     },
 )
 
@@ -45,31 +48,31 @@ ENV = ResolveEnv(
 # ----- table: (source annotation object -> expected Resolved Ty) -----
 CASES: list[tuple[object, Ty]] = [
     # 1) Forward ref as string
-    ("User", TyName(module="pkg.models", name="User")),
+    ("User", TyType(type_=User)),
     # 2) list["User"] → list[pkg.models.User]
     (
         list["User"],  # noqa: F821
-        TyApp(base=b("list"), args=(TyName(module="pkg.models", name="User"),)),
+        TyApp(base=b("list"), args=(TyType(type_=User),)),
     ),
     # 3) typing.Type["User"] → type[pkg.models.User]
     (
         t.Type["User"],  # noqa: F821
-        TyApp(base=b("type"), args=(TyName(module="pkg.models", name="User"),)),
+        TyApp(base=b("type"), args=(TyType(type_=User),)),
     ),
     # 4) No-op on already-qualified user generic
     (
         Box[int],
-        TyApp(base=TyName(module=Box.__module__, name="Box"), args=(b("int"),)),
+        TyApp(base=TyType(type_=Box), args=(b("int"),)),
     ),
     # 5) Union containing forward & normal
     (
         t.Union["User", int],  # noqa: F821
-        TyUnion(options=(TyName(module="pkg.models", name="User"), b("int"))),
+        TyUnion(options=(TyType(type_=User), b("int"))),
     ),
     # 6) Callable[..., "User"]
     (
         t.Callable[..., "User"],  # noqa: F821
-        TyCallable(params=..., ret=TyName(module="pkg.models", name="User")),
+        TyCallable(params=..., ret=TyType(type_=User)),
     ),
 ]
 

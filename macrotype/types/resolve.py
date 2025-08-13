@@ -11,10 +11,10 @@ from .ir import (
     TyCallable,
     TyForward,
     TyLiteral,
-    TyName,
     TyNever,
     TyParamSpec,
     TyRoot,
+    TyType,
     TyTypeVar,
     TyTypeVarTuple,
     TyUnion,
@@ -29,13 +29,13 @@ class ResolveEnv:
     """
     Context for name resolution.
 
-    imports: mapping from simple name -> fully qualified 'pkg.mod.Name'
-      e.g., {"User": "myapp.models.User", "Box": "myapp.types.Box"}
+    imports: mapping from simple name -> actual type object
+      e.g., {"User": myapp.models.User, "Box": myapp.types.Box}
     module: the current module we're resolving within (used only for provenance/error messages for now)
     """
 
     module: str
-    imports: dict[str, str]
+    imports: dict[str, type]
     # You can add: globals: dict[str, object] if you decide to eval forward refs later
 
 
@@ -59,34 +59,18 @@ def resolve(t: ParsedTy | Ty, env: ResolveEnv) -> ResolvedTy:
 def _res(node: Ty, env: ResolveEnv) -> Ty:
     ann = node.annotations
     match node:
-        case TyAny() | TyNever() | TyParamSpec() | TyTypeVar() | TyTypeVarTuple():
-            res = node
-
-        case TyName(module=None, name=name):
-            if fq := env.imports.get(name):
-                mod, _, nm = fq.rpartition(".")
-                res = TyName(module=mod, name=nm)
-            else:
-                res = node
-
-        case TyName(module="typing", name="Type"):
-            res = TyName(module="builtins", name="type")
-
-        case TyName():
+        case TyAny() | TyNever() | TyParamSpec() | TyTypeVar() | TyTypeVarTuple() | TyType():
             res = node
 
         case TyForward(qualname=qn):
-            if fq := env.imports.get(qn):
-                mod, _, nm = fq.rpartition(".")
-                res = TyName(module=mod, name=nm)
+            if tp := env.imports.get(qn):
+                res = TyType(type_=tp)
             else:
                 res = node  # leave unresolved
 
         case TyApp(base=base, args=args):
             base_r = _res(base, env)
             args_r = tuple(_res(a, env) for a in args)
-            if isinstance(base_r, TyName) and base_r.module == "typing" and base_r.name == "Type":
-                base_r = TyName(module="builtins", name="type")
             res = TyApp(base=base_r, args=args_r)
 
         case TyUnion(options=opts):

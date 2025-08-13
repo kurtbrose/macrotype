@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import builtins
+import typing as t
+from types import EllipsisType
+
 from macrotype.types.emit import EmitCtx, emit_top
 from macrotype.types.ir import (
     TyAnnoTree,
@@ -7,21 +11,25 @@ from macrotype.types.ir import (
     TyApp,
     TyCallable,
     TyLiteral,
-    TyName,
     TyNever,
     TyRoot,
+    TyType,
     TyTypeVarTuple,
     TyUnion,
     TyUnpack,
 )
 
 
-def b(n: str) -> TyName:
-    return TyName(module="builtins", name=n)
+def b(n: str) -> TyType:
+    if n == "Ellipsis":
+        return TyType(type_=EllipsisType)
+    if n == "None":
+        return TyType(type_=type(None))
+    return TyType(type_=getattr(builtins, n))
 
 
-def typ(n: str) -> TyName:
-    return TyName(module="typing", name=n)
+def typ(n: str) -> TyType:
+    return TyType(type_=getattr(t, n))
 
 
 CASES: list[tuple[TyRoot, str, set[str]]] = [
@@ -31,15 +39,14 @@ CASES: list[tuple[TyRoot, str, set[str]]] = [
     (TyRoot(ty=TyApp(base=b("list"), args=(b("str"),))), "list[str]", set()),
     (TyRoot(ty=TyLiteral(values=(1, "x"))), "Literal[1, 'x']", {"Literal"}),
     (
-        TyRoot(ty=TyName(module="builtins", name="int", annotations=TyAnnoTree(annos=("x",)))),
+        TyRoot(ty=TyType(type_=int, annotations=TyAnnoTree(annos=("x",)))),
         "Annotated[int, 'x']",
         {"Annotated"},
     ),
     (
         TyRoot(
-            ty=TyName(
-                module="builtins",
-                name="int",
+            ty=TyType(
+                type_=int,
                 annotations=TyAnnoTree(annos=("a",), child=TyAnnoTree(annos=("b",))),
             )
         ),
