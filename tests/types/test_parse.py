@@ -9,7 +9,6 @@ from macrotype.types.ir import (
     TyAny,
     TyApp,
     TyCallable,
-    TyClassVar,
     TyForward,
     TyLiteral,
     TyName,
@@ -140,10 +139,10 @@ CASES: list[tuple[object, Ty]] = [
         t.Annotated[int, "x"],
         TyName(module="builtins", name="int", annotations=TyAnnoTree(annos=("x",))),
     ),
-    # ClassVar / Final / Required / NotRequired (IR unwraps Final/Req)
-    (t.ClassVar[int], TyClassVar(inner=b("int"))),
-    (t.Final[int], b("int")),  # Final is handled at the symbol layer
-    (t.Final, TyAny()),  # bare Final → inner Any here (symbol layer will infer/wrap)
+    # ClassVar / Final / Required / NotRequired
+    (t.ClassVar[int], b("int")),
+    (t.Final[int], b("int")),
+    (t.Final, TyAny()),
     (t.NotRequired[int], b("int")),
     (t.Required[str], b("str")),
     # variables / binders (declaration-like leaves appearing at use sites)
@@ -162,6 +161,14 @@ CASES: list[tuple[object, Ty]] = [
     (t.Deque[int], TyApp(base=typ("Deque"), args=(b("int"),))),
 ]
 
+FLAGS = {
+    repr(t.ClassVar[int]): (False, None, True),
+    repr(t.Final[int]): (True, None, False),
+    repr(t.Final): (True, None, False),
+    repr(t.NotRequired[int]): (False, False, False),
+    repr(t.Required[str]): (False, True, False),
+}
+
 # Optional cases depending on runtime features
 if AliasListT is not None:
     CASES.append(
@@ -173,11 +180,17 @@ if AliasListT is not None:
 
 
 def test_parse_table_driven():
-    assert CASES == [(src, parse(src)) for src, _ in CASES]
+    assert CASES == [(src, parse(src).ty) for src, _ in CASES]
+    for src, _ in CASES:
+        got = parse(src)
+        is_final, is_required, is_classvar = FLAGS.get(repr(src), (False, None, False))
+        assert got.is_final is is_final
+        assert got.is_required is is_required
+        assert got.is_classvar is is_classvar
 
 
 def test_user_generic_application():
-    got = parse(Box[int])
+    got = parse(Box[int]).ty
     assert isinstance(got, TyApp)
     assert isinstance(got.base, TyName)
     assert got.base.name == "Box" and got.base.module == Box.__module__

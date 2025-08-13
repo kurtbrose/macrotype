@@ -6,6 +6,7 @@ from macrotype.types.ir import (
     TyApp,
     TyLiteral,
     TyName,
+    TyRoot,
     TyTuple,
     TyUnion,
 )
@@ -85,12 +86,11 @@ CASES = [
 def test_normalize_table() -> None:
     got: list[tuple[object, object]] = []
     for src, exp in CASES:
-        n = norm(src)
-        # special-case the empty-union policy expected marker above
+        n = norm(TyRoot(ty=src))
         if isinstance(src, TyUnion) and len(src.options) == 0:
-            assert repr(n) == "TyNever()", "Empty union should normalize to Never"
+            assert repr(n.ty) == "TyNever()", "Empty union should normalize to Never"
         else:
-            got.append((src, n))
+            got.append((src, n.ty))
     # Compare remaining
     expected = [
         pair for pair in CASES if not (isinstance(pair[0], TyUnion) and len(pair[0].options) == 0)
@@ -111,6 +111,6 @@ def test_idempotence() -> None:
         TyLiteral(values=(1, 1, "x")),
     ]
     for r in reps:
-        n1 = norm(r)
+        n1 = norm(TyRoot(ty=r))
         n2 = norm(n1)
         assert n1 == n2

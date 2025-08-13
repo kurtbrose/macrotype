@@ -1,7 +1,7 @@
 # Generated via: macrotype macrotype
 # Do not edit by hand
 from dataclasses import dataclass
-from macrotype.types.ir import Ty
+from macrotype.types.ir import NormalizedTy, ResolvedTy, Ty
 
 @dataclass(frozen=True)
 class NormOpts:
@@ -10,7 +10,7 @@ class NormOpts:
     sort_unions: bool
     dedup_unions: bool
 
-def norm(t: ResolvedTy, opts: None | NormOpts) -> NormalizedTy: ...
+def norm(t: ResolvedTy | Ty, opts: None | NormOpts) -> NormalizedTy: ...
 
 def _norm(n: Ty, o: NormOpts) -> Ty: ...
 

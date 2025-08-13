@@ -9,10 +9,10 @@ from .ir import (
     TyAny,
     TyApp,
     TyCallable,
-    TyClassVar,
     TyLiteral,
     TyName,
     TyNever,
+    TyRoot,
     TyTuple,
     TyUnion,
     TyUnpack,
@@ -45,10 +45,19 @@ _TYPING_TO_BUILTINS = {
 }
 
 
-def norm(t: ResolvedTy, opts: NormOpts | None = None) -> NormalizedTy:
+def norm(t: ResolvedTy | Ty, opts: NormOpts | None = None) -> NormalizedTy:
     """Normalize *t* according to *opts*."""
 
-    return NormalizedTy(_norm(t, opts or _DEFAULT))
+    top = t if isinstance(t, TyRoot) else TyRoot(ty=t)
+    inner = _norm(top.ty, opts or _DEFAULT)
+    return NormalizedTy(
+        TyRoot(
+            ty=inner,
+            is_final=top.is_final,
+            is_required=top.is_required,
+            is_classvar=top.is_classvar,
+        )
+    )
 
 
 def _norm(n: Ty, o: NormOpts) -> Ty:
@@ -126,9 +135,6 @@ def _norm(n: Ty, o: NormOpts) -> Ty:
                 params=tuple(_norm(a, o) for a in params),
                 ret=_norm(ret, o),
             )
-
-        case TyClassVar(inner=inner):
-            res = TyClassVar(inner=_norm(inner, o))
 
         case TyUnpack(inner=inner):
             res = TyUnpack(inner=_norm(inner, o))

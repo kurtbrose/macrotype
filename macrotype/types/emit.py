@@ -8,11 +8,11 @@ from .ir import (
     TyAny,
     TyApp,
     TyCallable,
-    TyClassVar,
     TyLiteral,
     TyName,
     TyNever,
     TyParamSpec,
+    TyRoot,
     TyTuple,
     TyTypeVar,
     TyTypeVarTuple,
@@ -38,6 +38,24 @@ class EmitCtx:
 def emit(t: Ty, ctx: EmitCtx | None = None) -> str:
     ctx = ctx or EmitCtx()
     return _emit(t, ctx)
+
+
+def emit_top(t: TyRoot, ctx: EmitCtx | None = None) -> str:
+    ctx = ctx or EmitCtx()
+    inner = _emit(t.ty, ctx)
+    if t.is_classvar:
+        ctx.need("ClassVar")
+        inner = f"ClassVar[{inner}]"
+    if t.is_final:
+        ctx.need("Final")
+        inner = f"Final[{inner}]"
+    if t.is_required is True:
+        ctx.need("Required")
+        inner = f"Required[{inner}]"
+    elif t.is_required is False:
+        ctx.need("NotRequired")
+        inner = f"NotRequired[{inner}]"
+    return inner
 
 
 def _emit(n: Ty, ctx: EmitCtx) -> str:
@@ -102,10 +120,6 @@ def _emit_no_annos(n: Ty, ctx: EmitCtx) -> str:
             ctx.need("Callable")
             params = ", ".join(_emit(p, ctx) for p in ps)
             return f"Callable[[{params}], {_emit(r, ctx)}]"
-
-        case TyClassVar(inner=i):
-            ctx.need("ClassVar")
-            return f"ClassVar[{_emit(i, ctx)}]"
 
         case TyUnpack(inner=i):
             ctx.need("Unpack")
