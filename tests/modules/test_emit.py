@@ -13,7 +13,7 @@ case1 = (
     ModuleInfo(
         mod=mod1,
         symbols=[
-            VarSymbol(name="x", site=Site(role="var", raw=Any)),
+            VarSymbol(name="x", site=Site(role="var", annotation=Any)),
         ],
     ),
     ["from typing import Any", "", "x: Any"],
@@ -24,15 +24,15 @@ case2 = (
     ModuleInfo(
         mod=mod2,
         symbols=[
-            VarSymbol(name="v", site=Site(role="var", raw=Any)),
+            VarSymbol(name="v", site=Site(role="var", annotation=Any)),
             AliasSymbol(
                 name="Alias",
-                value=Site(role="alias_value", raw=list[int]),
+                value=Site(role="alias_value", annotation=list[int]),
             ),
             FuncSymbol(
                 name="f",
-                params=(Site(role="param", name="x", raw=int),),
-                ret=Site(role="return", raw=str),
+                params=(Site(role="param", name="x", annotation=int),),
+                ret=Site(role="return", annotation=str),
             ),
             ClassSymbol(
                 name="C",
@@ -40,7 +40,7 @@ case2 = (
                 members=(
                     VarSymbol(
                         name="y",
-                        site=Site(role="var", name="y", raw=ClassVar[int]),
+                        site=Site(role="var", name="y", annotation=ClassVar[int]),
                     ),
                 ),
             ),

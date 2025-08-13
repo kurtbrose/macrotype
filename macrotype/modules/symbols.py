@@ -17,7 +17,7 @@ class Site:
     role: Literal["var", "return", "param", "base", "alias_value", "td_field"]
     name: Optional[str] = None
     index: Optional[int] = None
-    raw: object
+    annotation: object
 
 
 @dataclass(frozen=True, kw_only=True)

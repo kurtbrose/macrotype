@@ -9,10 +9,10 @@ from .symbols import AliasSymbol, ClassSymbol, FuncSymbol, Symbol, VarSymbol
 
 
 def emit_module(mi: ModuleInfo) -> list[str]:
-    """Emit `.pyi` lines for a ModuleInfo using raw annotations only."""
-    raw_annos = collect_all_annotations(mi)
+    """Emit `.pyi` lines for a ModuleInfo using annotations only."""
+    annotations = collect_all_annotations(mi)
     atoms = set()
-    for ann in raw_annos:
+    for ann in annotations:
         atoms |= flatten_annotation_atoms(ann)
 
     context = mi.mod.__dict__
@@ -38,25 +38,25 @@ def emit_module(mi: ModuleInfo) -> list[str]:
 
 
 def collect_all_annotations(mi: ModuleInfo) -> list[Any]:
-    """Walk ModuleInfo and collect all raw annotations."""
+    """Walk ModuleInfo and collect all annotations."""
     annos: list[Any] = []
 
     def visit(sym: Symbol):
         match sym:
             case VarSymbol(site=site):
-                annos.append(site.raw)
+                annos.append(site.annotation)
             case AliasSymbol(value=site):
-                annos.append(site.raw)
+                annos.append(site.annotation)
             case FuncSymbol(params=params, ret=ret):
                 for p in params:
-                    annos.append(p.raw)
+                    annos.append(p.annotation)
                 if ret:
-                    annos.append(ret.raw)
+                    annos.append(ret.annotation)
             case ClassSymbol(bases=bases, td_fields=fields, members=members):
                 for b in bases:
-                    annos.append(b.raw)
+                    annos.append(b.annotation)
                 for f in fields:
-                    annos.append(f.raw)
+                    annos.append(f.annotation)
                 for m in members:
                     visit(m)
 
@@ -138,30 +138,34 @@ def _emit_symbol(sym: Symbol, name_map: dict[Any, str], *, indent: int) -> list[
 
     match sym:
         case VarSymbol(site=site):
-            ty = stringify_annotation(site.raw, name_map)
+            ty = stringify_annotation(site.annotation, name_map)
             return [f"{pad}{sym.name}: {ty}"]
 
         case AliasSymbol(value=site):
-            ty = stringify_annotation(site.raw, name_map)
+            ty = stringify_annotation(site.annotation, name_map)
             return [f"{pad}type {sym.name} = {ty}"]
 
         case FuncSymbol(params=params, ret=ret, decorators=decos):
             pieces: list[str] = []
             for d in decos:
                 pieces.append(f"{pad}@{d}")
-            param_strs = [f"{p.name}: {stringify_annotation(p.raw, name_map)}" for p in params]
-            ret_str = f" -> {stringify_annotation(ret.raw, name_map)}" if ret else ""
+            param_strs = [
+                f"{p.name}: {stringify_annotation(p.annotation, name_map)}" for p in params
+            ]
+            ret_str = f" -> {stringify_annotation(ret.annotation, name_map)}" if ret else ""
             pieces.append(f"{pad}def {sym.name}({', '.join(param_strs)}){ret_str}: ...")
             return pieces
 
         case ClassSymbol(bases=bases, td_fields=fields, members=members):
             base_str = ""
             if bases:
-                base_str = f"({', '.join(stringify_annotation(b.raw, name_map) for b in bases)})"
+                base_str = (
+                    f"({', '.join(stringify_annotation(b.annotation, name_map) for b in bases)})"
+                )
             lines = [f"{pad}class {sym.name}{base_str}:"]
             if fields:
                 for f in fields:
-                    ty = stringify_annotation(f.raw, name_map)
+                    ty = stringify_annotation(f.annotation, name_map)
                     lines.append(f"{pad}{INDENT}{f.name}: {ty}")
             if members:
                 for m in members:

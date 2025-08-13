@@ -42,7 +42,7 @@ def scan_module(mod: ModuleType) -> ModuleInfo:
         seen.add(name)
 
         if isinstance(obj, t.TypeAliasType):  # type: ignore[attr-defined]
-            site = Site(role="alias_value", raw=obj.__value__)
+            site = Site(role="alias_value", annotation=obj.__value__)
             syms.append(AliasSymbol(name=name, value=site))
             continue
 
@@ -57,22 +57,22 @@ def scan_module(mod: ModuleType) -> ModuleInfo:
         if name in mod_ann:
             ann = mod_ann[name]
             if ann is t.TypeAlias:
-                site = Site(role="alias_value", raw=obj)
+                site = Site(role="alias_value", annotation=obj)
                 syms.append(AliasSymbol(name=name, value=site))
             else:
-                site = Site(role="var", name=name, raw=ann)
+                site = Site(role="var", name=name, annotation=ann)
                 syms.append(VarSymbol(name=name, site=site, initializer=obj))
             continue
 
         if hasattr(obj, "__name__") and getattr(obj, "__module__", None) != modname:
-            site = Site(role="alias_value", raw=obj)
+            site = Site(role="alias_value", annotation=obj)
             syms.append(AliasSymbol(name=name, value=site))
             continue
 
     for name, rann in mod_ann.items():
         if name in seen:
             continue
-        site = Site(role="var", name=name, raw=rann)
+        site = Site(role="var", name=name, annotation=rann)
         syms.append(VarSymbol(name=name, site=site))
 
     return ModuleInfo(mod=mod, symbols=syms)
@@ -87,13 +87,13 @@ def _scan_function(fn: t.Callable) -> FuncSymbol:
         sig = inspect.signature(fn)
         for p in sig.parameters.values():
             if p.name in raw_ann:
-                params.append(Site(role="param", name=p.name, raw=raw_ann[p.name]))
+                params.append(Site(role="param", name=p.name, annotation=raw_ann[p.name]))
     except (TypeError, ValueError):
         pass
 
     ret = None
     if "return" in raw_ann:
-        ret = Site(role="return", raw=raw_ann["return"])
+        ret = Site(role="return", annotation=raw_ann["return"])
 
     decos: list[str] = []
     if getattr(fn, "__isabstractmethod__", False):
@@ -115,7 +115,7 @@ def _scan_class(cls: type) -> ClassSymbol:
     for i, b in enumerate(bases_src):
         if b is object:
             continue
-        bases.append(Site(role="base", index=i, raw=b))
+        bases.append(Site(role="base", index=i, annotation=b))
 
     is_td = isinstance(cls, getattr(t, "_TypedDictMeta", ()))
     td_total: bool | None = None
@@ -124,7 +124,7 @@ def _scan_class(cls: type) -> ClassSymbol:
         td_total = cls.__dict__.get("__total__", True)
         raw_ann = cls.__dict__.get("__annotations__", {}) or {}
         for fname, rann in raw_ann.items():
-            td_fields.append(Site(role="td_field", name=fname, raw=rann))
+            td_fields.append(Site(role="td_field", name=fname, annotation=rann))
 
     members: list[Symbol] = []
 
@@ -132,7 +132,7 @@ def _scan_class(cls: type) -> ClassSymbol:
     for fname, rann in class_ann.items():
         if is_td:
             continue
-        site = Site(role="var", name=fname, raw=rann)
+        site = Site(role="var", name=fname, annotation=rann)
         init_val = cls.__dict__.get(fname, Ellipsis)
         members.append(VarSymbol(name=fname, site=site, initializer=init_val))
 

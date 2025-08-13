@@ -1,9 +1,8 @@
 # Generated via: macrotype macrotype
 # Do not edit by hand
 from dataclasses import dataclass
+from types import EllipsisType
 from typing import Literal
-
-EllipsisType = ellipsis
 
 @dataclass(frozen=True, kw_only=True)
 class Symbol:
@@ -14,12 +13,12 @@ class Site:
     role: Literal["var", "return", "param", "base", "alias_value", "td_field"]
     name: None | str
     index: None | int
-    raw: object
+    annotation: object
 
 @dataclass(frozen=True, kw_only=True)
 class VarSymbol(Symbol):
     site: Site
-    initializer: ellipsis | object
+    initializer: EllipsisType | object
     flags: dict[str, bool]
 
 @dataclass(frozen=True, kw_only=True)
