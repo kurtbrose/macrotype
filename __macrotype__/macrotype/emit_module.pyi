@@ -1,5 +1,3 @@
-# Generated via: macrotype macrotype
-# Do not edit by hand
 from macrotype.scanner import ModuleInfo
 from macrotype.types.emit import EmitCtx
 from macrotype.types.symbols import Symbol

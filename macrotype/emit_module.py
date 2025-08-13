@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from .scanner import ModuleInfo
-from .types.emit import EmitCtx, emit
+from .types.emit import EmitCtx, emit_top
 from .types.symbols import AliasSymbol, ClassSymbol, FuncSymbol, Symbol, VarSymbol
 
 INDENT = "    "
@@ -37,10 +37,10 @@ def _emit_symbol(sym: Symbol, ctx: EmitCtx, *, indent: int) -> list[str]:
     pad = INDENT * indent
     match sym:
         case VarSymbol(site=site):
-            ty = emit(site.ty, ctx)
+            ty = emit_top(site.ty, ctx)
             return [f"{pad}{sym.name}: {ty}"]
         case AliasSymbol(value=site):
-            ty = emit(site.ty, ctx)
+            ty = emit_top(site.ty, ctx)
             return [f"{pad}type {sym.name} = {ty}"]
         case FuncSymbol(params=params, ret=ret, decorators=decos):
             pieces: list[str] = []
@@ -48,20 +48,20 @@ def _emit_symbol(sym: Symbol, ctx: EmitCtx, *, indent: int) -> list[str]:
                 pieces.append(f"{pad}@{d}")
             params_s: list[str] = []
             for p in params:
-                ann = emit(p.ty, ctx)
+                ann = emit_top(p.ty, ctx)
                 params_s.append(f"{p.name}: {ann}")
             param_str = ", ".join(params_s)
-            ret_str = f" -> {emit(ret.ty, ctx)}" if ret else ""
+            ret_str = f" -> {emit_top(ret.ty, ctx)}" if ret else ""
             pieces.append(f"{pad}def {sym.name}({param_str}){ret_str}: ...")
             return pieces
         case ClassSymbol(bases=bases, td_fields=fields, members=members):
             base_str = ""
             if bases:
-                base_str = f"({', '.join(emit(b.ty, ctx) for b in bases)})"
+                base_str = f"({', '.join(emit_top(b.ty, ctx) for b in bases)})"
             lines = [f"{pad}class {sym.name}{base_str}:"]
             if fields:
                 for f in fields:
-                    ty = emit(f.ty, ctx)
+                    ty = emit_top(f.ty, ctx)
                     lines.append(f"{pad}{INDENT}{f.name}: {ty}")
             if members:
                 for m in members:

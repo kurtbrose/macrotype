@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from types import EllipsisType
 from typing import Literal, Optional
 
-from .ir import Provenance, Ty
+from .ir import Provenance, TyTop
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -22,7 +22,7 @@ class Site:
     name: Optional[str] = None
     index: Optional[int] = None
     raw: object
-    ty: Optional[Ty] = None
+    ty: Optional[TyTop] = None
 
 
 @dataclass(frozen=True, kw_only=True)

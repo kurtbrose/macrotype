@@ -9,12 +9,12 @@ from .ir import (
     TyAny,
     TyApp,
     TyCallable,
-    TyClassVar,
     TyForward,
     TyLiteral,
     TyName,
     TyNever,
     TyParamSpec,
+    TyTop,
     TyTuple,
     TyTypeVar,
     TyTypeVarTuple,
@@ -43,9 +43,11 @@ class ResolveEnv:
 # --------- implementation ---------
 
 
-def resolve(t: ParsedTy, env: ResolveEnv) -> ResolvedTy:
+def resolve(t: ParsedTy | Ty, env: ResolveEnv) -> ResolvedTy:
     """Resolve forward refs and qualify bare names. Pure; returns a new tree."""
-    return ResolvedTy(_res(t, env))
+    top = t if isinstance(t, TyTop) else TyTop(ty=t)
+    inner = _res(top.ty, env)
+    return ResolvedTy(TyTop(ty=inner, qualifiers=top.qualifiers))
 
 
 def _res(node: Ty, env: ResolveEnv) -> Ty:
@@ -98,9 +100,6 @@ def _res(node: Ty, env: ResolveEnv) -> Ty:
                 params=tuple(_res(a, env) for a in params),
                 ret=_res(ret, env),
             )
-
-        case TyClassVar(inner=inner):
-            res = TyClassVar(_res(inner, env))
 
         case TyUnpack(inner=inner):
             res = TyUnpack(_res(inner, env))

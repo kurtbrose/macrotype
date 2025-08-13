@@ -75,11 +75,11 @@ CASES: list[tuple[object, Ty]] = [
 
 
 def test_resolve_table_driven():
-    got = [(src, resolve(parse(src), ENV)) for src, _ in CASES]
+    got = [(src, resolve(parse(src), ENV).ty) for src, _ in CASES]
     assert CASES == got
 
 
 def test_unresolved_forward_remains():
     # Not in imports map → stays TyForward
-    ty = resolve(parse("MissingType"), ENV)
+    ty = resolve(parse("MissingType"), ENV).ty
     assert isinstance(ty, TyForward) and ty.qualname == "MissingType"

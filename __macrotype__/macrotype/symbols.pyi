@@ -1,7 +1,5 @@
-# Generated via: macrotype macrotype
-# Do not edit by hand
 from dataclasses import dataclass
-from macrotype.types.ir import Provenance, Ty
+from macrotype.types.ir import Provenance, TyTop
 from typing import Literal
 
 EllipsisType = ellipsis
@@ -18,7 +16,7 @@ class Site:
     name: None | str
     index: None | int
     raw: object
-    ty: None | Ty
+    ty: None | TyTop
 
 @dataclass(frozen=True, kw_only=True)
 class VarSymbol(Symbol):

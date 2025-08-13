@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import enum
+import typing as t
 from dataclasses import dataclass, field
 from typing import NewType, Optional, TypeAlias
 
@@ -21,7 +22,23 @@ class Provenance:
 
 # Literal value shape per PEP 586: primitives, Enums, and nested tuples thereof.
 LitPrim: TypeAlias = int | bool | str | bytes | None | enum.Enum
-LitVal: TypeAlias = LitPrim | tuple["LitVal", ...]
+if t.TYPE_CHECKING:
+    LitVal: TypeAlias = LitPrim | tuple["LitVal", ...]
+else:  # pragma: no cover - runtime placeholder for stubgen
+    LitVal = object  # type: ignore[assignment]
+
+
+class Qualifier(enum.Enum):
+    FINAL = enum.auto()
+    CLASSVAR = enum.auto()
+    REQUIRED = enum.auto()
+    NOTREQUIRED = enum.auto()
+
+
+@dataclass(frozen=True, kw_only=True)
+class TyTop:
+    ty: "Ty"
+    qualifiers: frozenset[Qualifier] = frozenset()
 
 
 # =====================
@@ -164,18 +181,6 @@ class TyCallable(Ty):
 
 
 @dataclass(frozen=True, kw_only=True)
-class TyClassVar(Ty):
-    """
-    ClassVar wrapper for class attributes.
-
-    Examples:
-      - `ClassVar[int]`
-    """
-
-    inner: Ty
-
-
-@dataclass(frozen=True, kw_only=True)
 class TyForward(Ty):
     """
     Unresolved forward reference (string form).
@@ -185,44 +190,6 @@ class TyForward(Ty):
     """
 
     qualname: str
-
-
-# TypedDict (use-site type, but its fields are declaration-like; see TyTDItem)
-
-
-@dataclass(frozen=True, kw_only=True)
-class TyTDItem:
-    """
-    One TypedDict field with required/optional flag and its own provenance.
-
-    Examples:
-      - key="id", ty=int, required=True
-    """
-
-    name: str
-    ty: Ty
-    required: bool
-    prov: Optional[Provenance] = field(default=None, compare=False, hash=False, repr=False)
-
-
-@dataclass(frozen=True, kw_only=True)
-class TyTypedDict(Ty):
-    """
-    TypedDict type. `items` enumerate fields if constructed inline; or `name` points
-    to a nominal TD elsewhere (items may be empty in that case).
-
-    Examples:
-      - Inline:
-          TypedDict("User", {"id": int, "name": str}, total=True)
-        → TyTypedDict(name="User", items=[...], total=True)
-      - Nominal reference:
-          class User(TypedDict): ...
-        → TyName("mymod","User") at use-site (preferred), but TyTypedDict can model inline generation.
-    """
-
-    name: Optional[str]
-    items: tuple[TyTDItem, ...]
-    total: bool
 
 
 # ==================================
@@ -287,6 +254,6 @@ class TyUnpack(Ty):
     inner: Ty
 
 
-ParsedTy = NewType("ParsedTy", Ty)  # output of parse.parse
-ResolvedTy = NewType("ResolvedTy", Ty)  # output of resolve.resolve
-NormalizedTy = NewType("NormalizedTy", Ty)  # output of normalize.norm
+ParsedTy = NewType("ParsedTy", TyTop)  # output of parse.parse
+ResolvedTy = NewType("ResolvedTy", TyTop)  # output of resolve.resolve
+NormalizedTy = NewType("NormalizedTy", TyTop)  # output of normalize.norm

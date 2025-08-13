@@ -1,5 +1,3 @@
-# Generated via: macrotype macrotype
-# Do not edit by hand
 from collections.abc import Mapping
 from dataclasses import dataclass
 from macrotype.types.ir import Provenance

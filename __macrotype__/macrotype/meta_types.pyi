@@ -1,5 +1,3 @@
-# Generated via: macrotype macrotype
-# Do not edit by hand
 from typing import Any, Callable, get_overloads, overload
 
 _OVERLOAD_REGISTRY: dict[str, dict[str, list[Callable[..., Any]]]]

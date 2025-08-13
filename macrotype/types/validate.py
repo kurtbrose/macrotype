@@ -8,11 +8,11 @@ from .ir import (
     TyAny,
     TyApp,
     TyCallable,
-    TyClassVar,
     TyLiteral,
     TyName,
     TyNever,
     TyParamSpec,
+    TyTop,
     TyTuple,
     TyTypeVar,
     TyTypeVarTuple,
@@ -29,8 +29,8 @@ class TypeValidationError(TypeError):
 Context = Literal["top", "tuple_items", "call_params", "concat_args", "other"]
 
 
-def validate(t: NormalizedTy) -> Ty:
-    _v(t, ctx="top")
+def validate(t: NormalizedTy) -> TyTop:
+    _v(t.ty, ctx="top")
     return t
 
 
@@ -141,11 +141,6 @@ def _v(node: Ty, *, ctx: Context) -> None:
                         )
                     _v(p, ctx="call_params")
             _v(r, ctx="other")
-            return
-
-        # ClassVar wrapper is fine; inner must be valid
-        case TyClassVar(inner=i):
-            _v(i, ctx="other")
             return
 
         # Unpack can only appear in tuple items or Concatenate args

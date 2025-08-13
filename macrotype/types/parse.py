@@ -10,17 +10,18 @@ from typing import Optional, get_args, get_origin
 from .ir import (
     LitVal,
     ParsedTy,
+    Qualifier,
     Ty,
     TyAnnoTree,
     TyAny,
     TyApp,
     TyCallable,
-    TyClassVar,
     TyForward,
     TyLiteral,
     TyName,
     TyNever,
     TyParamSpec,
+    TyTop,
     TyTuple,
     TyTypeVar,
     TyTypeVarTuple,
@@ -63,8 +64,6 @@ def _tyname_of(obj: object) -> Ty:
         return TyAny()
     if obj in (t.Never, t.NoReturn):
         return TyNever()
-    if obj is t.Final:
-        return TyAny()
 
     # None value / NoneType
     if obj is None or obj is type(None):  # noqa: E721
@@ -117,104 +116,121 @@ def _litval_of(val: object) -> LitVal:
 # ---------- Main parser ----------
 
 
-def _to_ir(tp: object, env: ParseEnv) -> Ty:
+def _to_ir(tp: object, env: ParseEnv) -> TyTop:
     """Parse a Python typing object into IR. Non-strict; preserves opaque bits."""
 
-    # Fast path: leafy names / special singletons
     origin = get_origin(tp)
     if origin is None:
-        return _tyname_of(tp)
+        if tp is t.ClassVar:
+            return TyTop(ty=TyAny(), qualifiers=frozenset({Qualifier.CLASSVAR}))
+        if tp is t.Final:
+            return TyTop(ty=TyAny(), qualifiers=frozenset({Qualifier.FINAL}))
+        if tp is t.Required:
+            return TyTop(ty=TyAny(), qualifiers=frozenset({Qualifier.REQUIRED}))
+        if tp is t.NotRequired:
+            return TyTop(ty=TyAny(), qualifiers=frozenset({Qualifier.NOTREQUIRED}))
+        return TyTop(ty=_tyname_of(tp), qualifiers=frozenset())
 
     args = get_args(tp)
 
-    # --- Union (X | Y) ---
     if origin in (t.Union, _types.UnionType):
         opts: list[Ty] = []
         for a in args:
             ir = _to_ir(a, env)
-            if isinstance(ir, TyUnion):
-                opts.extend(ir.options)
-            else:
-                opts.append(ir)
-        # Deduplicate and sort for order-insensitivity
+            opts.append(ir.ty)
         uniq: dict[str, Ty] = {repr(o): o for o in opts}
-        return TyUnion(options=tuple(sorted(uniq.values(), key=repr)))
+        return TyTop(
+            ty=TyUnion(options=tuple(sorted(uniq.values(), key=repr))), qualifiers=frozenset()
+        )
 
-    # --- Annotated[T, ...] ---
     if origin is t.Annotated:
         base, *meta = args
         inner = _to_ir(base, env)
-        ann = TyAnnoTree(annos=tuple(meta), child=inner.annotations)
-        return replace(inner, annotations=ann)
+        ann = TyAnnoTree(annos=tuple(meta), child=inner.ty.annotations)
+        return TyTop(ty=replace(inner.ty, annotations=ann), qualifiers=inner.qualifiers)
 
-    # --- Literal[...] ---
     if origin is t.Literal:
-        return TyLiteral(values=tuple(_litval_of(a) for a in args))
+        return TyTop(
+            ty=TyLiteral(values=tuple(_litval_of(a) for a in args)), qualifiers=frozenset()
+        )
 
-    # --- ClassVar[T] ---
     if origin is t.ClassVar:
         (inner,) = args or (t.Any,)
-        return TyClassVar(inner=_to_ir(inner, env))
+        inner_tt = _to_ir(inner, env)
+        return TyTop(ty=inner_tt.ty, qualifiers=inner_tt.qualifiers | {Qualifier.CLASSVAR})
 
-    # --- Final[T] / Final (unwrap; mark at symbol layer, not here) ---
     if origin is t.Final:
         inner = args[0] if args else t.Any
-        return _to_ir(inner, env)
+        inner_tt = _to_ir(inner, env)
+        return TyTop(ty=inner_tt.ty, qualifiers=inner_tt.qualifiers | {Qualifier.FINAL})
 
-    # --- Required/NotRequired (unwrap; TD field metadata handled by caller) ---
     if origin in (t.Required, t.NotRequired):
         (inner,) = args or (t.Any,)
-        return _to_ir(inner, env)
+        inner_tt = _to_ir(inner, env)
+        qual = Qualifier.REQUIRED if origin is t.Required else Qualifier.NOTREQUIRED
+        return TyTop(ty=inner_tt.ty, qualifiers=inner_tt.qualifiers | {qual})
 
-    # --- Tuple[...] ---
     if origin is tuple:
-        # tuple[int, str] vs variadic tuple[T, ...]
         if args and args[-1] is Ellipsis:
-            items = tuple(_to_ir(a, env) for a in args[:-1]) + (
+            items = tuple(_to_ir(a, env).ty for a in args[:-1]) + (
                 TyName(module="builtins", name="Ellipsis"),
             )
-            return TyApp(base=TyName(module="builtins", name="tuple"), args=items)
-        return TyTuple(items=tuple(_to_ir(a, env) for a in args))
+            return TyTop(
+                ty=TyApp(base=TyName(module="builtins", name="tuple"), args=items),
+                qualifiers=frozenset(),
+            )
+        return TyTop(
+            ty=TyTuple(items=tuple(_to_ir(a, env).ty for a in args)), qualifiers=frozenset()
+        )
 
-    # --- Callable[...] ---
     if origin in (t.Callable, abc.Callable):
         if args and args[0] is Ellipsis:
-            # Callable[..., R]
-            return TyCallable(params=Ellipsis, ret=_to_ir(args[1], env))
+            return TyTop(
+                ty=TyCallable(params=Ellipsis, ret=_to_ir(args[1], env).ty), qualifiers=frozenset()
+            )
         if args and isinstance(args[0], (list, tuple)):
-            params = tuple(_to_ir(a, env) for a in args[0])
-            ret = _to_ir(args[1], env)
-            return TyCallable(params=params, ret=ret)
+            params = tuple(_to_ir(a, env).ty for a in args[0])
+            ret = _to_ir(args[1], env).ty
+            return TyTop(ty=TyCallable(params=params, ret=ret), qualifiers=frozenset())
         if args:
-            return TyCallable(params=(_to_ir(args[0], env),), ret=_to_ir(args[1], env))
-        return TyCallable(params=Ellipsis, ret=TyAny())
+            return TyTop(
+                ty=TyCallable(
+                    params=(_to_ir(args[0], env).ty,),
+                    ret=_to_ir(args[1], env).ty,
+                ),
+                qualifiers=frozenset(),
+            )
+        return TyTop(ty=TyCallable(params=Ellipsis, ret=TyAny()), qualifiers=frozenset())
 
-    # --- Unpack[...] (PEP 646) ---
     if origin is t.Unpack:
         (inner,) = args
-        return TyUnpack(inner=_to_ir(inner, env))
+        return TyTop(ty=TyUnpack(inner=_to_ir(inner, env).ty), qualifiers=frozenset())
 
-    # --- Concatenate[...] (treat as TyApp for now; you can special-case later) ---
     if getattr(t, "Concatenate", None) is origin:
-        return TyApp(
-            base=TyName(module="typing", name="Concatenate"),
-            args=tuple(_to_ir(a, env) for a in args),
+        return TyTop(
+            ty=TyApp(
+                base=TyName(module="typing", name="Concatenate"),
+                args=tuple(_to_ir(a, env).ty for a in args),
+            ),
+            qualifiers=frozenset(),
         )
 
-    # --- Type[...] (a/k/a builtins.type) ---
     if origin is type:
-        return TyApp(
-            base=TyName(module="builtins", name="type"), args=tuple(_to_ir(a, env) for a in args)
+        return TyTop(
+            ty=TyApp(
+                base=TyName(module="builtins", name="type"),
+                args=tuple(_to_ir(a, env).ty for a in args),
+            ),
+            qualifiers=frozenset(),
         )
 
-    # --- ParamSpec at use-site inside Callable etc. (already handled as leaf) ---
-
-    # --- Default: generic application ---
     if getattr(tp, "__module__", None) == "typing":
         base = _tyname_of(tp)
     else:
-        base = _to_ir(origin, env)
-    return TyApp(base=base, args=tuple(_to_ir(a, env) for a in args))
+        base = _to_ir(origin, env).ty
+    return TyTop(
+        ty=TyApp(base=base, args=tuple(_to_ir(a, env).ty for a in args)), qualifiers=frozenset()
+    )
 
 
 def parse(tp: object, env: Optional[ParseEnv] = None) -> ParsedTy:
@@ -223,8 +239,8 @@ def parse(tp: object, env: Optional[ParseEnv] = None) -> ParsedTy:
 
 # Notes:
 #
-#     Final, Required, NotRequired are unwrapped here (flags belong to the symbol/TypedDict field layer).
+#     Final, ClassVar, Required, NotRequired are modeled via ``TyTop.qualifiers``.
 #
-#     Unknown/future typing.Foo[...] falls back to TyApp(TyName("typing","Foo"), args_ir) — lossless, pass‑through.
+#     Unknown/future typing.Foo[...] falls back to ``TyApp(TyName("typing","Foo"), args_ir)`` — lossless, pass‑through.
 #
-#     Forward references handled both as strings and typing.ForwardRef.
+#     Forward references handled both as strings and ``typing.ForwardRef``.
