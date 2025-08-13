@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import types
-from typing import Any, ForwardRef, Literal, Union, get_args, get_origin
+from typing import Annotated, Any, ForwardRef, Literal, Union, get_args, get_origin
 
 INDENT = "    "
 
@@ -140,6 +140,16 @@ def stringify_annotation(ann: Any, name_map: dict[Any, str]) -> str:
             else:
                 inner_parts.append(stringify_annotation(arg, name_map))
         return f"Literal[{', '.join(inner_parts)}]"
+
+    if origin is Annotated:
+        first, *metas = args
+        parts = [stringify_annotation(first, name_map)]
+        for meta in metas:
+            if isinstance(meta, str):
+                parts.append(repr(meta))
+            else:
+                parts.append(stringify_annotation(meta, name_map))
+        return f"Annotated[{', '.join(parts)}]"
 
     if origin:
         name = name_map.get(origin, getattr(origin, "__name__", repr(origin)))
