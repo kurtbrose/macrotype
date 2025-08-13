@@ -6,6 +6,7 @@ from types import ModuleType
 
 from .add_comment_transform import add_comments
 from .dataclass_transform import transform_dataclasses
+from .descriptor_transform import normalize_descriptors
 from .emit import emit_module
 from .scanner import ModuleInfo, scan_module
 
@@ -15,6 +16,7 @@ def from_module(mod: ModuleType) -> ModuleInfo:
 
     mi = scan_module(mod)
     transform_dataclasses(mi)
+    normalize_descriptors(mi)
     add_comments(mi)
     return mi
 
@@ -23,6 +25,7 @@ __all__ = [
     "ModuleInfo",
     "add_comments",
     "from_module",
+    "normalize_descriptors",
     "emit_module",
     "scan_module",
     "transform_dataclasses",
