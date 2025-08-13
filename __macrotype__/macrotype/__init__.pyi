@@ -1,5 +1,10 @@
 # Generated via: macrotype macrotype
 # Do not edit by hand
-from macrotype.types.ir import Ty
+from collections.abc import Mapping
+from typing import Any
 
-def from_type(obj: object) -> Ty: ...
+from macrotype.modules.scanner import ModuleInfo
+
+ModuleType = module
+
+def from_module(glb_or_mod: Mapping[str, Any] | module) -> ModuleInfo: ...

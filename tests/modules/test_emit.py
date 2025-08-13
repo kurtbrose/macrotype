@@ -1,17 +1,11 @@
 from __future__ import annotations
 
-import builtins
 from types import ModuleType
+from typing import Any, ClassVar
 
 from macrotype.modules.emit import emit_module
 from macrotype.modules.scanner import ModuleInfo
 from macrotype.modules.symbols import AliasSymbol, ClassSymbol, FuncSymbol, Site, VarSymbol
-from macrotype.types.ir import TyAny, TyApp, TyRoot, TyType
-
-
-def b(name: str) -> TyType:  # builtins helper
-    return TyType(type_=getattr(builtins, name))
-
 
 # ---- table: ModuleInfo -> emitted lines ----
 mod1 = ModuleType("m1")
@@ -19,7 +13,7 @@ case1 = (
     ModuleInfo(
         mod=mod1,
         symbols=[
-            VarSymbol(name="x", site=Site(role="var", raw=None, ty=TyRoot(ty=TyAny()))),
+            VarSymbol(name="x", site=Site(role="var", raw=Any)),
         ],
     ),
     ["from typing import Any", "", "x: Any"],
@@ -30,19 +24,15 @@ case2 = (
     ModuleInfo(
         mod=mod2,
         symbols=[
-            VarSymbol(name="v", site=Site(role="var", raw=None, ty=TyRoot(ty=TyAny()))),
+            VarSymbol(name="v", site=Site(role="var", raw=Any)),
             AliasSymbol(
                 name="Alias",
-                value=Site(
-                    role="alias_value",
-                    raw=None,
-                    ty=TyRoot(ty=TyApp(base=b("list"), args=(b("int"),))),
-                ),
+                value=Site(role="alias_value", raw=list[int]),
             ),
             FuncSymbol(
                 name="f",
-                params=(Site(role="param", name="x", raw=None, ty=TyRoot(ty=b("int"))),),
-                ret=Site(role="return", raw=None, ty=TyRoot(ty=b("str"))),
+                params=(Site(role="param", name="x", raw=int),),
+                ret=Site(role="return", raw=str),
             ),
             ClassSymbol(
                 name="C",
@@ -50,12 +40,7 @@ case2 = (
                 members=(
                     VarSymbol(
                         name="y",
-                        site=Site(
-                            role="var",
-                            name="y",
-                            raw=None,
-                            ty=TyRoot(ty=b("int"), is_classvar=True),
-                        ),
+                        site=Site(role="var", name="y", raw=ClassVar[int]),
                     ),
                 ),
             ),
