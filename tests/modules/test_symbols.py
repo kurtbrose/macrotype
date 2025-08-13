@@ -164,3 +164,38 @@ def test_expand_overloads_transform() -> None:
     mixed = [s for s in mi.symbols if s.name == "mixed_overload"]
     assert len(mixed) == 3
     assert mixed[-1].params[0].annotation == (int | str)
+
+
+def test_flag_transform() -> None:
+    ann = importlib.import_module("tests.annotations")
+    mi = from_module(ann)
+
+    fc = next(s for s in mi.symbols if s.name == "FinalClass")
+    assert isinstance(fc, ClassSymbol)
+    assert fc.flags.get("final") is True
+
+    hfm = next(s for s in mi.symbols if s.name == "HasFinalMethod")
+    assert isinstance(hfm, ClassSymbol)
+    fm = next(m for m in hfm.members if isinstance(m, FuncSymbol) and m.name == "do_final")
+    assert fm.flags.get("final") is True
+    assert "final" in fm.decorators
+
+    ff = next(s for s in mi.symbols if s.name == "final_func")
+    assert isinstance(ff, FuncSymbol)
+    assert ff.flags.get("final") is True
+    assert "final" not in ff.decorators
+
+    ol = next(s for s in mi.symbols if s.name == "OverrideLate")
+    assert isinstance(ol, ClassSymbol)
+    cls_override = next(
+        m for m in ol.members if isinstance(m, FuncSymbol) and m.name == "cls_override"
+    )
+    assert cls_override.flags.get("override") is True
+    assert "override" in cls_override.decorators
+
+    ab = next(s for s in mi.symbols if s.name == "AbstractBase")
+    assert isinstance(ab, ClassSymbol)
+    assert ab.flags.get("abstract") is True
+    m = next(m for m in ab.members if isinstance(m, FuncSymbol) and m.name == "do_something")
+    assert m.flags.get("abstract") is True
+    assert "abstractmethod" in m.decorators

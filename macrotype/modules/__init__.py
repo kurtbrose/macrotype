@@ -9,6 +9,7 @@ from .alias_transform import synthesize_aliases
 from .dataclass_transform import transform_dataclasses
 from .descriptor_transform import normalize_descriptors
 from .emit import emit_module
+from .flag_transform import normalize_flags
 from .overload_transform import expand_overloads
 from .scanner import ModuleInfo, scan_module
 
@@ -20,6 +21,7 @@ def from_module(mod: ModuleType) -> ModuleInfo:
     synthesize_aliases(mi)
     transform_dataclasses(mi)
     normalize_descriptors(mi)
+    normalize_flags(mi)
     expand_overloads(mi)
     add_comments(mi)
     return mi
@@ -30,6 +32,7 @@ __all__ = [
     "add_comments",
     "from_module",
     "expand_overloads",
+    "normalize_flags",
     "normalize_descriptors",
     "synthesize_aliases",
     "emit_module",
