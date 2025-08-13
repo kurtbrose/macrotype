@@ -2,37 +2,14 @@ from __future__ import annotations
 
 import enum
 from dataclasses import dataclass, field
+from types import EllipsisType
 from typing import NewType, Optional, TypeAlias
-
-# Literal value shape per PEP 586: primitives, Enums, and nested tuples thereof.
-LitPrim: TypeAlias = int | bool | str | bytes | None | enum.Enum
-LitVal: TypeAlias = LitPrim | tuple["LitVal", ...]
-
-
-@dataclass(frozen=True, kw_only=True)
-class TyRoot:
-    ty: "Ty"
-    is_final: bool = False
-    is_required: bool | None = None
-    is_classvar: bool = False
-
-
-# =====================
-# Base node (all nodes)
-# =====================
-
-
-@dataclass(frozen=True, kw_only=True)
-class Ty:
-    """Base IR node (type-level AST)."""
-
-    annotations: Optional["TyAnnoTree"] = field(default=None, repr=False)
 
 
 @dataclass(frozen=True, kw_only=True)
 class TyAnnoTree:
     annos: tuple[object, ...]
-    child: Optional["TyAnnoTree"] = None
+    child: Optional[TyAnnoTree] = None
 
     def flatten(self) -> tuple[object, ...]:
         parts = []
@@ -43,10 +20,20 @@ class TyAnnoTree:
         return tuple(parts)
 
 
-# ============================
-# Use-site / expression nodes
-# (appear in annotations)
-# ============================
+@dataclass(frozen=True, kw_only=True)
+class TyRoot:
+    ty: Ty | None  # None here for bare Final
+    annotations: TyAnnoTree | None = None
+    is_final: bool = False
+    is_required: bool | None = None
+    is_classvar: bool = False
+
+
+@dataclass(frozen=True, kw_only=True)
+class Ty:
+    """Base IR node (type-level AST)."""
+
+    annotations: Optional["TyAnnoTree"] = field(default=None, repr=False)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -120,6 +107,11 @@ class TyUnion(Ty):
     options: tuple[Ty, ...]
 
 
+# Literal value shape per PEP 586: primitives, Enums, and nested tuples thereof.
+LitPrim: TypeAlias = int | bool | str | bytes | None | enum.Enum
+LitVal: TypeAlias = LitPrim | tuple["LitVal", ...]
+
+
 @dataclass(frozen=True, kw_only=True)
 class TyLiteral(Ty):
     """
@@ -145,7 +137,7 @@ class TyCallable(Ty):
       - `Callable[Concatenate[int, P], str]`  (modeled via params containing TyParamSpec/Unpack)
     """
 
-    params: tuple[Ty, ...] | Ellipsis
+    params: tuple[Ty, ...] | EllipsisType
     ret: Ty
 
 
@@ -159,12 +151,6 @@ class TyForward(Ty):
     """
 
     qualname: str
-
-
-# ==================================
-# Declaration-site / binder nodes
-# (appear in generic parameter lists)
-# ==================================
 
 
 @dataclass(frozen=True, kw_only=True)

@@ -37,13 +37,14 @@ def typ(name: str) -> TyName:
 
 # Wrap expected types in TyRoot with qualifier flags
 def r(
-    ty: Ty,
+    ty: Ty | None,
     *,
     final: bool = False,
     required: bool | None = None,
     classvar: bool = False,
+    annotations: TyAnnoTree | None = None,
 ) -> TyRoot:
-    return TyRoot(ty=ty, is_final=final, is_required=required, is_classvar=classvar)
+    return TyRoot(ty=ty, is_final=final, is_required=required, is_classvar=classvar, annotations=annotations)
 
 
 # ----- fixtures used in tests -----
@@ -164,12 +165,12 @@ CASES: list[tuple[object, TyRoot]] = [
     # Annotated
     (
         t.Annotated[int, "x"],
-        r(TyName(module="builtins", name="int", annotations=TyAnnoTree(annos=("x",)))),
+        r(TyName(module="builtins", name="int"), annotations=TyAnnoTree(annos=("x",))),
     ),
     # ClassVar / Final / Required / NotRequired
     (t.ClassVar[int], r(b("int"), classvar=True)),
     (t.Final[int], r(b("int"), final=True)),
-    (t.Final, r(TyAny(), final=True)),
+    (t.Final, r(None, final=True)),
     (t.NotRequired[int], r(b("int"), required=False)),
     (t.Required[str], r(b("str"), required=True)),
     # variables / binders (declaration-like leaves appearing at use sites)

@@ -205,6 +205,9 @@ def _append_ann_child(tree: TyAnnoTree | None, child: TyAnnoTree | None) -> TyAn
     return replace(tree, child=_append_ann_child(tree.child, child))
 
 
+_missing = object()
+
+
 def parse_root(tp: object, env: Optional[ParseEnv] = None) -> TyRoot:
     env = env or ParseEnv()
     ann_tree: TyAnnoTree | None = None
@@ -212,23 +215,22 @@ def parse_root(tp: object, env: Optional[ParseEnv] = None) -> TyRoot:
     qualifiers: set[object] = set()
     valid_qualifiers = {t.Final, t.ClassVar, t.Required, t.NotRequired}
     while True:
+        ann_tree, obj = _push_ann(ann_tree, obj)
         origin = get_origin(obj)
-        if origin is t.Annotated:
-            ann_tree, obj = _push_ann(ann_tree, obj)
-        elif origin in valid_qualifiers:
+        if origin in valid_qualifiers:
             args = get_args(obj)
-            obj = args[0] if args else t.Any
+            obj = args[0] if args else _missing
             qualifiers.add(origin)
         elif obj in valid_qualifiers:
             qualifiers.add(obj)
-            obj = t.Any
+            obj = _missing
         else:
             break
-
-    ty = _to_ir(obj, env)
-    ty = replace(ty, annotations=_append_ann_child(ty.annotations, ann_tree))
+    
+    ty = _to_ir(obj, env) if obj is not _missing else None
     return TyRoot(
         ty=ty,
+        annotations=ann_tree,
         is_final=t.Final in qualifiers,
         is_required=True
         if t.Required in qualifiers
