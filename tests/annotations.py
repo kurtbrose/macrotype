@@ -258,6 +258,18 @@ class OverrideLate(Basic):
         return 2
 
 
+# Property with both setter and deleter
+class ManualProperty:
+    @property
+    def both(self) -> int: ...
+
+    @both.setter
+    def both(self, value: int) -> None: ...
+
+    @both.deleter
+    def both(self) -> None: ...
+
+
 class SampleDict(TypedDict):
     name: str
     age: int
