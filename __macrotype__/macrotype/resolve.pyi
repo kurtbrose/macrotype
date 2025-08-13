@@ -6,7 +6,7 @@ from macrotype.types.ir import Ty
 @dataclass(frozen=True)
 class ResolveEnv:
     module: str
-    imports: dict[str, str]
+    imports: dict[str, type]
 
 def resolve(t: ParsedTy | Ty, env: ResolveEnv) -> ResolvedTy: ...
 

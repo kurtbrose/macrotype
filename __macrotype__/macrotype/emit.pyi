@@ -3,6 +3,8 @@
 from dataclasses import dataclass
 from macrotype.types.ir import Ty, TyRoot
 
+EllipsisType = ellipsis
+
 @dataclass
 class EmitCtx:
     typing_needed: set[str]

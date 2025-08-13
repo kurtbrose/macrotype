@@ -1,1 +1,2 @@
-__macrotype__/macrotype/__init__.pyi
+# Generated via: macrotype macrotype
+# Do not edit by hand

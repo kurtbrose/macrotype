@@ -3,6 +3,8 @@
 from macrotype.types.ir import Ty, TyApp, TyRoot
 from typing import Literal, Literal
 
+EllipsisType = ellipsis
+
 class TypeValidationError(TypeError): ...
 
 Context = Literal

@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from types import EllipsisType
 from typing import Literal, Optional
 
-from .ir import TyRoot
+from ..types.ir import TyRoot
 
 
 @dataclass(frozen=True)

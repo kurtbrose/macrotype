@@ -3,10 +3,10 @@ from __future__ import annotations
 import builtins
 from types import ModuleType
 
-from macrotype.emit_module import emit_module
-from macrotype.scanner import ModuleInfo
+from macrotype.modules.emit_module import emit_module
+from macrotype.modules.scanner import ModuleInfo
 from macrotype.types.ir import TyAny, TyApp, TyRoot, TyType
-from macrotype.types.symbols import AliasSymbol, ClassSymbol, FuncSymbol, Site, VarSymbol
+from macrotype.modules.symbols import AliasSymbol, ClassSymbol, FuncSymbol, Site, VarSymbol
 
 
 def b(name: str) -> TyType:  # builtins helper
