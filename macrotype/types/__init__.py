@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-"""Type analysis and emission pipeline."""
+"""Type analysis pipeline with parsing and unparsing."""
 
-from .emit import EmitCtx, emit
 from .ir import Ty
 from .normalize import norm
 from .parse import parse
 from .resolve import ResolveEnv, resolve
+from .unparse import unparse, unparse_top
 from .validate import validate
 
 
@@ -18,4 +18,4 @@ def from_type(obj: object) -> Ty:
     return validate(normalized)
 
 
-__all__ = ["Ty", "from_type", "emit", "EmitCtx", "parse", "resolve", "norm", "validate"]
+__all__ = ["Ty", "from_type", "unparse", "unparse_top", "parse", "resolve", "norm", "validate"]
