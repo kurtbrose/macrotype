@@ -187,43 +187,31 @@ def _to_ir(tp: object, env: ParseEnv) -> Ty:
     return TyApp(base=base, args=tuple(_to_ir(a, env) for a in args))
 
 
+def _push_ann(tree: TyAnnoTree | None, ann: object) -> tuple[TyAnnoTree | None, object]:
+    """Peel successive Annotated wrappers into a tree."""
+    while get_origin(ann) is t.Annotated:
+        base, *meta = get_args(ann)
+        tree = TyAnnoTree(annos=tuple(meta), child=tree)
+        ann = base
+    return tree, ann
+
+
 def parse_root(tp: object, env: Optional[ParseEnv] = None) -> TyRoot:
     env = env or ParseEnv()
     ann_tree: TyAnnoTree | None = None
-    is_required: bool | None = None
-    is_final = False
-    is_classvar = False
     obj = tp
+    qualifiers: set[object] = set()
+    valid_qualifiers = {t.Final, t.ClassVar, t.Required, t.NotRequired}
     while True:
         origin = get_origin(obj)
         if origin is t.Annotated:
+            ann_tree, obj = _push_ann(ann_tree, obj)
+        elif origin in valid_qualifiers:
             args = get_args(obj)
-            base, *meta = args
-            ann_tree = TyAnnoTree(annos=tuple(meta), child=ann_tree)
-            obj = base
-        elif origin in (t.Final, t.ClassVar, t.Required, t.NotRequired):
-            args = get_args(obj)
-            if origin is t.Final:
-                obj = args[0] if args else t.Any
-                is_final = True
-            elif origin is t.ClassVar:
-                obj = args[0] if args else t.Any
-                is_classvar = True
-            elif origin is t.Required:
-                obj = args[0] if args else t.Any
-                is_required = True
-            elif origin is t.NotRequired:
-                obj = args[0] if args else t.Any
-                is_required = False
-        elif obj in (t.Final, t.ClassVar, t.Required, t.NotRequired):
-            if obj is t.Final:
-                is_final = True
-            elif obj is t.ClassVar:
-                is_classvar = True
-            elif obj is t.Required:
-                is_required = True
-            elif obj is t.NotRequired:
-                is_required = False
+            obj = args[0] if args else t.Any
+            qualifiers.add(origin)
+        elif obj in valid_qualifiers:
+            qualifiers.add(obj)
             obj = t.Any
         else:
             break
@@ -233,9 +221,13 @@ def parse_root(tp: object, env: Optional[ParseEnv] = None) -> TyRoot:
         ty = replace(ty, annotations=ann_tree)
     return TyRoot(
         ty=ty,
-        is_final=is_final,
-        is_required=is_required,
-        is_classvar=is_classvar,
+        is_final=t.Final in qualifiers,
+        is_required=True
+        if t.Required in qualifiers
+        else False
+        if t.NotRequired in qualifiers
+        else None,
+        is_classvar=t.ClassVar in qualifiers,
     )
 
 
