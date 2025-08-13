@@ -6,6 +6,7 @@ import typing
 import pytest
 
 from macrotype.modules import from_module
+from macrotype.modules.overload_transform import expand_overloads
 from macrotype.modules.scanner import ModuleInfo, scan_module
 from macrotype.modules.symbols import (
     AliasSymbol,
@@ -145,3 +146,21 @@ def test_dataclass_transform() -> None:
     nae = next(s for s in mi.symbols if s.name == "NoAutoEq")
     assert isinstance(nae, ClassSymbol)
     assert "__eq__" in {m.name for m in nae.members}
+
+
+def test_expand_overloads_transform() -> None:
+    ann = importlib.import_module("tests.annotations")
+    mi = scan_module(ann)
+    expand_overloads(mi)
+
+    overs = [s for s in mi.symbols if s.name == "over"]
+    assert len(overs) == 2
+    assert all("overload" in s.decorators for s in overs)
+
+    specials = [s for s in mi.symbols if s.name == "special_neg"]
+    assert len(specials) == 3
+    assert specials[-1].params[0].annotation is int
+
+    mixed = [s for s in mi.symbols if s.name == "mixed_overload"]
+    assert len(mixed) == 3
+    assert mixed[-1].params[0].annotation == (int | str)
