@@ -812,6 +812,20 @@ def bool_gate(flag: bool) -> int:
     return 1 if flag else 0
 
 
+# Mixing standard overloads with ``overload_for`` literal cases
+@overload
+def mixed_overload(x: str) -> str: ...
+
+
+@overload_for(0)
+def mixed_overload(x: int | str) -> int | str:
+    if x == 0:
+        return 0
+    if isinstance(x, str):
+        return x
+    return x
+
+
 # Class with an abstract method to verify abstract decorators
 class AbstractBase(ABC):
     @abstractmethod
