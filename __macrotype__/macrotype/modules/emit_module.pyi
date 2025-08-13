@@ -1,11 +1,5 @@
-# Generated via: macrotype macrotype
+# Generated via: macrotype macrotype/modules/emit_module.py -o __macrotype__/macrotype/modules/emit_module.pyi
 # Do not edit by hand
-from macrotype.modules.scanner import ModuleInfo
-from macrotype.modules.symbols import Symbol
-from macrotype.types.emit import EmitCtx
+from macrotype.modules.emit import emit_module
 
-INDENT: str
-
-def emit_module(mi: ModuleInfo) -> list[str]: ...
-
-def _emit_symbol(sym: Symbol, ctx: EmitCtx, *, indent: int) -> list[str]: ...
+__all__ = ["emit_module"]
