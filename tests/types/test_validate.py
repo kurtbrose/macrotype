@@ -8,7 +8,7 @@ from macrotype.types.ir import (
     TyLiteral,
     TyName,
     TyParamSpec,
-    TyTop,
+    TyRoot,
     TyTuple,
     TyTypeVarTuple,
     TyUnion,
@@ -47,7 +47,7 @@ GOOD = [
 @pytest.mark.parametrize("node", GOOD)
 def test_validate_good(node):
     # treat input as NormalizedTy already
-    validate(TyTop(ty=node))  # should not raise
+    validate(TyRoot(ty=node))  # should not raise
 
 
 # -------- BAD CASES (should raise) --------
@@ -64,4 +64,4 @@ BAD = [
 @pytest.mark.parametrize("node", BAD)
 def test_validate_bad(node):
     with pytest.raises(TypeValidationError):
-        validate(TyTop(ty=node))
+        validate(TyRoot(ty=node))

@@ -1,3 +1,5 @@
+# Generated via: macrotype macrotype
+# Do not edit by hand
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Callable, ClassVar, ParamSpec, TypeVar, TypeVarTuple, Unpack, _TypedDictMeta

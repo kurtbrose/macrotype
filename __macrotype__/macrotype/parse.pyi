@@ -1,7 +1,5 @@
 from dataclasses import dataclass
-from macrotype.types.ir import Ty, TyTop, TyTypeVar
-
-LitVal = object
+from macrotype.types.ir import LitVal, ParsedTy, Ty, TyRoot, TyTypeVar
 
 @dataclass(frozen=True)
 class ParseEnv:
@@ -16,6 +14,6 @@ def _maybe_to_ir(tp: None | object, env: None | ParseEnv) -> None | Ty: ...
 
 def _litval_of(val: object) -> object: ...
 
-def _to_ir(tp: object, env: ParseEnv) -> TyTop: ...
+def _to_ir(tp: object, env: ParseEnv) -> TyRoot: ...
 
 def parse(tp: object, env: None | ParseEnv) -> ParsedTy: ...

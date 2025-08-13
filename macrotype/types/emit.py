@@ -4,7 +4,6 @@ import builtins
 from dataclasses import dataclass, field, replace
 
 from .ir import (
-    Qualifier,
     Ty,
     TyAny,
     TyApp,
@@ -13,7 +12,7 @@ from .ir import (
     TyName,
     TyNever,
     TyParamSpec,
-    TyTop,
+    TyRoot,
     TyTuple,
     TyTypeVar,
     TyTypeVarTuple,
@@ -41,25 +40,21 @@ def emit(t: Ty, ctx: EmitCtx | None = None) -> str:
     return _emit(t, ctx)
 
 
-def emit_top(t: TyTop, ctx: EmitCtx | None = None) -> str:
+def emit_top(t: TyRoot, ctx: EmitCtx | None = None) -> str:
     ctx = ctx or EmitCtx()
     inner = _emit(t.ty, ctx)
-    order = [
-        Qualifier.CLASSVAR,
-        Qualifier.FINAL,
-        Qualifier.REQUIRED,
-        Qualifier.NOTREQUIRED,
-    ]
-    names = {
-        Qualifier.CLASSVAR: "ClassVar",
-        Qualifier.FINAL: "Final",
-        Qualifier.REQUIRED: "Required",
-        Qualifier.NOTREQUIRED: "NotRequired",
-    }
-    for q in order:
-        if q in t.qualifiers:
-            ctx.need(names[q])
-            inner = f"{names[q]}[{inner}]"
+    if t.is_classvar:
+        ctx.need("ClassVar")
+        inner = f"ClassVar[{inner}]"
+    if t.is_final:
+        ctx.need("Final")
+        inner = f"Final[{inner}]"
+    if t.is_required is True:
+        ctx.need("Required")
+        inner = f"Required[{inner}]"
+    elif t.is_required is False:
+        ctx.need("NotRequired")
+        inner = f"NotRequired[{inner}]"
     return inner
 
 

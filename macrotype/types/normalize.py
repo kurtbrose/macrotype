@@ -12,7 +12,7 @@ from .ir import (
     TyLiteral,
     TyName,
     TyNever,
-    TyTop,
+    TyRoot,
     TyTuple,
     TyUnion,
     TyUnpack,
@@ -48,9 +48,16 @@ _TYPING_TO_BUILTINS = {
 def norm(t: ResolvedTy | Ty, opts: NormOpts | None = None) -> NormalizedTy:
     """Normalize *t* according to *opts*."""
 
-    top = t if isinstance(t, TyTop) else TyTop(ty=t)
+    top = t if isinstance(t, TyRoot) else TyRoot(ty=t)
     inner = _norm(top.ty, opts or _DEFAULT)
-    return NormalizedTy(TyTop(ty=inner, qualifiers=top.qualifiers))
+    return NormalizedTy(
+        TyRoot(
+            ty=inner,
+            is_final=top.is_final,
+            is_required=top.is_required,
+            is_classvar=top.is_classvar,
+        )
+    )
 
 
 def _norm(n: Ty, o: NormOpts) -> Ty:

@@ -14,7 +14,7 @@ from .ir import (
     TyName,
     TyNever,
     TyParamSpec,
-    TyTop,
+    TyRoot,
     TyTuple,
     TyTypeVar,
     TyTypeVarTuple,
@@ -45,9 +45,16 @@ class ResolveEnv:
 
 def resolve(t: ParsedTy | Ty, env: ResolveEnv) -> ResolvedTy:
     """Resolve forward refs and qualify bare names. Pure; returns a new tree."""
-    top = t if isinstance(t, TyTop) else TyTop(ty=t)
+    top = t if isinstance(t, TyRoot) else TyRoot(ty=t)
     inner = _res(top.ty, env)
-    return ResolvedTy(TyTop(ty=inner, qualifiers=top.qualifiers))
+    return ResolvedTy(
+        TyRoot(
+            ty=inner,
+            is_final=top.is_final,
+            is_required=top.is_required,
+            is_classvar=top.is_classvar,
+        )
+    )
 
 
 def _res(node: Ty, env: ResolveEnv) -> Ty:

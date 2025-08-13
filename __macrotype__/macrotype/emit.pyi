@@ -1,5 +1,7 @@
+# Generated via: macrotype macrotype
+# Do not edit by hand
 from dataclasses import dataclass
-from macrotype.types.ir import Ty, TyTop
+from macrotype.types.ir import Ty, TyRoot
 
 @dataclass
 class EmitCtx:
@@ -9,7 +11,7 @@ class EmitCtx:
 
 def emit(t: Ty, ctx: EmitCtx | None) -> str: ...
 
-def emit_top(t: TyTop, ctx: EmitCtx | None) -> str: ...
+def emit_top(t: TyRoot, ctx: EmitCtx | None) -> str: ...
 
 def _emit(n: Ty, ctx: EmitCtx) -> str: ...
 

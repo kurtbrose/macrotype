@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import enum
-import typing as t
 from dataclasses import dataclass, field
 from typing import NewType, Optional, TypeAlias
 
@@ -22,23 +21,15 @@ class Provenance:
 
 # Literal value shape per PEP 586: primitives, Enums, and nested tuples thereof.
 LitPrim: TypeAlias = int | bool | str | bytes | None | enum.Enum
-if t.TYPE_CHECKING:
-    LitVal: TypeAlias = LitPrim | tuple["LitVal", ...]
-else:  # pragma: no cover - runtime placeholder for stubgen
-    LitVal = object  # type: ignore[assignment]
-
-
-class Qualifier(enum.Enum):
-    FINAL = enum.auto()
-    CLASSVAR = enum.auto()
-    REQUIRED = enum.auto()
-    NOTREQUIRED = enum.auto()
+LitVal: TypeAlias = LitPrim | tuple["LitVal", ...]
 
 
 @dataclass(frozen=True, kw_only=True)
-class TyTop:
+class TyRoot:
     ty: "Ty"
-    qualifiers: frozenset[Qualifier] = frozenset()
+    is_final: bool = False
+    is_required: bool | None = None
+    is_classvar: bool = False
 
 
 # =====================
@@ -254,6 +245,6 @@ class TyUnpack(Ty):
     inner: Ty
 
 
-ParsedTy = NewType("ParsedTy", TyTop)  # output of parse.parse
-ResolvedTy = NewType("ResolvedTy", TyTop)  # output of resolve.resolve
-NormalizedTy = NewType("NormalizedTy", TyTop)  # output of normalize.norm
+ParsedTy = NewType("ParsedTy", TyRoot)  # output of parse.parse
+ResolvedTy = NewType("ResolvedTy", TyRoot)  # output of resolve.resolve
+NormalizedTy = NewType("NormalizedTy", TyRoot)  # output of normalize.norm

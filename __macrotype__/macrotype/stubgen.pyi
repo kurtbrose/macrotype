@@ -1,3 +1,5 @@
+# Generated via: macrotype macrotype
+# Do not edit by hand
 from ast import If, NodeTransformer, expr, stmt
 from pathlib import Path
 

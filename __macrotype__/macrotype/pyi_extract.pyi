@@ -1,3 +1,5 @@
+# Generated via: macrotype macrotype
+# Do not edit by hand
 from dataclasses import _DataclassParams, dataclass
 from enum import EnumType
 from functools import partialmethod

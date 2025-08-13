@@ -4,7 +4,7 @@ from types import ModuleType
 
 from macrotype.emit_module import emit_module
 from macrotype.scanner import ModuleInfo
-from macrotype.types.ir import Qualifier, TyAny, TyApp, TyName, TyTop
+from macrotype.types.ir import TyAny, TyApp, TyName, TyRoot
 from macrotype.types.symbols import AliasSymbol, ClassSymbol, FuncSymbol, Site, VarSymbol
 
 
@@ -19,7 +19,7 @@ case1 = (
         mod=mod1,
         provenance="m1",
         symbols=[
-            VarSymbol(name="x", key="m1.x", site=Site(role="var", raw=None, ty=TyTop(ty=TyAny()))),
+            VarSymbol(name="x", key="m1.x", site=Site(role="var", raw=None, ty=TyRoot(ty=TyAny()))),
         ],
     ),
     ["from typing import Any", "", "x: Any"],
@@ -31,21 +31,21 @@ case2 = (
         mod=mod2,
         provenance="m2",
         symbols=[
-            VarSymbol(name="v", key="m2.v", site=Site(role="var", raw=None, ty=TyTop(ty=TyAny()))),
+            VarSymbol(name="v", key="m2.v", site=Site(role="var", raw=None, ty=TyRoot(ty=TyAny()))),
             AliasSymbol(
                 name="Alias",
                 key="m2.Alias",
                 value=Site(
                     role="alias_value",
                     raw=None,
-                    ty=TyTop(ty=TyApp(base=b("list"), args=(b("int"),))),
+                    ty=TyRoot(ty=TyApp(base=b("list"), args=(b("int"),))),
                 ),
             ),
             FuncSymbol(
                 name="f",
                 key="m2.f",
-                params=(Site(role="param", name="x", raw=None, ty=TyTop(ty=b("int"))),),
-                ret=Site(role="return", raw=None, ty=TyTop(ty=b("str"))),
+                params=(Site(role="param", name="x", raw=None, ty=TyRoot(ty=b("int"))),),
+                ret=Site(role="return", raw=None, ty=TyRoot(ty=b("str"))),
             ),
             ClassSymbol(
                 name="C",
@@ -59,7 +59,7 @@ case2 = (
                             role="var",
                             name="y",
                             raw=None,
-                            ty=TyTop(ty=b("int"), qualifiers=frozenset({Qualifier.CLASSVAR})),
+                            ty=TyRoot(ty=b("int"), is_classvar=True),
                         ),
                     ),
                 ),

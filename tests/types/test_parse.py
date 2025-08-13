@@ -4,7 +4,6 @@ import enum
 import typing as t
 
 from macrotype.types.ir import (
-    Qualifier,
     Ty,
     TyAnnoTree,
     TyAny,
@@ -162,12 +161,12 @@ CASES: list[tuple[object, Ty]] = [
     (t.Deque[int], TyApp(base=typ("Deque"), args=(b("int"),))),
 ]
 
-QUALS = {
-    repr(t.ClassVar[int]): frozenset({Qualifier.CLASSVAR}),
-    repr(t.Final[int]): frozenset({Qualifier.FINAL}),
-    repr(t.Final): frozenset({Qualifier.FINAL}),
-    repr(t.NotRequired[int]): frozenset({Qualifier.NOTREQUIRED}),
-    repr(t.Required[str]): frozenset({Qualifier.REQUIRED}),
+FLAGS = {
+    repr(t.ClassVar[int]): (False, None, True),
+    repr(t.Final[int]): (True, None, False),
+    repr(t.Final): (True, None, False),
+    repr(t.NotRequired[int]): (False, False, False),
+    repr(t.Required[str]): (False, True, False),
 }
 
 # Optional cases depending on runtime features
@@ -184,7 +183,10 @@ def test_parse_table_driven():
     assert CASES == [(src, parse(src).ty) for src, _ in CASES]
     for src, _ in CASES:
         got = parse(src)
-        assert got.qualifiers == QUALS.get(repr(src), frozenset())
+        is_final, is_required, is_classvar = FLAGS.get(repr(src), (False, None, False))
+        assert got.is_final is is_final
+        assert got.is_required is is_required
+        assert got.is_classvar is is_classvar
 
 
 def test_user_generic_application():

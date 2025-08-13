@@ -1,5 +1,7 @@
+# Generated via: macrotype macrotype
+# Do not edit by hand
 from dataclasses import dataclass
-from macrotype.types.ir import Ty
+from macrotype.types.ir import NormalizedTy, ResolvedTy, Ty
 
 @dataclass(frozen=True)
 class NormOpts:

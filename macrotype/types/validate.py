@@ -12,7 +12,7 @@ from .ir import (
     TyName,
     TyNever,
     TyParamSpec,
-    TyTop,
+    TyRoot,
     TyTuple,
     TyTypeVar,
     TyTypeVarTuple,
@@ -29,7 +29,7 @@ class TypeValidationError(TypeError):
 Context = Literal["top", "tuple_items", "call_params", "concat_args", "other"]
 
 
-def validate(t: NormalizedTy) -> TyTop:
+def validate(t: NormalizedTy) -> TyRoot:
     _v(t.ty, ctx="top")
     return t
 
