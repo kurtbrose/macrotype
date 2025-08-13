@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import types
-from typing import Annotated, Any, ForwardRef, Literal, Union, get_args, get_origin
+from collections.abc import Callable
+from typing import Annotated, Any, ForwardRef, Iterable, Literal, Union, get_args, get_origin
 
 INDENT = "    "
 
@@ -12,12 +13,12 @@ from .symbols import AliasSymbol, ClassSymbol, FuncSymbol, Symbol, VarSymbol
 def emit_module(mi: ModuleInfo) -> list[str]:
     """Emit `.pyi` lines for a ModuleInfo using annotations only."""
     annotations = collect_all_annotations(mi)
-    atoms = set()
+    atoms: dict[int, Any] = {}
     for ann in annotations:
-        atoms |= flatten_annotation_atoms(ann)
+        atoms.update(flatten_annotation_atoms(ann))
 
     context = mi.mod.__dict__
-    name_map = build_name_map(atoms, context)
+    name_map = build_name_map(atoms.values(), context)
 
     lines: list[str] = []
     for sym in mi.symbols:
@@ -27,7 +28,11 @@ def emit_module(mi: ModuleInfo) -> list[str]:
         lines.pop()
 
     # Collect typing imports
-    typing_names = {name_map[a] for a in atoms if getattr(a, "__module__", None) == "typing"}
+    typing_names = {
+        name_map[id(a)]
+        for a in atoms.values()
+        if getattr(a, "__module__", None) == "typing" or a is Callable
+    }
 
     pre: list[str] = []
     if typing_names:
@@ -66,56 +71,62 @@ def collect_all_annotations(mi: ModuleInfo) -> list[Any]:
     return annos
 
 
-def flatten_annotation_atoms(ann: Any) -> set[Any]:
+def flatten_annotation_atoms(ann: Any) -> dict[int, Any]:
     """Flatten all atomic components of a type annotation."""
-    visited = set()
-    atoms = set()
+    visited: dict[int, Any] = {}
+    atoms: dict[int, Any] = {}
     stack = [ann]
 
     while stack:
         obj = stack.pop()
-        if obj in visited:
+        obj_id = id(obj)
+        if obj_id in visited:
             continue
-        visited.add(obj)
-
-        if isinstance(obj, ForwardRef):
-            atoms.add(obj)
-            continue
+        visited[obj_id] = obj
 
         origin = get_origin(obj)
         args = get_args(obj)
 
+        if isinstance(obj, (list, tuple)) and origin is None:
+            stack.extend(obj)
+            continue
+
+        if isinstance(obj, ForwardRef):
+            atoms[obj_id] = obj
+            continue
+
         if origin:
-            atoms.add(origin)
+            atoms[id(origin)] = origin
             stack.extend(args)
         elif isinstance(args, tuple):
-            atoms.add(obj)
+            atoms[obj_id] = obj
             stack.extend(args)
         else:
-            atoms.add(obj)
+            atoms[obj_id] = obj
 
     return atoms
 
 
-def build_name_map(atoms: set[Any], context: dict[str, Any]) -> dict[Any, str]:
+def build_name_map(atoms: Iterable[Any], context: dict[str, Any]) -> dict[int, str]:
     """Map annotation atoms to names based on module context."""
-    reverse = {v: k for k, v in context.items()}
-    name_map: dict[Any, str] = {}
+    reverse = {id(v): k for k, v in context.items()}
+    name_map: dict[int, str] = {}
 
     for atom in atoms:
+        atom_id = id(atom)
         if isinstance(atom, ForwardRef):
-            name_map[atom] = atom.__forward_arg__
-        elif atom in reverse:
-            name_map[atom] = reverse[atom]
+            name_map[atom_id] = atom.__forward_arg__
+        elif atom_id in reverse:
+            name_map[atom_id] = reverse[atom_id]
         elif hasattr(atom, "__name__"):
-            name_map[atom] = atom.__name__
+            name_map[atom_id] = atom.__name__
         else:
-            name_map[atom] = repr(atom)
+            name_map[atom_id] = repr(atom)
 
     return name_map
 
 
-def stringify_annotation(ann: Any, name_map: dict[Any, str]) -> str:
+def stringify_annotation(ann: Any, name_map: dict[int, str]) -> str:
     """Emit string form of a type annotation."""
     if ann is Ellipsis:
         return "..."
@@ -141,6 +152,18 @@ def stringify_annotation(ann: Any, name_map: dict[Any, str]) -> str:
                 inner_parts.append(stringify_annotation(arg, name_map))
         return f"Literal[{', '.join(inner_parts)}]"
 
+
+    if origin is Callable:
+        if not args:
+            return "Callable"
+        params, ret = args
+        ret_str = stringify_annotation(ret, name_map)
+        name = name_map.get(id(origin), "Callable")
+        if params is Ellipsis:
+            return f"{name}[..., {ret_str}]"
+        params_str = ", ".join(stringify_annotation(p, name_map) for p in params)
+        return f"{name}[[{params_str}], {ret_str}]"
+
     if origin is Annotated:
         first, *metas = args
         parts = [stringify_annotation(first, name_map)]
@@ -152,14 +175,14 @@ def stringify_annotation(ann: Any, name_map: dict[Any, str]) -> str:
         return f"Annotated[{', '.join(parts)}]"
 
     if origin:
-        name = name_map.get(origin, getattr(origin, "__name__", repr(origin)))
+        name = name_map.get(id(origin), getattr(origin, "__name__", repr(origin)))
         inner = ", ".join(stringify_annotation(arg, name_map) for arg in args)
         return f"{name}[{inner}]"
     else:
-        return name_map.get(ann, repr(ann))
+        return name_map.get(id(ann), repr(ann))
 
 
-def _emit_symbol(sym: Symbol, name_map: dict[Any, str], *, indent: int) -> list[str]:
+def _emit_symbol(sym: Symbol, name_map: dict[int, str], *, indent: int) -> list[str]:
     pad = INDENT * indent
 
     match sym:
