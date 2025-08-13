@@ -95,6 +95,8 @@ ANNOTATED_FINAL: Final[int]
 
 ANNOTATED_CLASSVAR: int
 
+LITERAL_STR_VAR: LiteralString
+
 BOX_SIZE: Final[int]
 
 BORDER_SIZE: Final[int]
@@ -587,8 +589,6 @@ GENERIC_DEQUE: deque[int]
 GENERIC_DEQUE_LIST: deque[list[str]]
 
 GENERIC_USERBOX: UserBox[int]
-
-LITERAL_STR_VAR: LiteralString
 
 DICT_WITH_IMPLICIT_ANY: dict[int]  # type: ignore[type-arg]  # pyright: ignore[reportInvalidTypeArguments]
 

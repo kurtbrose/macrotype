@@ -116,6 +116,9 @@ CALLABLE_LIST_VAR: list[Callable[[int], str]]
 ANNOTATED_FINAL: Final[int] = 5
 ANNOTATED_CLASSVAR: int = 1
 
+# Literal string should retain quotes
+LITERAL_STR_VAR: Literal["hi"] = "hi"
+
 # ``Final`` without explicit type should infer from value
 BOX_SIZE: Final = 20
 BORDER_SIZE: Final = 4

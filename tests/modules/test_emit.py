@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from types import ModuleType
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Literal
 
 from macrotype.modules.emit import emit_module
 from macrotype.modules.scanner import ModuleInfo
@@ -60,7 +60,17 @@ case2 = (
     ],
 )
 
-CASES = [case1, case2]
+mod3 = ModuleType("m3")
+case3 = (
+    ModuleInfo(
+        mod=mod3,
+        symbols=[
+            VarSymbol(name="lit", site=Site(role="var", annotation=Literal["hi"])),
+        ],
+    ),
+    ["from typing import Literal", "", "lit: Literal['hi']"],
+)
+CASES = [case1, case2, case3]
 
 
 def test_emit_module_table() -> None:
