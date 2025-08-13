@@ -150,6 +150,8 @@ NESTED_ANNOTATED: Annotated[Annotated[int, "a"], "b"] = 3
 TRIPLE_ANNOTATED: Annotated[Annotated[Annotated[int, "x"], "y"], "z"] = 4
 # Annotated union to ensure metadata is preserved with unions
 ANNOTATED_OPTIONAL_META: Annotated[int | None, "meta"] = 0
+# Annotated combined with Final wrapper to verify root handling
+ANNOTATED_FINAL_META: Annotated[Final[int], "meta"] = 2
 
 # Built-in generic without dedicated handler
 GENERIC_DEQUE: Deque[int]

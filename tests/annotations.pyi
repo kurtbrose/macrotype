@@ -121,6 +121,8 @@ TRIPLE_ANNOTATED: Annotated[int, 'x', 'y', 'z']
 
 ANNOTATED_OPTIONAL_META: Annotated[None | int, 'meta']
 
+ANNOTATED_FINAL_META: Final[Annotated[int, 'meta']]
+
 class UserBox[T]: ...
 
 class Basic:

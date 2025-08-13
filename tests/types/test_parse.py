@@ -3,6 +3,8 @@ from __future__ import annotations
 import enum
 import typing as t
 
+import pytest
+
 from macrotype.types.ir import (
     Ty,
     TyAnnoTree,
@@ -201,3 +203,8 @@ def test_union_order_insensitive():
     a = parse(int | str)
     b = parse(str | int)
     assert a == b
+
+
+def test_inner_final_disallowed():
+    with pytest.raises(ValueError):
+        parse(list[t.Final[int]])
