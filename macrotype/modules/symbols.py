@@ -44,6 +44,7 @@ class ClassSymbol(Symbol):
     is_typeddict: bool = False
     td_total: Optional[bool] = None
     members: tuple[Symbol, ...] = ()  # nested Var/Func/Class
+    decorators: tuple[str, ...] = ()
     flags: dict[str, bool] = field(default_factory=dict)  # e.g., protocol, abstract
 
 

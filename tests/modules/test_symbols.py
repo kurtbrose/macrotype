@@ -5,6 +5,7 @@ import typing
 
 import pytest
 
+from macrotype.modules import from_module
 from macrotype.modules.scanner import ModuleInfo, scan_module
 from macrotype.modules.symbols import (
     AliasSymbol,
@@ -130,3 +131,17 @@ def test_td_inheritance(idx: dict[str, object]) -> None:
     sub = get(idx, "SubTD")
     assert isinstance(sub, ClassSymbol)
     assert any(b.role == "base" for b in sub.bases)
+
+
+def test_dataclass_transform() -> None:
+    ann = importlib.import_module("tests.annotations")
+    mi = from_module(ann)
+    frozen = next(s for s in mi.symbols if s.name == "Frozen")
+    assert isinstance(frozen, ClassSymbol)
+    assert "dataclass(frozen=True, slots=True)" in frozen.decorators
+    member_names = {m.name for m in frozen.members}
+    assert "__init__" not in member_names
+
+    nae = next(s for s in mi.symbols if s.name == "NoAutoEq")
+    assert isinstance(nae, ClassSymbol)
+    assert "__eq__" in {m.name for m in nae.members}

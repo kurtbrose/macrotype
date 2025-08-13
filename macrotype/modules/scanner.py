@@ -130,8 +130,6 @@ def _scan_class(cls: type) -> ClassSymbol:
         members.append(VarSymbol(name=fname, site=site, initializer=init_val))
 
     for mname, attr in cls.__dict__.items():
-        if _is_dunder(mname):
-            continue
         raw = attr
         while hasattr(raw, "__wrapped__"):
             raw = raw.__wrapped__
