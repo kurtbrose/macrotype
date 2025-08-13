@@ -5,8 +5,8 @@ from types import ModuleType
 
 from macrotype.modules.emit_module import emit_module
 from macrotype.modules.scanner import ModuleInfo
-from macrotype.types.ir import TyAny, TyApp, TyRoot, TyType
 from macrotype.modules.symbols import AliasSymbol, ClassSymbol, FuncSymbol, Site, VarSymbol
+from macrotype.types.ir import TyAny, TyApp, TyRoot, TyType
 
 
 def b(name: str) -> TyType:  # builtins helper

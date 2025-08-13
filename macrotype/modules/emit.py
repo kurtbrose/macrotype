@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from .scanner import ModuleInfo
 from ..types.emit import EmitCtx, emit_top
+from .scanner import ModuleInfo
 from .symbols import AliasSymbol, ClassSymbol, FuncSymbol, Symbol, VarSymbol
 
 INDENT = "    "

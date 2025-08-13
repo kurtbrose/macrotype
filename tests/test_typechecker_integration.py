@@ -13,7 +13,7 @@ def test_macrotype_check(tmp_path: Path, tool: str) -> None:
     cmd = [
         sys.executable,
         "-m",
-        "macrotype.typecheck",
+        "macrotype.cli.typecheck",
         tool,
         "tests/annotations.py",
         "-o",

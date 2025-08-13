@@ -4,29 +4,16 @@ import argparse
 import sys
 from pathlib import Path
 
-from . import stubgen
+from .. import stubgen
+from . import DEFAULT_OUT_DIR, _default_output_path
 from .watch import watch_and_run
-
-DEFAULT_OUT_DIR = Path("__macrotype__")
-
-
-def _default_output_path(path: Path, cwd: Path, *, is_file: bool) -> Path:
-    """Return the default output location for ``path`` relative to ``cwd``."""
-
-    abs_path = path if path.is_absolute() else cwd / path
-    if not abs_path.is_relative_to(cwd):
-        raise ValueError(f"{path} is not under {cwd}; specify -o")
-    rel = abs_path.relative_to(cwd)
-    base = DEFAULT_OUT_DIR / rel
-    return base.with_suffix(".pyi") if is_file else base
 
 
 def _stdout_write(lines: list[str], command: str | None = None) -> None:
     sys.stdout.write("\n".join(stubgen._header_lines(command) + lines) + "\n")
 
 
-def main(argv: list[str] | None = None) -> int:
-    argv = list(argv or sys.argv[1:])
+def _stub_main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(prog="macrotype")
     parser.add_argument(
         "paths",
@@ -121,6 +108,11 @@ def main(argv: list[str] | None = None) -> int:
                 stub_overlay_dir=overlay,
             )
     return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    argv = list(argv or sys.argv[1:])
+    return _stub_main(argv)
 
 
 if __name__ == "__main__":  # pragma: no cover
