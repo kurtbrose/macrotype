@@ -4,8 +4,6 @@ from dataclasses import dataclass, field
 from types import EllipsisType
 from typing import Literal, Optional
 
-from ..types.ir import TyRoot
-
 
 @dataclass(frozen=True, kw_only=True)
 class Symbol:
@@ -19,8 +17,7 @@ class Site:
     role: Literal["var", "return", "param", "base", "alias_value", "td_field"]
     name: Optional[str] = None
     index: Optional[int] = None
-    raw: object
-    ty: Optional[TyRoot] = None
+    annotation: object
 
 
 @dataclass(frozen=True, kw_only=True)

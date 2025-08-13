@@ -35,7 +35,7 @@ def get(idx: dict[str, object], key: str) -> Symbol:
 def test_module_var_and_func(idx: dict[str, object]) -> None:
     x = get(idx, "GLOBAL")
     assert isinstance(x, VarSymbol)
-    assert x.site.raw is int
+    assert x.site.annotation is int
 
     f = get(idx, "mult")
     assert isinstance(f, FuncSymbol)
@@ -61,11 +61,11 @@ def test_typeddict_fields(idx: dict[str, object]) -> None:
 def test_aliases(idx: dict[str, object]) -> None:
     other = get(idx, "Other")
     assert isinstance(other, AliasSymbol)
-    assert typing.get_origin(other.value.raw) is dict
+    assert typing.get_origin(other.value.annotation) is dict
 
     mylist = get(idx, "MyList")
     assert isinstance(mylist, AliasSymbol)
-    assert typing.get_origin(mylist.value.raw) is list
+    assert typing.get_origin(mylist.value.annotation) is list
 
 
 def test_function_sites(idx: dict[str, object]) -> None:
@@ -79,8 +79,8 @@ def test_function_sites(idx: dict[str, object]) -> None:
             tp = typing.get_args(tp)[0]
         return typing.get_origin(tp) or tp
 
-    assert unwrap(ps[0].raw) is int
-    assert f.ret and unwrap(f.ret.raw) is str
+    assert unwrap(ps[0].annotation) is int
+    assert f.ret and unwrap(f.ret.annotation) is str
 
 
 def test_nested_classes(idx: dict[str, object]) -> None:
@@ -99,7 +99,7 @@ def test_overloads_present(idx: dict[str, object]) -> None:
 def test_async_functions(idx: dict[str, object]) -> None:
     af = get(idx, "async_add_one")
     assert isinstance(af, FuncSymbol)
-    assert af.ret and af.ret.raw is int
+    assert af.ret and af.ret.annotation is int
 
 
 def test_properties_detected_as_functions_or_vars(idx: dict[str, object]) -> None:
