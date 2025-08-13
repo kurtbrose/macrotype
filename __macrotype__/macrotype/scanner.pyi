@@ -2,8 +2,7 @@
 # Do not edit by hand
 from collections.abc import Mapping
 from dataclasses import dataclass
-from macrotype.types.ir import Provenance
-from macrotype.types.symbols import ClassSymbol, FuncSymbol, Symbol
+from macrotype.types.symbols import ClassSymbol, FuncSymbol, Provenance, Symbol
 from typing import Any, Callable
 
 ModuleType = module

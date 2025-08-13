@@ -5,11 +5,11 @@ import typing as t
 from dataclasses import dataclass, replace
 from types import ModuleType
 
-from .types.ir import Provenance
 from .types.symbols import (
     AliasSymbol,
     ClassSymbol,
     FuncSymbol,
+    Provenance,
     Site,
     Symbol,
     VarSymbol,
@@ -80,7 +80,7 @@ def scan_module(glb_or_mod: ModuleType | t.Mapping[str, t.Any]) -> ModuleInfo:
         if isinstance(obj, t.TypeAliasType):  # type: ignore[attr-defined]
             key = _mk_key(None, modname, name)
             prov = _source_prov(obj, modname=modname, key=key, name=name)
-            site = Site(role="alias_value", raw=obj.__value__)
+            site = Site(role="alias_value", raw=obj.__value__, prov=prov)
             syms.append(AliasSymbol(name=name, key=key, prov=prov, value=site))
             continue
 
@@ -97,18 +97,18 @@ def scan_module(glb_or_mod: ModuleType | t.Mapping[str, t.Any]) -> ModuleInfo:
             ann = mod_ann[name]
             if ann is t.TypeAlias:
                 prov = _source_prov(obj, modname=modname, key=key, name=name)
-                site = Site(role="alias_value", raw=obj)
+                site = Site(role="alias_value", raw=obj, prov=prov)
                 syms.append(AliasSymbol(name=name, key=key, prov=prov, value=site))
             else:
                 prov = _source_prov(obj, modname=modname, key=key, name=name)
-                site = Site(role="var", name=name, raw=ann)
+                site = Site(role="var", name=name, raw=ann, prov=prov)
                 syms.append(VarSymbol(name=name, key=key, prov=prov, site=site, initializer=obj))
             continue
 
         if hasattr(obj, "__name__") and getattr(obj, "__module__", None) != modname:
             key = _mk_key(None, modname, name)
             prov = _source_prov(obj, modname=modname, key=key, name=name)
-            site = Site(role="alias_value", raw=obj)
+            site = Site(role="alias_value", raw=obj, prov=prov)
             syms.append(AliasSymbol(name=name, key=key, prov=prov, value=site))
             continue
 
@@ -117,7 +117,7 @@ def scan_module(glb_or_mod: ModuleType | t.Mapping[str, t.Any]) -> ModuleInfo:
             continue
         key = _mk_key(None, modname, name)
         prov = Provenance(module=modname, qualname=name, file=mod_file, line=None)
-        site = Site(role="var", name=name, raw=rann)
+        site = Site(role="var", name=name, raw=rann, prov=prov)
         syms.append(VarSymbol(name=name, key=key, prov=prov, site=site))
 
     return ModuleInfo(mod=mod, symbols=syms, provenance=modname)
@@ -134,13 +134,13 @@ def _scan_function(fn: t.Callable, *, modname: str, parent_key: str | None) -> F
         sig = inspect.signature(fn)
         for p in sig.parameters.values():
             if p.name in raw_ann:
-                params.append(Site(role="param", name=p.name, raw=raw_ann[p.name]))
+                params.append(Site(role="param", name=p.name, raw=raw_ann[p.name], prov=prov))
     except (TypeError, ValueError):
         pass
 
     ret = None
     if "return" in raw_ann:
-        ret = Site(role="return", raw=raw_ann["return"])
+        ret = Site(role="return", raw=raw_ann["return"], prov=prov)
 
     decos: list[str] = []
     if getattr(fn, "__isabstractmethod__", False):
@@ -167,7 +167,7 @@ def _scan_class(cls: type, *, modname: str, parent_key: str | None) -> ClassSymb
     for i, b in enumerate(bases_src):
         if b is object:
             continue
-        bases.append(Site(role="base", index=i, raw=b))
+        bases.append(Site(role="base", index=i, raw=b, prov=prov))
 
     is_td = isinstance(cls, getattr(t, "_TypedDictMeta", ()))
     td_total: bool | None = None
@@ -176,7 +176,7 @@ def _scan_class(cls: type, *, modname: str, parent_key: str | None) -> ClassSymb
         td_total = cls.__dict__.get("__total__", True)
         raw_ann = cls.__dict__.get("__annotations__", {}) or {}
         for fname, rann in raw_ann.items():
-            td_fields.append(Site(role="td_field", name=fname, raw=rann))
+            td_fields.append(Site(role="td_field", name=fname, raw=rann, prov=prov))
 
     members: list[Symbol] = []
 
@@ -186,7 +186,7 @@ def _scan_class(cls: type, *, modname: str, parent_key: str | None) -> ClassSymb
             continue
         key_m = f"{key}.{fname}"
         prov_m = Provenance(module=modname, qualname=f"{name}.{fname}", file=prov.file, line=None)
-        site = Site(role="var", name=fname, raw=rann)
+        site = Site(role="var", name=fname, raw=rann, prov=prov_m)
         init_val = cls.__dict__.get(fname, Ellipsis)
         members.append(
             VarSymbol(name=fname, key=key_m, prov=prov_m, site=site, initializer=init_val)

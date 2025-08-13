@@ -4,7 +4,17 @@ from dataclasses import dataclass, field
 from types import EllipsisType
 from typing import Literal, Optional
 
-from .ir import Provenance, TyRoot
+from .ir import TyRoot
+
+
+@dataclass(frozen=True)
+class Provenance:
+    """Non-semantic source info (for diagnostics), e.g. module/file/line."""
+
+    module: str
+    qualname: str
+    file: Optional[str] = None
+    line: Optional[int] = None
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -23,6 +33,7 @@ class Site:
     index: Optional[int] = None
     raw: object
     ty: Optional[TyRoot] = None
+    prov: Optional[Provenance] = field(default=None, compare=False, hash=False, repr=False)
 
 
 @dataclass(frozen=True, kw_only=True)
