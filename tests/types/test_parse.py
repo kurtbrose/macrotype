@@ -16,6 +16,7 @@ from macrotype.types.ir import (
     TyName,
     TyNever,
     TyParamSpec,
+    TyRoot,
     TyTuple,
     TyTypeVar,
     TyTypeVarTuple,
@@ -32,6 +33,17 @@ def b(name: str) -> TyName:
 
 def typ(name: str) -> TyName:
     return TyName(module="typing", name=name)
+
+
+# Wrap expected types in TyRoot with qualifier flags
+def r(
+    ty: Ty,
+    *,
+    final: bool = False,
+    required: bool | None = None,
+    classvar: bool = False,
+) -> TyRoot:
+    return TyRoot(ty=ty, is_final=final, is_required=required, is_classvar=classvar)
 
 
 # ----- fixtures used in tests -----
@@ -59,136 +71,135 @@ if hasattr(t, "TypeAliasType"):
 
 
 # ----- table-driven positive cases -----
-CASES: list[tuple[object, Ty]] = [
+CASES: list[tuple[object, TyRoot]] = [
     # atoms / basics
-    (int, b("int")),
-    (str, b("str")),
-    (None, b("None")),
-    (t.Any, TyAny()),
-    (t.NoReturn, TyNever()),
-    (t.Never, TyNever()),
-    (t.LiteralString, typ("LiteralString")),
+    (int, r(b("int"))),
+    (str, r(b("str"))),
+    (None, r(b("None"))),
+    (t.Any, r(TyAny())),
+    (t.NoReturn, r(TyNever())),
+    (t.Never, r(TyNever())),
+    (t.LiteralString, r(typ("LiteralString"))),
     # Literal (PEP 586 shapes)
-    (t.Literal[1, "x", True, None], TyLiteral(values=(1, "x", True, None))),
-    (t.Literal[Color.RED], TyLiteral(values=(Color.RED,))),
+    (t.Literal[1, "x", True, None], r(TyLiteral(values=(1, "x", True, None)))),
+    (t.Literal[Color.RED], r(TyLiteral(values=(Color.RED,)))),
     # builtins and common generics
-    (dict, b("dict")),
-    (list, b("list")),
-    (tuple, b("tuple")),
-    (set, b("set")),
-    (frozenset, b("frozenset")),
-    (dict[int], TyApp(base=b("dict"), args=(b("int"),))),
-    (dict[int, str], TyApp(base=b("dict"), args=(b("int"), b("str")))),
-    (dict[int, t.Any], TyApp(base=b("dict"), args=(b("int"), TyAny()))),
-    (list[int], TyApp(base=b("list"), args=(b("int"),))),
+    (dict, r(b("dict"))),
+    (list, r(b("list"))),
+    (tuple, r(b("tuple"))),
+    (set, r(b("set"))),
+    (frozenset, r(b("frozenset"))),
+    (dict[int], r(TyApp(base=b("dict"), args=(b("int"),)))),
+    (dict[int, str], r(TyApp(base=b("dict"), args=(b("int"), b("str"))))),
+    (dict[int, t.Any], r(TyApp(base=b("dict"), args=(b("int"), TyAny())))),
+    (list[int], r(TyApp(base=b("list"), args=(b("int"),)))),
     (
         list[list[int]],
-        TyApp(base=b("list"), args=(TyApp(base=b("list"), args=(b("int"),)),)),
+        r(TyApp(base=b("list"), args=(TyApp(base=b("list"), args=(b("int"),)),))),
     ),
     (
         dict[str, list[int]],
-        TyApp(base=b("dict"), args=(b("str"), TyApp(base=b("list"), args=(b("int"),)))),
+        r(
+            TyApp(
+                base=b("dict"),
+                args=(b("str"), TyApp(base=b("list"), args=(b("int"),))),
+            )
+        ),
     ),
     # tuples
-    (tuple[()], TyTuple(items=())),
-    (tuple[int], TyTuple(items=(b("int"),))),
-    (tuple[int, str], TyTuple(items=(b("int"), b("str")))),
+    (tuple[()], r(TyTuple(items=()))),
+    (tuple[int], r(TyTuple(items=(b("int"),)))),
+    (tuple[int, str], r(TyTuple(items=(b("int"), b("str"))))),
     # variadic as application with Ellipsis marker
-    (tuple[int, ...], TyApp(base=b("tuple"), args=(b("int"), b("Ellipsis")))),
+    (tuple[int, ...], r(TyApp(base=b("tuple"), args=(b("int"), b("Ellipsis"))))),
     (
         tuple[int, str, ...],
-        TyApp(base=b("tuple"), args=(b("int"), b("str"), b("Ellipsis"))),
+        r(TyApp(base=b("tuple"), args=(b("int"), b("str"), b("Ellipsis")))),
     ),
     # Unpack in tuples
-    (t.Unpack[Ts], TyUnpack(inner=TyTypeVarTuple(name="Ts"))),
-    (tuple[t.Unpack[Ts]], TyTuple(items=(TyUnpack(inner=TyTypeVarTuple(name="Ts")),))),
+    (t.Unpack[Ts], r(TyUnpack(inner=TyTypeVarTuple(name="Ts")))),
+    (
+        tuple[t.Unpack[Ts]],
+        r(TyTuple(items=(TyUnpack(inner=TyTypeVarTuple(name="Ts")),))),
+    ),
     # sets
-    (set[int], TyApp(base=b("set"), args=(b("int"),))),
-    (frozenset[str], TyApp(base=b("frozenset"), args=(b("str"),))),
+    (set[int], r(TyApp(base=b("set"), args=(b("int"),)))),
+    (frozenset[str], r(TyApp(base=b("frozenset"), args=(b("str"),)))),
     # unions / optionals
-    (t.Union[int, str], TyUnion(options=(b("int"), b("str")))),
-    (int | str, TyUnion(options=(b("int"), b("str")))),
-    (t.Union[int, str, None], TyUnion(options=(b("None"), b("int"), b("str")))),
+    (t.Union[int, str], r(TyUnion(options=(b("int"), b("str"))))),
+    (int | str, r(TyUnion(options=(b("int"), b("str"))))),
+    (t.Union[int, str, None], r(TyUnion(options=(b("None"), b("int"), b("str"))))),
     (
         dict[str, t.Union[int, None]],
-        TyApp(base=b("dict"), args=(b("str"), TyUnion(options=(b("None"), b("int"))))),
+        r(TyApp(base=b("dict"), args=(b("str"), TyUnion(options=(b("None"), b("int")))))),
     ),
     # callables
-    (t.Callable[[int, str], bool], TyCallable(params=(b("int"), b("str")), ret=b("bool"))),
-    (t.Callable[..., int], TyCallable(params=..., ret=b("int"))),
+    (
+        t.Callable[[int, str], bool],
+        r(TyCallable(params=(b("int"), b("str")), ret=b("bool"))),
+    ),
+    (t.Callable[..., int], r(TyCallable(params=..., ret=b("int")))),
     (
         t.Callable[P, int],
-        TyCallable(params=(TyParamSpec(name="P"),), ret=b("int")),
+        r(TyCallable(params=(TyParamSpec(name="P"),), ret=b("int"))),
     ),
     (
         t.Concatenate[int, P],
-        TyApp(base=typ("Concatenate"), args=(b("int"), TyParamSpec(name="P"))),
+        r(TyApp(base=typ("Concatenate"), args=(b("int"), TyParamSpec(name="P")))),
     ),
     (
         t.Callable[t.Concatenate[int, P], int],
-        TyCallable(
-            params=(
-                TyApp(
-                    base=typ("Concatenate"),
-                    args=(b("int"), TyParamSpec(name="P")),
+        r(
+            TyCallable(
+                params=(
+                    TyApp(
+                        base=typ("Concatenate"),
+                        args=(b("int"), TyParamSpec(name="P")),
+                    ),
                 ),
-            ),
-            ret=b("int"),
+                ret=b("int"),
+            )
         ),
     ),
     # Annotated
     (
         t.Annotated[int, "x"],
-        TyName(module="builtins", name="int", annotations=TyAnnoTree(annos=("x",))),
+        r(TyName(module="builtins", name="int", annotations=TyAnnoTree(annos=("x",)))),
     ),
     # ClassVar / Final / Required / NotRequired
-    (t.ClassVar[int], b("int")),
-    (t.Final[int], b("int")),
-    (t.Final, TyAny()),
-    (t.NotRequired[int], b("int")),
-    (t.Required[str], b("str")),
+    (t.ClassVar[int], r(b("int"), classvar=True)),
+    (t.Final[int], r(b("int"), final=True)),
+    (t.Final, r(TyAny(), final=True)),
+    (t.NotRequired[int], r(b("int"), required=False)),
+    (t.Required[str], r(b("str"), required=True)),
     # variables / binders (declaration-like leaves appearing at use sites)
     (
         T,
-        TyTypeVar(name="T", bound=None, constraints=(), cov=False, contrav=False),
+        r(TyTypeVar(name="T", bound=None, constraints=(), cov=False, contrav=False)),
     ),
-    (P, TyParamSpec(name="P")),
-    (Ts, TyTypeVarTuple(name="Ts")),
-    (t.Unpack[Ts], TyUnpack(inner=TyTypeVarTuple(name="Ts"))),
+    (P, r(TyParamSpec(name="P"))),
+    (Ts, r(TyTypeVarTuple(name="Ts"))),
+    (t.Unpack[Ts], r(TyUnpack(inner=TyTypeVarTuple(name="Ts")))),
     # typing.Type / builtins.type
-    (t.Type[int], TyApp(base=b("type"), args=(b("int"),))),
+    (t.Type[int], r(TyApp(base=b("type"), args=(b("int"),)))),
     # forward ref by string
-    ("User", TyForward(qualname="User")),
+    ("User", r(TyForward(qualname="User"))),
     # collections.abc generics parse (kept as names/apps; normalization can fold later)
-    (t.Deque[int], TyApp(base=typ("Deque"), args=(b("int"),))),
+    (t.Deque[int], r(TyApp(base=typ("Deque"), args=(b("int"),)))),
 ]
-
-FLAGS = {
-    repr(t.ClassVar[int]): (False, None, True),
-    repr(t.Final[int]): (True, None, False),
-    repr(t.Final): (True, None, False),
-    repr(t.NotRequired[int]): (False, False, False),
-    repr(t.Required[str]): (False, True, False),
-}
 
 # Optional cases depending on runtime features
 if AliasListT is not None:
     CASES.append(
         (
             AliasListT[int],
-            TyApp(base=TyName(module=__name__, name="AliasListT"), args=(b("int"),)),
+            r(TyApp(base=TyName(module=__name__, name="AliasListT"), args=(b("int"),))),
         )
     )
 
 
 def test_parse_table_driven():
-    assert CASES == [(src, parse(src).ty) for src, _ in CASES]
-    for src, _ in CASES:
-        got = parse(src)
-        is_final, is_required, is_classvar = FLAGS.get(repr(src), (False, None, False))
-        assert got.is_final is is_final
-        assert got.is_required is is_required
-        assert got.is_classvar is is_classvar
+    assert CASES == [(src, parse(src)) for src, _ in CASES]
 
 
 def test_user_generic_application():
