@@ -20,6 +20,7 @@ from macrotype.modules.transformers import (
     prune_protocol_methods,
     synthesize_aliases,
     transform_dataclasses,
+    transform_enums,
 )
 
 
@@ -298,3 +299,36 @@ def test_typeddict_transform() -> None:
     assert len(derived.td_fields) == 1
     assert derived.td_fields[0].name == "c"
     assert derived.td_total is None
+
+
+def test_enum_transform() -> None:
+    code = """
+    from enum import Enum, IntFlag
+
+    class Color(Enum):
+        RED = 1
+        GREEN = 2
+        def describe(self) -> str: ...
+
+    class Permission(IntFlag):
+        READ = 1
+        WRITE = 2
+    """
+    mod = mod_from_code(code, "enums")
+    mi = scan_module(mod)
+    transform_enums(mi)
+    color = t.cast(
+        ClassSymbol, next(s for s in mi.symbols if isinstance(s, ClassSymbol) and s.name == "Color")
+    )
+    aliases = [m for m in color.members if isinstance(m, AliasSymbol)]
+    assert [a.name for a in aliases] == ["RED", "GREEN"]
+    methods = {m.name for m in color.members if isinstance(m, FuncSymbol)}
+    assert "describe" in methods and "__new__" not in methods
+    perm = t.cast(
+        ClassSymbol,
+        next(s for s in mi.symbols if isinstance(s, ClassSymbol) and s.name == "Permission"),
+    )
+    perm_aliases = [m.name for m in perm.members if isinstance(m, AliasSymbol)]
+    assert perm_aliases == ["READ", "WRITE"]
+    perm_methods = {m.name for m in perm.members if isinstance(m, FuncSymbol)}
+    assert "__or__" not in perm_methods
