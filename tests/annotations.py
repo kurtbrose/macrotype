@@ -559,6 +559,9 @@ PLAIN_FINAL_VAR: Final[int] = 1
 # Edge case: alias to a foreign function should be preserved
 SIN_ALIAS = math.sin
 
+# Foreign function with annotation should stay a variable
+COS_VAR: Callable[[float], float] = math.cos
+
 # Edge case: alias to a foreign constant should retain its type
 PI_ALIAS = math.pi
 

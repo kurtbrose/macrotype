@@ -370,6 +370,8 @@ PLAIN_FINAL_VAR: Final[int]
 
 SIN_ALIAS = sin
 
+COS_VAR: Callable[[float], float]
+
 PI_ALIAS: float
 
 PRAGMA_VAR: int  # type: ignore
