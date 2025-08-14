@@ -6,6 +6,7 @@ import typing
 import pytest
 
 from macrotype.modules import from_module
+from macrotype.modules.foreign_symbol_transform import canonicalize_foreign_symbols
 from macrotype.modules.overload_transform import expand_overloads
 from macrotype.modules.scanner import ModuleInfo, scan_module
 from macrotype.modules.symbols import (
@@ -60,12 +61,17 @@ def test_typeddict_fields(idx: dict[str, object]) -> None:
     assert fields == ["name", "age"]
 
 
-def test_aliases(idx: dict[str, object]) -> None:
-    other = get(idx, "Other")
+def test_aliases() -> None:
+    ann = importlib.import_module("tests.annotations")
+    mi = scan_module(ann)
+    canonicalize_foreign_symbols(mi)
+    by_key = {s.name: s for s in mi.symbols}
+
+    other = typing.cast(AliasSymbol, by_key["Other"])
     assert isinstance(other, AliasSymbol)
     assert typing.get_origin(other.value.annotation) is dict
 
-    mylist = get(idx, "MyList")
+    mylist = typing.cast(AliasSymbol, by_key["MyList"])
     assert isinstance(mylist, AliasSymbol)
     assert typing.get_origin(mylist.value.annotation) is list
 
@@ -116,9 +122,17 @@ def test_variadic_things_dont_crash(idx: dict[str, object]) -> None:
     assert isinstance(vnt, ClassSymbol)
 
 
-def test_simple_alias_to_foreign(idx: dict[str, object]) -> None:
-    sin = get(idx, "SIN_ALIAS")
+def test_simple_alias_to_foreign() -> None:
+    ann = importlib.import_module("tests.annotations")
+    mi = scan_module(ann)
+    canonicalize_foreign_symbols(mi)
+    by_key = {s.name: s for s in mi.symbols}
+
+    sin = by_key["SIN_ALIAS"]
     assert isinstance(sin, AliasSymbol)
+
+    cos = by_key["COS_VAR"]
+    assert isinstance(cos, VarSymbol)
 
 
 def test_class_vars_scanned(idx: dict[str, object]) -> None:

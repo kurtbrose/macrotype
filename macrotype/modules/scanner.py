@@ -57,10 +57,8 @@ def scan_module(mod: ModuleType) -> ModuleInfo:
                 syms.append(VarSymbol(name=name, site=site, initializer=obj))
             continue
 
-        if hasattr(obj, "__name__") and getattr(obj, "__module__", None) != modname:
-            site = Site(role="alias_value", annotation=obj)
-            syms.append(AliasSymbol(name=name, value=site))
-            continue
+        site = Site(role="var", name=name, annotation=type(obj))
+        syms.append(VarSymbol(name=name, site=site, initializer=obj))
 
     for name, rann in mod_ann.items():
         if name in seen:
