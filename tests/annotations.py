@@ -973,3 +973,20 @@ class RequiredUndefinedCls:
     __annotations__ = {
         k: strip_null(v, Undefined) for k, v in mt.all_annotations(UndefinedCls).items()
     }
+
+
+# Callable wrapped by non-function object with __wrapped__
+def _wrap(fn):
+    class Wrapper:
+        def __init__(self, f):
+            self._f = f
+            self.__wrapped__ = f
+
+        def __call__(self, *a, **kw):
+            return self._f(*a, **kw)
+
+    return Wrapper(fn)
+
+
+@_wrap
+def wrapped_callable(x: int, y: str) -> str: ...
