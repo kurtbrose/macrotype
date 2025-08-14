@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import typing as t
 
-from macrotype.modules.ir import AliasDecl, Decl, ModuleDecl, Site, VarDecl
+from macrotype.modules.ir import Decl, ModuleDecl, Site, TypeDefDecl, VarDecl
 
 
 def canonicalize_foreign_symbols(mi: ModuleDecl) -> None:
@@ -31,7 +31,7 @@ def canonicalize_foreign_symbols(mi: ModuleDecl) -> None:
             alias_name = getattr(obj, "__name__", None)
             if alias_name and alias_name != sym.name:
                 new_syms.append(
-                    AliasDecl(
+                    TypeDefDecl(
                         name=sym.name,
                         value=Site(role="alias_value", annotation=obj),
                         obj=obj,

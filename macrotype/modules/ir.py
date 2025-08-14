@@ -81,11 +81,11 @@ class ClassDecl(Decl):
 
 
 @dataclass(kw_only=True)
-class AliasDecl(Decl):
+class TypeDefDecl(Decl):
     value: Optional[Site]
     obj: object | None = None
     type_params: tuple[str, ...] = ()
-    alias_type: object | None = None
+    obj_type: object | None = None
 
     def get_annotation_sites(self) -> tuple[Site, ...]:
         return (self.value,) if self.value is not None else ()

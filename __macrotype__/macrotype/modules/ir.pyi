@@ -20,7 +20,7 @@ class Decl:
 
 @dataclass(kw_only=True)
 class Site:
-    role: Literal['var', 'return', 'param', 'base', 'alias_value', 'td_field']
+    role: Literal["var", "return", "param", "base", "alias_value", "td_field"]
     name: None | str
     index: None | int
     annotation: object
@@ -58,11 +58,11 @@ class ClassDecl(Decl):
     def get_annotation_sites(self) -> tuple[Site, ...]: ...
 
 @dataclass(kw_only=True)
-class AliasDecl(Decl):
+class TypeDefDecl(Decl):
     value: None | Site
     obj: None | object
     type_params: tuple[str, ...]
-    alias_type: None | object
+    obj_type: None | object
     def get_annotation_sites(self) -> tuple[Site, ...]: ...
 
 @dataclass(kw_only=True)

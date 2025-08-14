@@ -7,11 +7,11 @@ import pytest
 
 from macrotype.modules import from_module
 from macrotype.modules.ir import (
-    AliasDecl,
     ClassDecl,
     Decl,
     FuncDecl,
     ModuleDecl,
+    TypeDefDecl,
     VarDecl,
 )
 from macrotype.modules.scanner import scan_module
@@ -67,12 +67,12 @@ def test_aliases() -> None:
     canonicalize_foreign_symbols(mi)
     by_key = {s.name: s for s in mi.members}
 
-    other = typing.cast(AliasDecl, by_key["Other"])
-    assert isinstance(other, AliasDecl)
+    other = typing.cast(TypeDefDecl, by_key["Other"])
+    assert isinstance(other, TypeDefDecl)
     assert typing.get_origin(other.value.annotation) is dict
 
-    mylist = typing.cast(AliasDecl, by_key["MyList"])
-    assert isinstance(mylist, AliasDecl)
+    mylist = typing.cast(TypeDefDecl, by_key["MyList"])
+    assert isinstance(mylist, TypeDefDecl)
     assert typing.get_origin(mylist.value.annotation) is list
 
 
@@ -129,7 +129,7 @@ def test_simple_alias_to_foreign() -> None:
     by_key = {s.name: s for s in mi.members}
 
     sin = by_key["SIN_ALIAS"]
-    assert isinstance(sin, AliasDecl)
+    assert isinstance(sin, TypeDefDecl)
 
     cos = by_key["COS_VAR"]
     assert isinstance(cos, VarDecl)

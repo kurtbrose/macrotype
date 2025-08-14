@@ -8,7 +8,7 @@ INDENT = "    "
 
 import typing as t
 
-from .ir import AliasDecl, ClassDecl, Decl, FuncDecl, ModuleDecl, VarDecl
+from .ir import ClassDecl, Decl, FuncDecl, ModuleDecl, TypeDefDecl, VarDecl
 
 
 def emit_module(mi: ModuleDecl) -> list[str]:
@@ -57,7 +57,7 @@ def _collect_typing_names(symbols: Iterable[Decl]) -> set[str]:
             if base in {"final", "override", "overload", "runtime_checkable"}:
                 names.add(base)
         match sym:
-            case AliasDecl(alias_type=alias):
+            case TypeDefDecl(obj_type=alias):
                 if isinstance(alias, (t.TypeVar, t.ParamSpec, t.TypeVarTuple)):
                     names.add(type(alias).__name__)
                 elif alias is t.NewType:
@@ -203,7 +203,7 @@ def _emit_decl(sym: Decl, name_map: dict[int, str], *, indent: int) -> list[str]
             line = _add_comment(line, sym.comment or site.comment)
             return [line]
 
-        case AliasDecl(value=site, type_params=params, alias_type=alias):
+        case TypeDefDecl(value=site, type_params=params, obj_type=alias):
             keyword = param_str = ""
             match alias:
                 case t.TypeAliasType():  # type: ignore[attr-defined]

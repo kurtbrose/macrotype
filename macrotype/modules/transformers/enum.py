@@ -4,16 +4,16 @@ from __future__ import annotations
 
 import enum
 
-from macrotype.modules.ir import AliasDecl, ClassDecl, ModuleDecl, Site
+from macrotype.modules.ir import ClassDecl, ModuleDecl, Site, TypeDefDecl
 
 
-def _enum_members(klass: enum.EnumMeta) -> list[AliasDecl]:
+def _enum_members(klass: enum.EnumMeta) -> list[TypeDefDecl]:
     """Return alias symbols for enum members in *klass*."""
 
-    members: list[AliasDecl] = []
+    members: list[TypeDefDecl] = []
     for member_name, member in klass.__members__.items():
         site = Site(role="alias_value", annotation=member.value)
-        members.append(AliasDecl(name=member_name, value=site, obj=member))
+        members.append(TypeDefDecl(name=member_name, value=site, obj=member))
     return members
 
 
