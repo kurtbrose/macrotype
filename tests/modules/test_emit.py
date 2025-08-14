@@ -5,6 +5,7 @@ from types import ModuleType
 from typing import Annotated, Any, Callable, ClassVar, Literal, NewType, TypeAliasType, Union
 
 from macrotype.meta_types import set_module
+from macrotype.modules import resolve_imports
 from macrotype.modules.emit import emit_module
 from macrotype.modules.ir import (
     ClassDecl,
@@ -230,6 +231,8 @@ CASES = [case1, case2, case3, case4, case5, case6, case7, case8, case9, case10]
 
 
 def test_emit_module_table() -> None:
+    for mi, _ in CASES:
+        resolve_imports(mi)
     got = [emit_module(mi) for mi, _ in CASES]
     expected = [exp for _, exp in CASES]
     assert got == expected
