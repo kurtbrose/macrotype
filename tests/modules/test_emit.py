@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import pathlib
 from types import ModuleType
 from typing import Annotated, Any, Callable, ClassVar, Literal, NewType, TypeAliasType, Union
 
+from macrotype.meta_types import set_module
 from macrotype.modules.emit import emit_module
 from macrotype.modules.ir import (
     ClassDecl,
@@ -209,7 +211,22 @@ case9 = (
         "    ...",
     ],
 )
-CASES = [case1, case2, case3, case4, case5, case6, case7, case8, case9]
+mod10 = ModuleType("m10")
+orig = pathlib.Path.__module__
+set_module(pathlib.Path, "pathlib._local")
+case10 = (
+    ModuleDecl(
+        name=mod10.__name__,
+        obj=mod10,
+        members=[
+            VarDecl(name="p", site=Site(role="var", annotation=pathlib.Path)),
+        ],
+    ),
+    ["from pathlib import Path", "", "p: Path"],
+)
+set_module(pathlib.Path, orig)
+
+CASES = [case1, case2, case3, case4, case5, case6, case7, case8, case9, case10]
 
 
 def test_emit_module_table() -> None:
