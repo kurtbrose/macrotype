@@ -1,4 +1,4 @@
-# Generated via: macrotype tests/annotations.py -o tests/annotations.pyi
+# Generated via: macrotype tests/annotations.py -o -
 # Do not edit by hand
 # pyright: basic
 from abc import ABC, abstractmethod
@@ -635,6 +635,8 @@ SET_LIST_VAR: set[list[str]]
 TUPLE_LIST_VAR: tuple[list[str], int]
 
 CALLABLE_LIST_VAR: list[Callable[[int], str]]
+
+STRICT_UNION: int | str
 
 GENERIC_DEQUE: deque[int]
 

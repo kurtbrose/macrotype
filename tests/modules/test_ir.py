@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import types
 import typing
 
 import pytest
@@ -220,3 +221,20 @@ def test_flag_transform() -> None:
     m = next(m for m in ab.members if isinstance(m, FuncDecl) and m.name == "do_something")
     assert m.flags.get("abstract") is True
     assert "abstractmethod" in m.decorators
+
+
+def test_strict_mode_normalizes_union() -> None:
+    ann = importlib.import_module("tests.annotations")
+
+    mi_default = from_module(ann)
+    var_default = next(
+        s for s in mi_default.members if isinstance(s, VarDecl) and s.name == "STRICT_UNION"
+    )
+    assert typing.get_origin(var_default.site.annotation) is typing.Union
+
+    mi_strict = from_module(ann, strict=True)
+    var_strict = next(
+        s for s in mi_strict.members if isinstance(s, VarDecl) and s.name == "STRICT_UNION"
+    )
+    assert var_strict.site.annotation == (int | str)
+    assert typing.get_origin(var_strict.site.annotation) is types.UnionType

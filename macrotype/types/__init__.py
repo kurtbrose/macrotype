@@ -18,4 +18,24 @@ def from_type(obj: object) -> Ty:
     return validate(normalized)
 
 
-__all__ = ["Ty", "from_type", "unparse", "unparse_top", "parse", "resolve", "norm", "validate"]
+def normalize_annotation(obj: object) -> object:
+    """Return a normalized typing object for *obj*.
+
+    The annotation is parsed, resolved, normalized, validated, and then
+    converted back into a Python typing object.
+    """
+
+    return unparse_top(from_type(obj))
+
+
+__all__ = [
+    "Ty",
+    "from_type",
+    "unparse",
+    "unparse_top",
+    "parse",
+    "resolve",
+    "norm",
+    "validate",
+    "normalize_annotation",
+]

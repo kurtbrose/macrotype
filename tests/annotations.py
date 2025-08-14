@@ -148,6 +148,9 @@ BOOL_FALSE = False
 # Variable to test Site provenance handling
 SITE_PROV_VAR: int = 1
 
+# Union variable used to exercise strict normalization
+STRICT_UNION: Union[str, int]
+
 
 COMMENTED_VAR: int = 1  # pragma: var
 
