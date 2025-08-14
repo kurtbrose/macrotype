@@ -8,12 +8,13 @@ from types import ModuleType
 import pytest
 
 from macrotype.meta_types import clear_registry
-from macrotype.modules.ir import ClassDecl, FuncDecl, TypeDefDecl, VarDecl
+from macrotype.modules.ir import ClassDecl, FuncDecl, ModuleDecl, Site, TypeDefDecl, VarDecl
 from macrotype.modules.scanner import scan_module
 from macrotype.modules.transformers import (
     add_comments,
     canonicalize_foreign_symbols,
     expand_overloads,
+    infer_constant_types,
     infer_param_defaults,
     normalize_descriptors,
     normalize_flags,
@@ -113,6 +114,32 @@ def test_newtype_transform() -> None:
     assert isinstance(user, TypeDefDecl)
     assert user.obj_type is t.NewType
     assert user.value and user.value.annotation is int
+
+
+def test_constant_transform() -> None:
+    class CustomInt(int):
+        pass
+
+    members = [
+        VarDecl(name="ANSWER", site=Site(role="var", name="ANSWER"), obj=42),
+        VarDecl(name="GREETING", site=Site(role="var", name="GREETING"), obj="hi"),
+        VarDecl(name="RATE", site=Site(role="var", name="RATE"), obj=1.5),
+        VarDecl(name="FLAG", site=Site(role="var", name="FLAG"), obj=True),
+        VarDecl(name="CUSTOM", site=Site(role="var", name="CUSTOM"), obj=CustomInt(1)),
+    ]
+    mi = ModuleDecl(name="consts", obj=ModuleType("consts"), members=members)
+    infer_constant_types(mi)
+    by_name = {s.name: s for s in mi.members}
+    ans = t.cast(VarDecl, by_name["ANSWER"])
+    greet = t.cast(VarDecl, by_name["GREETING"])
+    rate = t.cast(VarDecl, by_name["RATE"])
+    flag = t.cast(VarDecl, by_name["FLAG"])
+    custom = t.cast(VarDecl, by_name["CUSTOM"])
+    assert ans.site.annotation is int
+    assert greet.site.annotation is str
+    assert rate.site.annotation is float
+    assert flag.site.annotation is bool
+    assert custom.site.annotation is None
 
 
 def test_dataclass_transform() -> None:
