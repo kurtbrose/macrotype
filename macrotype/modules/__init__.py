@@ -4,32 +4,8 @@ from __future__ import annotations
 
 from types import ModuleType
 
-from .add_comment_transform import add_comments
-from .alias_transform import synthesize_aliases
-from .dataclass_transform import transform_dataclasses
-from .descriptor_transform import normalize_descriptors
 from .emit import emit_module
-from .flag_transform import normalize_flags
-from .foreign_symbol_transform import canonicalize_foreign_symbols
-from .overload_transform import expand_overloads
 from .scanner import ModuleInfo, scan_module
-from .typeddict_transform import prune_inherited_typeddict_fields
-
-
-def from_module(mod: ModuleType) -> ModuleInfo:
-    """Scan *mod* into a ModuleInfo and attach comments."""
-
-    mi = scan_module(mod)
-    canonicalize_foreign_symbols(mi)
-    synthesize_aliases(mi)
-    transform_dataclasses(mi)
-    prune_inherited_typeddict_fields(mi)
-    normalize_descriptors(mi)
-    normalize_flags(mi)
-    expand_overloads(mi)
-    add_comments(mi)
-    return mi
-
 
 __all__ = [
     "ModuleInfo",
@@ -45,3 +21,37 @@ __all__ = [
     "scan_module",
     "transform_dataclasses",
 ]
+
+
+def __getattr__(name: str):
+    if name in {
+        "add_comments",
+        "canonicalize_foreign_symbols",
+        "expand_overloads",
+        "normalize_descriptors",
+        "normalize_flags",
+        "prune_inherited_typeddict_fields",
+        "synthesize_aliases",
+        "transform_dataclasses",
+    }:
+        from . import transformers as _t
+
+        return getattr(_t, name)
+    raise AttributeError(name)
+
+
+def from_module(mod: ModuleType) -> ModuleInfo:
+    """Scan *mod* into a ModuleInfo and attach comments."""
+
+    from . import transformers as _t
+
+    mi = scan_module(mod)
+    _t.canonicalize_foreign_symbols(mi)
+    _t.synthesize_aliases(mi)
+    _t.transform_dataclasses(mi)
+    _t.prune_inherited_typeddict_fields(mi)
+    _t.normalize_descriptors(mi)
+    _t.normalize_flags(mi)
+    _t.expand_overloads(mi)
+    _t.add_comments(mi)
+    return mi

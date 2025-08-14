@@ -3,8 +3,8 @@ from __future__ import annotations
 import dataclasses
 from typing import Any
 
-from .scanner import ModuleInfo
-from .symbols import ClassSymbol
+from macrotype.modules.scanner import ModuleInfo
+from macrotype.modules.symbols import ClassSymbol
 
 # Defaults used when recreating a ``@dataclass`` decorator.
 _DATACLASS_DEFAULTS: dict[str, Any] = {

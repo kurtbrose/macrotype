@@ -6,8 +6,6 @@ import typing
 import pytest
 
 from macrotype.modules import from_module
-from macrotype.modules.foreign_symbol_transform import canonicalize_foreign_symbols
-from macrotype.modules.overload_transform import expand_overloads
 from macrotype.modules.scanner import ModuleInfo, scan_module
 from macrotype.modules.symbols import (
     AliasSymbol,
@@ -16,6 +14,7 @@ from macrotype.modules.symbols import (
     Symbol,
     VarSymbol,
 )
+from macrotype.modules.transformers import canonicalize_foreign_symbols, expand_overloads
 
 
 @pytest.fixture(scope="module")

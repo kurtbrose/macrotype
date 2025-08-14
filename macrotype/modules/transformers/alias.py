@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import typing as t
 
-from .scanner import ModuleInfo
-from .symbols import AliasSymbol, Site
+from macrotype.modules.scanner import ModuleInfo
+from macrotype.modules.symbols import AliasSymbol, Site
 
 
 def synthesize_aliases(mi: ModuleInfo) -> None:

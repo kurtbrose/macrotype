@@ -1,0 +1,3 @@
+from macrotype.modules.scanner import ModuleInfo
+
+def canonicalize_foreign_symbols(mi: ModuleInfo) -> None: ...
