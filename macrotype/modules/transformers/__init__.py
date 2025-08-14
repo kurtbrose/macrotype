@@ -5,6 +5,7 @@ from .descriptor import normalize_descriptors
 from .enum import transform_enums
 from .flag import normalize_flags
 from .foreign_symbol import canonicalize_foreign_symbols
+from .newtype import transform_newtypes
 from .overload import expand_overloads
 from .protocol import prune_protocol_methods
 from .typeddict import prune_inherited_typeddict_fields
@@ -18,6 +19,7 @@ __all__ = [
     "normalize_flags",
     "canonicalize_foreign_symbols",
     "expand_overloads",
+    "transform_newtypes",
     "prune_protocol_methods",
     "prune_inherited_typeddict_fields",
 ]

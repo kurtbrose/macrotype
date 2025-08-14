@@ -162,7 +162,21 @@ case7 = (
         "s: 'A'",
     ],
 )
-CASES = [case1, case2, case3, case4, case5, case6, case7]
+mod8 = ModuleType("m8")
+case8 = (
+    ModuleInfo(
+        mod=mod8,
+        symbols=[
+            AliasSymbol(
+                name="UserId",
+                value=Site(role="alias_value", annotation=int),
+                flags={"is_newtype": True},
+            ),
+        ],
+    ),
+    ["from typing import NewType", "", 'UserId = NewType("UserId", int)'],
+)
+CASES = [case1, case2, case3, case4, case5, case6, case7, case8]
 
 
 def test_emit_module_table() -> None:

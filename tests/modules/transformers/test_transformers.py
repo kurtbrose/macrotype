@@ -21,6 +21,7 @@ from macrotype.modules.transformers import (
     synthesize_aliases,
     transform_dataclasses,
     transform_enums,
+    transform_newtypes,
 )
 
 
@@ -70,6 +71,22 @@ def test_alias_transform() -> None:
     alias = t.cast(AliasSymbol, by_name["Alias"])
     assert alias.type_params == ("T",)
     assert t.get_origin(alias.value.annotation) is list
+
+
+def test_newtype_transform() -> None:
+    code = """
+    from typing import NewType
+
+    UserId = NewType("UserId", int)
+    """
+    mod = mod_from_code(code, "newtype")
+    mi = scan_module(mod)
+    transform_newtypes(mi)
+    by_name = {s.name: s for s in mi.symbols}
+    user = by_name["UserId"]
+    assert isinstance(user, AliasSymbol)
+    assert user.flags.get("is_newtype") is True
+    assert user.value and user.value.annotation is int
 
 
 def test_dataclass_transform() -> None:
