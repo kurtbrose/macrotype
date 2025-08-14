@@ -61,6 +61,8 @@ def _collect_typing_names(symbols: Iterable[Symbol]) -> set[str]:
                     names.add("ParamSpec")
                 if flags.get("is_typevartuple"):
                     names.add("TypeVarTuple")
+                if flags.get("is_newtype"):
+                    names.add("NewType")
             case ClassSymbol(members=members):
                 names.update(_collect_typing_names(members))
     return names
@@ -222,6 +224,9 @@ def _emit_symbol(sym: Symbol, name_map: dict[int, str], *, indent: int) -> list[
                 line = f"{pad}{sym.name} = {_stringify_paramspec(site.annotation)}"
             elif flags.get("is_typevartuple"):
                 line = f"{pad}{sym.name} = {_stringify_typevartuple(site.annotation)}"
+            elif flags.get("is_newtype"):
+                ty = stringify_annotation(site.annotation, name_map)
+                line = f'{pad}{sym.name} = NewType("{sym.name}", {ty})'
             elif flags.get("is_typealias"):
                 ty = stringify_annotation(site.annotation, name_map)
                 line = f"{pad}{sym.name} = {ty}"
