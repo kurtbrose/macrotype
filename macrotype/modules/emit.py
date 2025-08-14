@@ -59,15 +59,10 @@ def _collect_typing_names(symbols: Iterable[Symbol]) -> set[str]:
                 names.add(base)
         match sym:
             case AliasSymbol(alias_type=alias):
-                match alias:
-                    case t.TypeVar():
-                        names.add("TypeVar")
-                    case t.ParamSpec():
-                        names.add("ParamSpec")
-                    case t.TypeVarTuple():
-                        names.add("TypeVarTuple")
-                    case t.NewType:
-                        names.add("NewType")
+                if isinstance(alias, (t.TypeVar, t.ParamSpec, t.TypeVarTuple)):
+                    names.add(type(alias).__name__)
+                elif alias is t.NewType:
+                    names.add(alias.__name__)
             case ClassSymbol(members=members):
                 names.update(_collect_typing_names(members))
     return names
@@ -223,25 +218,26 @@ def _emit_symbol(sym: Symbol, name_map: dict[int, str], *, indent: int) -> list[
             return [line]
 
         case AliasSymbol(value=site, type_params=params, alias_type=alias):
-            if isinstance(alias, t.TypeAliasType):  # type: ignore[attr-defined]
-                ty = stringify_annotation(site.annotation, name_map)
-                param_str = f"[{', '.join(params)}]" if params else ""
-                line = f"{pad}type {sym.name}{param_str} = {ty}"
-            else:
-                if isinstance(alias, t.TypeVar):
-                    rhs = _stringify_typevar(alias, name_map)
-                elif isinstance(alias, t.ParamSpec):
-                    rhs = _stringify_paramspec(alias)
-                elif isinstance(alias, t.TypeVarTuple):
-                    rhs = _stringify_typevartuple(alias)
-                elif alias is t.TypeAlias:  # type: ignore[misc]
+            keyword = param_str = ""
+            match alias:
+                case t.TypeAliasType():  # type: ignore[attr-defined]
+                    keyword = "type "
                     rhs = stringify_annotation(site.annotation, name_map)
-                elif alias is t.NewType:
+                    param_str = f"[{', '.join(params)}]" if params else ""
+                case t.TypeVar():
+                    rhs = _stringify_typevar(alias, name_map)
+                case t.ParamSpec():
+                    rhs = _stringify_paramspec(alias)
+                case t.TypeVarTuple():
+                    rhs = _stringify_typevartuple(alias)
+                case t.TypeAlias:  # type: ignore[misc]
+                    rhs = stringify_annotation(site.annotation, name_map)
+                case t.NewType:
                     ty = stringify_annotation(site.annotation, name_map)
                     rhs = f'NewType("{sym.name}", {ty})'
-                else:
+                case _:
                     raise NotImplementedError(f"Unsupported alias type: {alias!r}")
-                line = f"{pad}{sym.name} = {rhs}"
+            line = f"{pad}{keyword}{sym.name}{param_str} = {rhs}"
             line = _add_comment(line, sym.comment or site.comment)
             return [line]
 
