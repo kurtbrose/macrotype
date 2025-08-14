@@ -314,6 +314,26 @@ def test_protocol_transform() -> None:
     assert member_names == {"meth"}
 
 
+def test_protocol_prunes_explicit_methods() -> None:
+    code = """
+    from typing import Protocol
+
+    class P(Protocol):
+        def __init__(self, x: int) -> None: ...
+        @classmethod
+        def __subclasshook__(cls, other: type) -> bool: ...
+        def meth(self) -> None: ...
+    """
+    mod = mod_from_code(code, "proto_explicit")
+    mi = scan_module(mod)
+    prune_protocol_methods(mi)
+    proto = t.cast(
+        ClassDecl, next(s for s in mi.members if isinstance(s, ClassDecl) and s.name == "P")
+    )
+    member_names = {m.name for m in proto.members if isinstance(m, FuncDecl)}
+    assert member_names == {"meth"}
+
+
 @pytest.mark.skip(reason="TypedDict base classes not in MRO at runtime")
 def test_typeddict_transform() -> None:
     code = """
