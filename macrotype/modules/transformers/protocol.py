@@ -6,8 +6,14 @@ from typing import Any
 
 from macrotype.modules.ir import ClassDecl, FuncDecl, ModuleDecl
 
-# Methods inserted by ``Protocol`` machinery which should be removed
-_PROTOCOL_METHOD_NAMES = {"_proto_hook", "_no_init_or_replace_init"}
+# Methods inserted by ``Protocol`` machinery or otherwise disallowed
+# on ``Protocol`` classes which should be removed from stubs.
+_PROTOCOL_METHOD_NAMES = {
+    "_proto_hook",
+    "_no_init_or_replace_init",
+    "__init__",
+    "__subclasshook__",
+}
 
 
 def _transform_class(sym: ClassDecl, cls: type[Any]) -> None:
