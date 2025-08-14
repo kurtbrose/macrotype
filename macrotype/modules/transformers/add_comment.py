@@ -7,11 +7,11 @@ import tokenize
 from types import ModuleType
 
 from macrotype.modules.ir import (
-    AliasDecl,
     ClassDecl,
     Decl,
     FuncDecl,
     ModuleDecl,
+    TypeDefDecl,
     VarDecl,
 )
 
@@ -68,7 +68,7 @@ def _attach(sym: Decl, obj: object | None, cmap: dict[str, str]) -> None:
     match sym:
         case VarDecl(site=site):
             site.comment = comment
-        case AliasDecl(value=site):
+        case TypeDefDecl(value=site):
             if site:
                 site.comment = comment
         case FuncDecl():

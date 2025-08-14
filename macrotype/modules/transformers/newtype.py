@@ -3,12 +3,12 @@
 import typing as t
 
 from macrotype.modules.ir import (
-    AliasDecl,
     ClassDecl,
     Decl,
     FuncDecl,
     ModuleDecl,
     Site,
+    TypeDefDecl,
     VarDecl,
 )
 
@@ -19,10 +19,10 @@ def _transform_decls(decls: list[Decl]) -> list[Decl]:
         match decl:
             case FuncDecl(name=name, obj=obj, comment=comment, emit=emit):
                 if callable(obj) and hasattr(obj, "__supertype__"):
-                    alias = AliasDecl(
+                    alias = TypeDefDecl(
                         name=name,
                         value=Site(role="alias_value", annotation=obj.__supertype__),
-                        alias_type=t.NewType,
+                        obj_type=t.NewType,
                         comment=comment,
                         emit=emit,
                         obj=obj,
@@ -32,10 +32,10 @@ def _transform_decls(decls: list[Decl]) -> list[Decl]:
                     new_decls.append(decl)
             case VarDecl(name=name, obj=obj, comment=comment, emit=emit):
                 if callable(obj) and hasattr(obj, "__supertype__"):
-                    alias = AliasDecl(
+                    alias = TypeDefDecl(
                         name=name,
                         value=Site(role="alias_value", annotation=obj.__supertype__),
-                        alias_type=t.NewType,
+                        obj_type=t.NewType,
                         comment=comment,
                         emit=emit,
                         obj=obj,

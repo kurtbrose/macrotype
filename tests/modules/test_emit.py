@@ -5,11 +5,11 @@ from typing import Annotated, Any, Callable, ClassVar, Literal, NewType, TypeAli
 
 from macrotype.modules.emit import emit_module
 from macrotype.modules.ir import (
-    AliasDecl,
     ClassDecl,
     FuncDecl,
     ModuleDecl,
     Site,
+    TypeDefDecl,
     VarDecl,
 )
 
@@ -33,10 +33,10 @@ case2 = (
         obj=mod2,
         members=[
             VarDecl(name="v", site=Site(role="var", annotation=Any)),
-            AliasDecl(
+            TypeDefDecl(
                 name="Alias",
                 value=Site(role="alias_value", annotation=list[int]),
-                alias_type=TypeAliasType("Alias", list[int]),
+                obj_type=TypeAliasType("Alias", list[int]),
             ),
             FuncDecl(
                 name="f",
@@ -182,10 +182,10 @@ case8 = (
         name=mod8.__name__,
         obj=mod8,
         members=[
-            AliasDecl(
+            TypeDefDecl(
                 name="UserId",
                 value=Site(role="alias_value", annotation=int),
-                alias_type=NewType,
+                obj_type=NewType,
             ),
         ],
     ),

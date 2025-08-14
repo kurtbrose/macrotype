@@ -8,7 +8,7 @@ from types import ModuleType
 import pytest
 
 from macrotype.meta_types import clear_registry
-from macrotype.modules.ir import AliasDecl, ClassDecl, FuncDecl, VarDecl
+from macrotype.modules.ir import ClassDecl, FuncDecl, TypeDefDecl, VarDecl
 from macrotype.modules.scanner import scan_module
 from macrotype.modules.transformers import (
     add_comments,
@@ -55,7 +55,7 @@ def test_add_comment_transform() -> None:
     assert x.comment == "variable comment"
 
     alias = by_name["Alias"]
-    assert isinstance(alias, AliasDecl)
+    assert isinstance(alias, TypeDefDecl)
     assert alias.comment == "alias comment"
     assert alias.value.comment == "alias comment"
 
@@ -72,9 +72,31 @@ def test_alias_transform() -> None:
     synthesize_aliases(mi)
     by_name = {s.name: s for s in mi.members}
 
-    alias = t.cast(AliasDecl, by_name["Alias"])
+    alias = t.cast(TypeDefDecl, by_name["Alias"])
     assert alias.type_params == ("T",)
     assert t.get_origin(alias.value.annotation) is list
+
+
+def test_typevar_alias_transform() -> None:
+    code = """
+    from typing import TypeVar, ParamSpec, TypeVarTuple
+
+    T = TypeVar("T")
+    P = ParamSpec("P")
+    Ts = TypeVarTuple("Ts")
+    """
+    mod = mod_from_code(code, "typevars")
+    mi = scan_module(mod)
+    synthesize_aliases(mi)
+    by_name = {s.name: s for s in mi.members}
+
+    t_alias = by_name["T"]
+    p_alias = by_name["P"]
+    ts_alias = by_name["Ts"]
+
+    assert isinstance(t_alias, TypeDefDecl)
+    assert isinstance(p_alias, TypeDefDecl)
+    assert isinstance(ts_alias, TypeDefDecl)
 
 
 def test_newtype_transform() -> None:
@@ -88,8 +110,8 @@ def test_newtype_transform() -> None:
     transform_newtypes(mi)
     by_name = {s.name: s for s in mi.members}
     user = by_name["UserId"]
-    assert isinstance(user, AliasDecl)
-    assert user.alias_type is t.NewType
+    assert isinstance(user, TypeDefDecl)
+    assert user.obj_type is t.NewType
     assert user.value and user.value.annotation is int
 
 
@@ -254,7 +276,7 @@ def test_foreign_symbol_transform() -> None:
     by_name = {s.name: s for s in mi.members}
 
     external = by_name["external"]
-    assert isinstance(external, AliasDecl)
+    assert isinstance(external, TypeDefDecl)
     const = by_name["const"]
     assert isinstance(const, VarDecl)
     annotated = by_name["annotated"]
@@ -397,7 +419,7 @@ def test_enum_transform() -> None:
     color = t.cast(
         ClassDecl, next(s for s in mi.members if isinstance(s, ClassDecl) and s.name == "Color")
     )
-    aliases = [m for m in color.members if isinstance(m, AliasDecl)]
+    aliases = [m for m in color.members if isinstance(m, TypeDefDecl)]
     assert [a.name for a in aliases] == ["RED", "GREEN"]
     methods = {m.name for m in color.members if isinstance(m, FuncDecl)}
     assert "describe" in methods and "__new__" not in methods
@@ -405,7 +427,7 @@ def test_enum_transform() -> None:
         ClassDecl,
         next(s for s in mi.members if isinstance(s, ClassDecl) and s.name == "Permission"),
     )
-    perm_aliases = [m.name for m in perm.members if isinstance(m, AliasDecl)]
+    perm_aliases = [m.name for m in perm.members if isinstance(m, TypeDefDecl)]
     assert perm_aliases == ["READ", "WRITE"]
     perm_methods = {m.name for m in perm.members if isinstance(m, FuncDecl)}
     assert "__or__" not in perm_methods

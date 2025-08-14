@@ -5,7 +5,7 @@ import typing as t
 from dataclasses import replace
 from types import ModuleType
 
-from .ir import AliasDecl, ClassDecl, Decl, FuncDecl, ModuleDecl, Site, VarDecl
+from .ir import ClassDecl, Decl, FuncDecl, ModuleDecl, Site, TypeDefDecl, VarDecl
 
 
 def _is_dunder(name: str) -> bool:
@@ -28,7 +28,7 @@ def scan_module(mod: ModuleType) -> ModuleDecl:
 
         if isinstance(obj, t.TypeAliasType):  # type: ignore[attr-defined]
             site = Site(role="alias_value", annotation=obj.__value__)
-            decls.append(AliasDecl(name=name, value=site, obj=obj))
+            decls.append(TypeDefDecl(name=name, value=site, obj=obj))
             continue
 
         if inspect.isclass(obj):
@@ -43,7 +43,7 @@ def scan_module(mod: ModuleType) -> ModuleDecl:
             ann = mod_ann[name]
             if ann is t.TypeAlias:
                 site = Site(role="alias_value", annotation=obj)
-                decls.append(AliasDecl(name=name, value=site, obj=obj))
+                decls.append(TypeDefDecl(name=name, value=site, obj=obj))
             else:
                 site = Site(role="var", name=name, annotation=ann)
                 decls.append(VarDecl(name=name, site=site, obj=obj))
