@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import typing as t
 
-from .scanner import ModuleInfo
-from .symbols import ClassSymbol
+from macrotype.modules.scanner import ModuleInfo
+from macrotype.modules.symbols import ClassSymbol
 
 
 def _transform_class(sym: ClassSymbol, cls: type, td_meta: type) -> None:

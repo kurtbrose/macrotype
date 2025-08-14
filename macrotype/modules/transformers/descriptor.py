@@ -6,8 +6,8 @@ import functools
 from dataclasses import replace
 from typing import Any
 
-from .scanner import ModuleInfo, _scan_function
-from .symbols import ClassSymbol, FuncSymbol
+from macrotype.modules.scanner import ModuleInfo, _scan_function
+from macrotype.modules.symbols import ClassSymbol, FuncSymbol
 
 # Mapping of descriptor types to the attribute holding the underlying
 # function and the decorator string to attach.

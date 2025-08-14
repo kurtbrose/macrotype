@@ -5,8 +5,8 @@ from __future__ import annotations
 import inspect
 from typing import Any
 
-from .scanner import ModuleInfo
-from .symbols import ClassSymbol, FuncSymbol
+from macrotype.modules.scanner import ModuleInfo
+from macrotype.modules.symbols import ClassSymbol, FuncSymbol
 
 
 def _normalize_function(sym: FuncSymbol, fn: Any, *, is_method: bool) -> None:

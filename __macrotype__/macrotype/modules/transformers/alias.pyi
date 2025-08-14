@@ -1,0 +1,3 @@
+from macrotype.modules.scanner import ModuleInfo
+
+def synthesize_aliases(mi: ModuleInfo) -> None: ...
