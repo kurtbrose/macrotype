@@ -32,11 +32,19 @@ def scan_module(mod: ModuleType) -> ModuleDecl:
             continue
 
         if inspect.isclass(obj):
-            decls.append(_scan_class(obj))
+            if obj.__name__ != name:
+                site = Site(role="alias_value", annotation=obj)
+                decls.append(TypeDefDecl(name=name, value=site, obj=obj))
+            else:
+                decls.append(_scan_class(obj))
             continue
 
         if inspect.isfunction(obj):
-            decls.append(_scan_function(obj))
+            if obj.__name__ != name:
+                site = Site(role="alias_value", annotation=obj)
+                decls.append(TypeDefDecl(name=name, value=site, obj=obj))
+            else:
+                decls.append(_scan_function(obj))
             continue
 
         if name in mod_ann:

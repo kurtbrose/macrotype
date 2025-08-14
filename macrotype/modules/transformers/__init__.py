@@ -4,6 +4,7 @@ from .constant import infer_constant_types
 from .dataclass import transform_dataclasses
 from .decorator import unwrap_decorated_functions
 from .descriptor import normalize_descriptors
+from .duplicate import canonicalize_local_aliases
 from .enum import transform_enums
 from .flag import normalize_flags
 from .foreign_symbol import canonicalize_foreign_symbols
@@ -25,6 +26,7 @@ __all__ = [
     "transform_enums",
     "normalize_flags",
     "canonicalize_foreign_symbols",
+    "canonicalize_local_aliases",
     "expand_overloads",
     "transform_newtypes",
     "infer_param_defaults",
