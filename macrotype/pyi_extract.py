@@ -408,21 +408,29 @@ def _collect_type_params(
 
 
 def _collect_decorators(
-    decorators: list[str] | None, fn: Callable, *, skip_final: bool = False
+    decorators: list[str] | None,
+    fn: Callable,
+    *,
+    is_method: bool,
+    skip_final: bool = False,
 ) -> tuple[list[str], set[type]]:
     """Return decorator strings and used types for ``fn``."""
 
     decos = list(decorators or [])
     used: set[type] = set()
-    if getattr(fn, "__final__", False) and not skip_final:
+    if getattr(fn, "__final__", False) and not skip_final and is_method:
         decos.append("final")
         used.add(typing.final)
-    if getattr(fn, "__override__", False):
+    if getattr(fn, "__override__", False) and is_method:
         decos.append("override")
         used.add(getattr(typing, "override"))
-    if getattr(fn, "__isabstractmethod__", False):
+    if getattr(fn, "__isabstractmethod__", False) and is_method:
         decos.append("abstractmethod")
         used.add(abc.abstractmethod)
+    if not is_method:
+        decos = [
+            d for d in decos if d.split(".")[-1] not in {"final", "override", "abstractmethod"}
+        ]
     if "overload" in decos:
         used.add(typing.overload)
     return decos, used
@@ -687,6 +695,7 @@ def _function_members(
                 ov,
                 decorators=["overload"],
                 exclude_params=class_params,
+                is_method=True,
                 globalns=globalns,
                 localns=localns,
             )
@@ -698,6 +707,7 @@ def _function_members(
                 case_fn,
                 decorators=["overload"],
                 exclude_params=class_params,
+                is_method=True,
                 globalns=globalns,
                 localns=localns,
             )
@@ -708,6 +718,7 @@ def _function_members(
                 fn,
                 decorators=["overload"],
                 exclude_params=class_params,
+                is_method=True,
                 globalns=globalns,
                 localns=localns,
             )
@@ -717,6 +728,7 @@ def _function_members(
         func = PyiFunction.from_function(
             fn,
             exclude_params=class_params,
+            is_method=True,
             globalns=globalns,
             localns=localns,
         )
@@ -746,6 +758,7 @@ def _descriptor_members(
                 fn_obj,
                 decorators=[deco],
                 exclude_params=class_params,
+                is_method=True,
                 globalns=globalns,
                 localns=localns,
             )
@@ -757,6 +770,7 @@ def _descriptor_members(
                         unwrapped.fset,
                         decorators=[f"{attr_name}.setter"],
                         exclude_params=class_params,
+                        is_method=True,
                         globalns=globalns,
                         localns=localns,
                     )
@@ -767,6 +781,7 @@ def _descriptor_members(
                         unwrapped.fdel,
                         decorators=[f"{attr_name}.deleter"],
                         exclude_params=class_params,
+                        is_method=True,
                         globalns=globalns,
                         localns=localns,
                     )
@@ -865,6 +880,7 @@ class PyiFunction(PyiNamedElement):
         decorators: list[str] | None = None,
         exclude_params: set[str] | None = None,
         *,
+        is_method: bool = False,
         skip_final: bool = False,
         globalns: dict[str, Any] | None = None,
         localns: dict[str, Any] | None = None,
@@ -893,7 +909,9 @@ class PyiFunction(PyiNamedElement):
         tp_strings, tp_used = _collect_type_params(fn, hints, exclude_params)
         used_types.update(tp_used)
 
-        decorators, dec_used = _collect_decorators(decorators, fn, skip_final=skip_final)
+        decorators, dec_used = _collect_decorators(
+            decorators, fn, is_method=is_method, skip_final=skip_final
+        )
         used_types.update(dec_used)
 
         is_async = inspect.iscoroutinefunction(fn) or inspect.isasyncgenfunction(fn)
@@ -1195,6 +1213,7 @@ class _ModuleBuilder:
                 func = PyiFunction.from_function(
                     ov,
                     decorators=["overload"],
+                    is_method=False,
                     skip_final=True,
                     globalns=self.globals,
                     localns=self.globals,
@@ -1208,6 +1227,7 @@ class _ModuleBuilder:
                 func = PyiFunction.from_function(
                     case_fn,
                     decorators=["overload"],
+                    is_method=False,
                     skip_final=True,
                     globalns=self.globals,
                     localns=self.globals,
@@ -1220,6 +1240,7 @@ class _ModuleBuilder:
                 func = PyiFunction.from_function(
                     fn_obj,
                     decorators=["overload"],
+                    is_method=False,
                     skip_final=True,
                     globalns=self.globals,
                     localns=self.globals,
@@ -1231,6 +1252,7 @@ class _ModuleBuilder:
         else:
             func = PyiFunction.from_function(
                 fn_obj,
+                is_method=False,
                 skip_final=False,
                 globalns=self.globals,
                 localns=self.globals,
