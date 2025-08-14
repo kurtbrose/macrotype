@@ -46,4 +46,4 @@ class ClassSymbol(Symbol):
 class AliasSymbol(Symbol):
     value: None | Site
     type_params: tuple[str, ...]
-    flags: dict[str, bool]
+    alias_type: None | object

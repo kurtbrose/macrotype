@@ -58,15 +58,11 @@ def _collect_typing_names(symbols: Iterable[Symbol]) -> set[str]:
             if base in {"final", "override", "overload", "runtime_checkable"}:
                 names.add(base)
         match sym:
-            case AliasSymbol(flags=flags):
-                if flags.get("is_typevar"):
-                    names.add("TypeVar")
-                if flags.get("is_paramspec"):
-                    names.add("ParamSpec")
-                if flags.get("is_typevartuple"):
-                    names.add("TypeVarTuple")
-                if flags.get("is_newtype"):
-                    names.add("NewType")
+            case AliasSymbol(alias_type=alias):
+                if isinstance(alias, (t.TypeVar, t.ParamSpec, t.TypeVarTuple)):
+                    names.add(type(alias).__name__)
+                elif alias is t.NewType:
+                    names.add(alias.__name__)
             case ClassSymbol(members=members):
                 names.update(_collect_typing_names(members))
     return names
@@ -221,23 +217,27 @@ def _emit_symbol(sym: Symbol, name_map: dict[int, str], *, indent: int) -> list[
             line = _add_comment(line, sym.comment or site.comment)
             return [line]
 
-        case AliasSymbol(value=site, type_params=params, flags=flags):
-            if flags.get("is_typevar"):
-                line = f"{pad}{sym.name} = {_stringify_typevar(site.annotation, name_map)}"
-            elif flags.get("is_paramspec"):
-                line = f"{pad}{sym.name} = {_stringify_paramspec(site.annotation)}"
-            elif flags.get("is_typevartuple"):
-                line = f"{pad}{sym.name} = {_stringify_typevartuple(site.annotation)}"
-            elif flags.get("is_newtype"):
-                ty = stringify_annotation(site.annotation, name_map)
-                line = f'{pad}{sym.name} = NewType("{sym.name}", {ty})'
-            elif flags.get("is_typealias"):
-                ty = stringify_annotation(site.annotation, name_map)
-                line = f"{pad}{sym.name} = {ty}"
-            else:
-                ty = stringify_annotation(site.annotation, name_map)
-                param_str = f"[{', '.join(params)}]" if params else ""
-                line = f"{pad}type {sym.name}{param_str} = {ty}"
+        case AliasSymbol(value=site, type_params=params, alias_type=alias):
+            keyword = param_str = ""
+            match alias:
+                case t.TypeAliasType():  # type: ignore[attr-defined]
+                    keyword = "type "
+                    rhs = stringify_annotation(site.annotation, name_map)
+                    param_str = f"[{', '.join(params)}]" if params else ""
+                case t.TypeVar():
+                    rhs = _stringify_typevar(alias, name_map)
+                case t.ParamSpec():
+                    rhs = _stringify_paramspec(alias)
+                case t.TypeVarTuple():
+                    rhs = _stringify_typevartuple(alias)
+                case t.TypeAlias:  # type: ignore[misc]
+                    rhs = stringify_annotation(site.annotation, name_map)
+                case t.NewType:
+                    ty = stringify_annotation(site.annotation, name_map)
+                    rhs = f'NewType("{sym.name}", {ty})'
+                case _:
+                    raise NotImplementedError(f"Unsupported alias type: {alias!r}")
+            line = f"{pad}{keyword}{sym.name}{param_str} = {rhs}"
             line = _add_comment(line, sym.comment or site.comment)
             return [line]
 

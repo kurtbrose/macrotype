@@ -53,4 +53,4 @@ class ClassSymbol(Symbol):
 class AliasSymbol(Symbol):
     value: Optional[Site]
     type_params: tuple[str, ...] = ()
-    flags: dict[str, bool] = field(default_factory=dict)
+    alias_type: object | None = None
