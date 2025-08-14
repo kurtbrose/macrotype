@@ -499,6 +499,11 @@ class Runnable(Protocol):
     def run(self) -> int: ...
 
 
+# Protocol auto methods should be pruned
+class NoProtoMethods(Protocol):
+    pass
+
+
 class Info(TypedDict):
     name: str
     age: int

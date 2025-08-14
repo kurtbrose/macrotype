@@ -344,6 +344,8 @@ class SelfFactory:
 class Runnable(Protocol):
     def run(self) -> int: ...
 
+class NoProtoMethods(Protocol): ...
+
 class Info(TypedDict):
     name: str
     age: int
