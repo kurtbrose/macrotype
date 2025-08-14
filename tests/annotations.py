@@ -128,6 +128,18 @@ BORDER_SIZE: Final = 4
 
 # Edge case: unannotated constant should be included
 UNANNOTATED_CONST = 42
+# Edge case: unannotated string constant should be included
+UNANNOTATED_STR = "hi"
+# Edge case: unannotated float constant should be included
+UNANNOTATED_FLOAT = 1.23
+
+
+# Edge case: subclass constants should preserve subclass type
+class CustomInt(int):
+    pass
+
+
+UNANNOTATED_CUSTOM_INT = CustomInt(7)
 
 # Edge case: boolean constants should be retained
 BOOL_TRUE = True

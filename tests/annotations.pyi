@@ -105,6 +105,14 @@ BORDER_SIZE: Final[int]
 
 UNANNOTATED_CONST: int
 
+UNANNOTATED_STR: str
+
+UNANNOTATED_FLOAT: float
+
+class CustomInt(int): ...
+
+UNANNOTATED_CUSTOM_INT: CustomInt
+
 BOOL_TRUE: bool
 
 BOOL_FALSE: bool
