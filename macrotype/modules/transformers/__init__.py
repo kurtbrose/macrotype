@@ -5,6 +5,7 @@ from .descriptor import normalize_descriptors
 from .flag import normalize_flags
 from .foreign_symbol import canonicalize_foreign_symbols
 from .overload import expand_overloads
+from .protocol import prune_protocol_methods
 from .typeddict import prune_inherited_typeddict_fields
 
 __all__ = [
@@ -15,5 +16,6 @@ __all__ = [
     "normalize_flags",
     "canonicalize_foreign_symbols",
     "expand_overloads",
+    "prune_protocol_methods",
     "prune_inherited_typeddict_fields",
 ]

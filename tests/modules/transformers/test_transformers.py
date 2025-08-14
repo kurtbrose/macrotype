@@ -17,6 +17,7 @@ from macrotype.modules.transformers import (
     normalize_descriptors,
     normalize_flags,
     prune_inherited_typeddict_fields,
+    prune_protocol_methods,
     synthesize_aliases,
     transform_dataclasses,
 )
@@ -258,6 +259,23 @@ def test_overload_transform() -> None:
     lits = [s for s in mi.symbols if isinstance(s, FuncSymbol) and s.name == "lit"]
     assert len(lits) == 3
     assert all("overload" in s.decorators for s in lits)
+
+
+def test_protocol_transform() -> None:
+    code = """
+    from typing import Protocol
+
+    class P(Protocol):
+        def meth(self) -> None: ...
+    """
+    mod = mod_from_code(code, "proto")
+    mi = scan_module(mod)
+    prune_protocol_methods(mi)
+    proto = t.cast(
+        ClassSymbol, next(s for s in mi.symbols if isinstance(s, ClassSymbol) and s.name == "P")
+    )
+    member_names = {m.name for m in proto.members if isinstance(m, FuncSymbol)}
+    assert member_names == {"meth"}
 
 
 @pytest.mark.skip(reason="TypedDict base classes not in MRO at runtime")
