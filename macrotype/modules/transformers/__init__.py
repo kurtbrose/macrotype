@@ -1,6 +1,7 @@
 from .add_comment import add_comments
 from .alias import synthesize_aliases
 from .dataclass import transform_dataclasses
+from .decorator import unwrap_decorated_functions
 from .descriptor import normalize_descriptors
 from .enum import transform_enums
 from .flag import normalize_flags
@@ -24,4 +25,5 @@ __all__ = [
     "prune_protocol_methods",
     "prune_inherited_typeddict_fields",
     "transform_namedtuples",
+    "unwrap_decorated_functions",
 ]

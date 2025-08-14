@@ -23,6 +23,7 @@ from macrotype.modules.transformers import (
     transform_enums,
     transform_namedtuples,
     transform_newtypes,
+    unwrap_decorated_functions,
 )
 
 
@@ -386,3 +387,27 @@ def test_enum_transform() -> None:
     assert perm_aliases == ["READ", "WRITE"]
     perm_methods = {m.name for m in perm.members if isinstance(m, FuncDecl)}
     assert "__or__" not in perm_methods
+
+
+def test_unwrap_decorated_function_transform() -> None:
+    code = """
+    class Wrapper:
+        def __init__(self, fn):
+            self._fn = fn
+            self.__wrapped__ = fn
+        def __call__(self, *a, **kw):
+            return self._fn(*a, **kw)
+
+    def deco(fn):
+        return Wrapper(fn)
+
+    @deco
+    def wrapped(x: int) -> str:
+        return str(x)
+    """
+    mod = mod_from_code(code, "decorated")
+    mi = scan_module(mod)
+    unwrap_decorated_functions(mi)
+    fn = next(s for s in mi.members if isinstance(s, FuncDecl) and s.name == "wrapped")
+    assert [p.name for p in fn.params] == ["x"]
+    assert fn.ret and fn.ret.annotation in (str, "str")

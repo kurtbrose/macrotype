@@ -602,6 +602,10 @@ class RequiredUndefinedCls:
     a: int
     b: str
 
+def _wrap(fn): ...
+
+def wrapped_callable(x: int, y: str) -> str: ...
+
 GLOBAL: int
 
 CONST: Final[str]
