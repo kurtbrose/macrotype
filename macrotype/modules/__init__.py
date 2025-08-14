@@ -47,8 +47,12 @@ def __getattr__(name: str):
     raise AttributeError(name)
 
 
-def from_module(mod: ModuleType) -> ModuleDecl:
-    """Scan *mod* into a ModuleDecl and attach comments."""
+def from_module(mod: ModuleType, *, strict: bool = False) -> ModuleDecl:
+    """Scan *mod* into a :class:`ModuleDecl` and attach comments.
+
+    If *strict* is ``True``, all annotations are normalized and validated via
+    ``macrotype.types`` before returning.
+    """
 
     from . import transformers as _t
 
@@ -64,4 +68,16 @@ def from_module(mod: ModuleType) -> ModuleDecl:
     _t.expand_overloads(mi)
     _t.add_comments(mi)
     _t.resolve_imports(mi)
+
+    if strict:
+        from macrotype.types import normalize_annotation
+
+        for decl in mi.iter_all_decls():
+            for site in decl.get_annotation_sites():
+                try:
+                    site.annotation = normalize_annotation(site.annotation)
+                except Exception:
+                    # Fall back to the original annotation if normalization fails
+                    pass
+
     return mi
