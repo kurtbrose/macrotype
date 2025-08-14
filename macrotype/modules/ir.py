@@ -92,9 +92,26 @@ class TypeDefDecl(Decl):
 
 
 @dataclass(kw_only=True)
+class ImportBlock:
+    typing: set[str] = field(default_factory=set)
+    froms: dict[str, set[str]] = field(default_factory=dict)
+
+    def lines(self) -> list[str]:
+        lines: list[str] = []
+        for mod, names in sorted(self.froms.items()):
+            lines.append(f"from {mod} import {', '.join(sorted(names))}")
+        if self.typing:
+            if lines:
+                lines.append("")
+            lines.append(f"from typing import {', '.join(sorted(self.typing))}")
+        return lines
+
+
+@dataclass(kw_only=True)
 class ModuleDecl(Decl):
     obj: ModuleType
     members: list[Decl]
+    imports: ImportBlock = field(default_factory=ImportBlock)
 
     def get_children(self) -> tuple[Decl, ...]:
         return tuple(self.members)

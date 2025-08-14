@@ -13,6 +13,7 @@ from .newtype import transform_newtypes
 from .overload import expand_overloads
 from .param_default import infer_param_defaults
 from .protocol import prune_protocol_methods
+from .resolve_imports import resolve_imports
 from .typeddict import prune_inherited_typeddict_fields
 
 __all__ = [
@@ -32,4 +33,5 @@ __all__ = [
     "transform_namedtuples",
     "transform_generics",
     "unwrap_decorated_functions",
+    "resolve_imports",
 ]

@@ -23,6 +23,7 @@ __all__ = [
     "emit_module",
     "scan_module",
     "transform_dataclasses",
+    "resolve_imports",
 ]
 
 
@@ -38,6 +39,7 @@ def __getattr__(name: str):
         "prune_protocol_methods",
         "synthesize_aliases",
         "transform_dataclasses",
+        "resolve_imports",
     }:
         from . import transformers as _t
 
@@ -61,4 +63,5 @@ def from_module(mod: ModuleType) -> ModuleDecl:
     _t.prune_protocol_methods(mi)
     _t.expand_overloads(mi)
     _t.add_comments(mi)
+    _t.resolve_imports(mi)
     return mi
