@@ -4,34 +4,34 @@ from __future__ import annotations
 
 from typing import Any
 
-from macrotype.modules.symbols import ClassSymbol, FuncSymbol, ModuleInfo
+from macrotype.modules.ir import ClassDecl, FuncDecl, ModuleDecl
 
 # Methods inserted by ``Protocol`` machinery which should be removed
 _PROTOCOL_METHOD_NAMES = {"_proto_hook", "_no_init_or_replace_init"}
 
 
-def _transform_class(sym: ClassSymbol, cls: type[Any]) -> None:
+def _transform_class(sym: ClassDecl, cls: type[Any]) -> None:
     if getattr(cls, "_is_protocol", False):
         sym.members = tuple(
             m
             for m in sym.members
-            if not (isinstance(m, FuncSymbol) and m.name in _PROTOCOL_METHOD_NAMES)
+            if not (isinstance(m, FuncDecl) and m.name in _PROTOCOL_METHOD_NAMES)
         )
         if getattr(cls, "_is_runtime_protocol", False):
             if "runtime_checkable" not in sym.decorators:
                 sym.decorators = sym.decorators + ("runtime_checkable",)
     for m in sym.members:
-        if isinstance(m, ClassSymbol):
-            inner = getattr(cls, m.name, None)
+        if isinstance(m, ClassDecl):
+            inner = m.obj
             if isinstance(inner, type):
                 _transform_class(m, inner)
 
 
-def prune_protocol_methods(mi: ModuleInfo) -> None:
+def prune_protocol_methods(mi: ModuleDecl) -> None:
     """Remove Protocol-generated methods within ``mi``."""
 
-    for sym in mi.get_all_symbols():
-        if isinstance(sym, ClassSymbol):
-            cls = getattr(mi.mod, sym.name, None)
+    for sym in mi.get_all_decls():
+        if isinstance(sym, ClassDecl):
+            cls = sym.obj
             if isinstance(cls, type):
                 _transform_class(sym, cls)

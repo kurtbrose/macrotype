@@ -6,20 +6,21 @@ from typing import Iterator, Literal, Optional
 
 
 @dataclass(kw_only=True)
-class Symbol:
+class Decl:
     """Base class for all top-level or nested declarations."""
 
     name: str
+    obj: object | EllipsisType | None = None
     comment: str | None = None
     emit: bool = True
 
-    def get_children(self) -> tuple["Symbol", ...]:
+    def get_children(self) -> tuple["Decl", ...]:
         return ()
 
     def get_annotation_sites(self) -> tuple[Site, ...]:
         return ()
 
-    def walk(self) -> Iterator["Symbol"]:
+    def walk(self) -> Iterator["Decl"]:
         yield self
         for child in self.get_children():
             yield from child.walk()
@@ -30,14 +31,14 @@ class Site:
     role: Literal["var", "return", "param", "base", "alias_value", "td_field"]
     name: Optional[str] = None
     index: Optional[int] = None
-    annotation: object
+    annotation: object = None
     comment: str | None = None
 
 
 @dataclass(kw_only=True)
-class VarSymbol(Symbol):
+class VarDecl(Decl):
     site: Site
-    initializer: object | EllipsisType = Ellipsis
+    obj: object | EllipsisType | None = None
     flags: dict[str, bool] = field(default_factory=dict)  # final, classvar
 
     def get_annotation_sites(self) -> tuple[Site, ...]:
@@ -45,9 +46,10 @@ class VarSymbol(Symbol):
 
 
 @dataclass(kw_only=True)
-class FuncSymbol(Symbol):
+class FuncDecl(Decl):
     params: tuple[Site, ...]
     ret: Optional[Site]
+    obj: object | None = None
     decorators: tuple[str, ...] = ()
     flags: dict[str, bool] = field(default_factory=dict)  # e.g., staticmethod, classmethod
 
@@ -59,16 +61,17 @@ class FuncSymbol(Symbol):
 
 
 @dataclass(kw_only=True)
-class ClassSymbol(Symbol):
+class ClassDecl(Decl):
     bases: tuple[Site, ...]
     td_fields: tuple[Site, ...] = ()
     is_typeddict: bool = False
     td_total: Optional[bool] = None
-    members: tuple[Symbol, ...] = ()  # nested Var/Func/Class
+    members: tuple[Decl, ...] = ()  # nested Var/Func/Class
+    obj: object | None = None
     decorators: tuple[str, ...] = ()
     flags: dict[str, bool] = field(default_factory=dict)  # e.g., protocol, abstract
 
-    def get_children(self) -> tuple[Symbol, ...]:
+    def get_children(self) -> tuple[Decl, ...]:
         return self.members
 
     def get_annotation_sites(self) -> tuple[Site, ...]:
@@ -76,8 +79,9 @@ class ClassSymbol(Symbol):
 
 
 @dataclass(kw_only=True)
-class AliasSymbol(Symbol):
+class AliasDecl(Decl):
     value: Optional[Site]
+    obj: object | None = None
     type_params: tuple[str, ...] = ()
     alias_type: object | None = None
 
@@ -85,16 +89,17 @@ class AliasSymbol(Symbol):
         return (self.value,) if self.value is not None else ()
 
 
-@dataclass
-class ModuleInfo:
-    """Scanned representation of a Python module."""
+@dataclass(kw_only=True)
+class ModuleDecl(Decl):
+    obj: ModuleType
+    members: list[Decl]
 
-    mod: ModuleType
-    symbols: list[Symbol]
+    def get_children(self) -> tuple[Decl, ...]:
+        return tuple(self.members)
 
-    def iter_all_symbols(self) -> Iterator[Symbol]:
-        for sym in self.symbols:
-            yield from sym.walk()
+    def iter_all_decls(self) -> Iterator[Decl]:
+        for decl in self.members:
+            yield from decl.walk()
 
-    def get_all_symbols(self) -> list[Symbol]:
-        return list(self.iter_all_symbols())
+    def get_all_decls(self) -> list[Decl]:
+        return list(self.iter_all_decls())

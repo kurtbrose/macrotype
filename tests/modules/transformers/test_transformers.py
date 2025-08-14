@@ -8,8 +8,8 @@ from types import ModuleType
 import pytest
 
 from macrotype.meta_types import clear_registry
+from macrotype.modules.ir import AliasDecl, ClassDecl, FuncDecl, VarDecl
 from macrotype.modules.scanner import scan_module
-from macrotype.modules.symbols import AliasSymbol, ClassSymbol, FuncSymbol, VarSymbol
 from macrotype.modules.transformers import (
     add_comments,
     canonicalize_foreign_symbols,
@@ -46,13 +46,13 @@ def test_add_comment_transform() -> None:
     mod = mod_from_code(code, "comments")
     mi = scan_module(mod)
     add_comments(mi)
-    by_name = {s.name: s for s in mi.symbols}
+    by_name = {s.name: s for s in mi.members}
 
     x = by_name["x"]
     assert x.comment == "variable comment"
 
     alias = by_name["Alias"]
-    assert isinstance(alias, AliasSymbol)
+    assert isinstance(alias, AliasDecl)
     assert alias.comment == "alias comment"
     assert alias.value.comment == "alias comment"
 
@@ -67,9 +67,9 @@ def test_alias_transform() -> None:
     mod = mod_from_code(code, "alias")
     mi = scan_module(mod)
     synthesize_aliases(mi)
-    by_name = {s.name: s for s in mi.symbols}
+    by_name = {s.name: s for s in mi.members}
 
-    alias = t.cast(AliasSymbol, by_name["Alias"])
+    alias = t.cast(AliasDecl, by_name["Alias"])
     assert alias.type_params == ("T",)
     assert t.get_origin(alias.value.annotation) is list
 
@@ -83,9 +83,9 @@ def test_newtype_transform() -> None:
     mod = mod_from_code(code, "newtype")
     mi = scan_module(mod)
     transform_newtypes(mi)
-    by_name = {s.name: s for s in mi.symbols}
+    by_name = {s.name: s for s in mi.members}
     user = by_name["UserId"]
-    assert isinstance(user, AliasSymbol)
+    assert isinstance(user, AliasDecl)
     assert user.alias_type is t.NewType
     assert user.value and user.value.annotation is int
 
@@ -109,17 +109,17 @@ def test_dataclass_transform() -> None:
     mod = mod_from_code(code, "dataclasses")
     mi = scan_module(mod)
     transform_dataclasses(mi)
-    by_name = {s.name: s for s in mi.symbols}
+    by_name = {s.name: s for s in mi.members}
 
-    dc = t.cast(ClassSymbol, by_name["DC"])
+    dc = t.cast(ClassDecl, by_name["DC"])
     assert "dataclass(order=True)" in dc.decorators
     member_names = {m.name for m in dc.members}
     assert "__init__" not in member_names
     assert "__lt__" not in member_names
 
-    outer = t.cast(ClassSymbol, by_name["Outer"])
+    outer = t.cast(ClassDecl, by_name["Outer"])
     assert "dataclass" in outer.decorators
-    inner = next(m for m in outer.members if isinstance(m, ClassSymbol) and m.name == "Inner")
+    inner = next(m for m in outer.members if isinstance(m, ClassDecl) and m.name == "Inner")
     assert "dataclass" in inner.decorators
 
 
@@ -151,20 +151,20 @@ def test_descriptor_transform() -> None:
     mi = scan_module(mod)
     normalize_descriptors(mi)
     dcls = t.cast(
-        ClassSymbol, next(s for s in mi.symbols if isinstance(s, ClassSymbol) and s.name == "D")
+        ClassDecl, next(s for s in mi.members if isinstance(s, ClassDecl) and s.name == "D")
     )
-    props = [m for m in dcls.members if m.name == "prop" and isinstance(m, FuncSymbol)]
+    props = [m for m in dcls.members if m.name == "prop" and isinstance(m, FuncDecl)]
     decos = {tuple(m.decorators) for m in props}
     assert ("property",) in decos
     assert ("prop.setter",) in decos
     assert ("prop.deleter",) in decos
-    cm = next(m for m in dcls.members if isinstance(m, FuncSymbol) and m.name == "clsmeth")
+    cm = next(m for m in dcls.members if isinstance(m, FuncDecl) and m.name == "clsmeth")
     assert cm.decorators == ("classmethod",)
-    sm = next(m for m in dcls.members if isinstance(m, FuncSymbol) and m.name == "stat")
+    sm = next(m for m in dcls.members if isinstance(m, FuncDecl) and m.name == "stat")
     assert sm.decorators == ("staticmethod",)
-    cp = next(m for m in dcls.members if isinstance(m, FuncSymbol) and m.name == "cache")
+    cp = next(m for m in dcls.members if isinstance(m, FuncDecl) and m.name == "cache")
     assert cp.decorators == ("cached_property",)
-    pm = next(m for m in dcls.members if isinstance(m, FuncSymbol) and m.name == "pm")
+    pm = next(m for m in dcls.members if isinstance(m, FuncDecl) and m.name == "pm")
     assert pm.decorators == ()
     assert [p.name for p in pm.params] == ["b"]
     assert pm.params[0].annotation in (str, "str")
@@ -194,24 +194,24 @@ def test_flag_transform() -> None:
     mod = mod_from_code(code, "flags")
     mi = scan_module(mod)
     normalize_flags(mi)
-    by_name = {s.name: s for s in mi.symbols}
+    by_name = {s.name: s for s in mi.members}
 
-    base = t.cast(ClassSymbol, by_name["Base"])
+    base = t.cast(ClassDecl, by_name["Base"])
     assert base.flags.get("final") is True
     assert "final" in base.decorators
 
-    derived = t.cast(ClassSymbol, by_name["Derived"])
-    meth = next(m for m in derived.members if isinstance(m, FuncSymbol) and m.name == "meth")
+    derived = t.cast(ClassDecl, by_name["Derived"])
+    meth = next(m for m in derived.members if isinstance(m, FuncDecl) and m.name == "meth")
     assert meth.flags.get("override") is True
     assert "override" in meth.decorators
 
-    abstract = t.cast(ClassSymbol, by_name["Abstract"])
+    abstract = t.cast(ClassDecl, by_name["Abstract"])
     assert abstract.flags.get("abstract") is True
-    abst = next(m for m in abstract.members if isinstance(m, FuncSymbol) and m.name == "abst")
+    abst = next(m for m in abstract.members if isinstance(m, FuncDecl) and m.name == "abst")
     assert abst.flags.get("abstract") is True
     assert "abstractmethod" in abst.decorators
 
-    func = t.cast(FuncSymbol, by_name["f"])
+    func = t.cast(FuncDecl, by_name["f"])
     assert func.flags.get("final") is True
     assert "final" not in func.decorators
 
@@ -228,7 +228,7 @@ def test_runtime_checkable_transform() -> None:
     mod = mod_from_code(code, "runtime")
     mi = scan_module(mod)
     prune_protocol_methods(mi)
-    cls = next(s for s in mi.symbols if isinstance(s, ClassSymbol) and s.name == "P")
+    cls = next(s for s in mi.members if isinstance(s, ClassDecl) and s.name == "P")
     assert "runtime_checkable" in cls.decorators
 
 
@@ -248,14 +248,14 @@ def test_foreign_symbol_transform() -> None:
     mod = mod_from_code(code, "foreign")
     mi = scan_module(mod)
     canonicalize_foreign_symbols(mi)
-    by_name = {s.name: s for s in mi.symbols}
+    by_name = {s.name: s for s in mi.members}
 
     external = by_name["external"]
-    assert isinstance(external, AliasSymbol)
+    assert isinstance(external, AliasDecl)
     const = by_name["const"]
-    assert isinstance(const, VarSymbol)
+    assert isinstance(const, VarDecl)
     annotated = by_name["annotated"]
-    assert isinstance(annotated, VarSymbol)
+    assert isinstance(annotated, VarDecl)
 
 
 def test_overload_transform() -> None:
@@ -284,14 +284,14 @@ def test_overload_transform() -> None:
     mod = mod_from_code(code, "overload")
     mi = scan_module(mod)
     expand_overloads(mi)
-    by_name = [s for s in mi.symbols if isinstance(s, FuncSymbol) and s.name == "foo"]
+    by_name = [s for s in mi.members if isinstance(s, FuncDecl) and s.name == "foo"]
     assert len(by_name) == 2
     assert all("overload" in s.decorators for s in by_name)
-    cls = next(s for s in mi.symbols if isinstance(s, ClassSymbol) and s.name == "C")
-    bars = [m for m in cls.members if isinstance(m, FuncSymbol) and m.name == "bar"]
+    cls = next(s for s in mi.members if isinstance(s, ClassDecl) and s.name == "C")
+    bars = [m for m in cls.members if isinstance(m, FuncDecl) and m.name == "bar"]
     assert len(bars) == 2
     assert all("overload" in m.decorators for m in bars)
-    lits = [s for s in mi.symbols if isinstance(s, FuncSymbol) and s.name == "lit"]
+    lits = [s for s in mi.members if isinstance(s, FuncDecl) and s.name == "lit"]
     assert len(lits) == 3
     assert all("overload" in s.decorators for s in lits)
 
@@ -307,9 +307,9 @@ def test_protocol_transform() -> None:
     mi = scan_module(mod)
     prune_protocol_methods(mi)
     proto = t.cast(
-        ClassSymbol, next(s for s in mi.symbols if isinstance(s, ClassSymbol) and s.name == "P")
+        ClassDecl, next(s for s in mi.members if isinstance(s, ClassDecl) and s.name == "P")
     )
-    member_names = {m.name for m in proto.members if isinstance(m, FuncSymbol)}
+    member_names = {m.name for m in proto.members if isinstance(m, FuncDecl)}
     assert member_names == {"meth"}
 
 
@@ -329,7 +329,7 @@ def test_typeddict_transform() -> None:
     mod = mod_from_code(code, "typeddict")
     mi = scan_module(mod)
     prune_inherited_typeddict_fields(mi)
-    derived = next(s for s in mi.symbols if isinstance(s, ClassSymbol) and s.name == "Derived")
+    derived = next(s for s in mi.members if isinstance(s, ClassDecl) and s.name == "Derived")
     assert len(derived.td_fields) == 1
     assert derived.td_fields[0].name == "c"
     assert derived.td_total is None
@@ -348,7 +348,7 @@ def test_namedtuple_transform() -> None:
     canonicalize_foreign_symbols(mi)
     transform_namedtuples(mi)
     nt = t.cast(
-        ClassSymbol, next(s for s in mi.symbols if isinstance(s, ClassSymbol) and s.name == "NT")
+        ClassDecl, next(s for s in mi.members if isinstance(s, ClassDecl) and s.name == "NT")
     )
     assert [b.annotation for b in nt.bases][0] is t.NamedTuple
     member_names = {m.name for m in nt.members}
@@ -372,17 +372,17 @@ def test_enum_transform() -> None:
     mi = scan_module(mod)
     transform_enums(mi)
     color = t.cast(
-        ClassSymbol, next(s for s in mi.symbols if isinstance(s, ClassSymbol) and s.name == "Color")
+        ClassDecl, next(s for s in mi.members if isinstance(s, ClassDecl) and s.name == "Color")
     )
-    aliases = [m for m in color.members if isinstance(m, AliasSymbol)]
+    aliases = [m for m in color.members if isinstance(m, AliasDecl)]
     assert [a.name for a in aliases] == ["RED", "GREEN"]
-    methods = {m.name for m in color.members if isinstance(m, FuncSymbol)}
+    methods = {m.name for m in color.members if isinstance(m, FuncDecl)}
     assert "describe" in methods and "__new__" not in methods
     perm = t.cast(
-        ClassSymbol,
-        next(s for s in mi.symbols if isinstance(s, ClassSymbol) and s.name == "Permission"),
+        ClassDecl,
+        next(s for s in mi.members if isinstance(s, ClassDecl) and s.name == "Permission"),
     )
-    perm_aliases = [m.name for m in perm.members if isinstance(m, AliasSymbol)]
+    perm_aliases = [m.name for m in perm.members if isinstance(m, AliasDecl)]
     assert perm_aliases == ["READ", "WRITE"]
-    perm_methods = {m.name for m in perm.members if isinstance(m, FuncSymbol)}
+    perm_methods = {m.name for m in perm.members if isinstance(m, FuncDecl)}
     assert "__or__" not in perm_methods

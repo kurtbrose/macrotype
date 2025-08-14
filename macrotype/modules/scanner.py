@@ -5,18 +5,18 @@ import typing as t
 from dataclasses import replace
 from types import ModuleType
 
-from .symbols import AliasSymbol, ClassSymbol, FuncSymbol, ModuleInfo, Site, Symbol, VarSymbol
+from .ir import AliasDecl, ClassDecl, Decl, FuncDecl, ModuleDecl, Site, VarDecl
 
 
 def _is_dunder(name: str) -> bool:
     return name.startswith("__") and name.endswith("__")
 
 
-def scan_module(mod: ModuleType) -> ModuleInfo:
+def scan_module(mod: ModuleType) -> ModuleDecl:
     modname = mod.__name__
     glb = vars(mod)
 
-    syms: list[Symbol] = []
+    decls: list[Decl] = []
 
     mod_ann: dict[str, t.Any] = glb.get("__annotations__", {}) or {}
     seen: set[str] = set()
@@ -28,40 +28,40 @@ def scan_module(mod: ModuleType) -> ModuleInfo:
 
         if isinstance(obj, t.TypeAliasType):  # type: ignore[attr-defined]
             site = Site(role="alias_value", annotation=obj.__value__)
-            syms.append(AliasSymbol(name=name, value=site))
+            decls.append(AliasDecl(name=name, value=site, obj=obj))
             continue
 
         if inspect.isclass(obj):
-            syms.append(_scan_class(obj))
+            decls.append(_scan_class(obj))
             continue
 
         if inspect.isfunction(obj):
-            syms.append(_scan_function(obj))
+            decls.append(_scan_function(obj))
             continue
 
         if name in mod_ann:
             ann = mod_ann[name]
             if ann is t.TypeAlias:
                 site = Site(role="alias_value", annotation=obj)
-                syms.append(AliasSymbol(name=name, value=site))
+                decls.append(AliasDecl(name=name, value=site, obj=obj))
             else:
                 site = Site(role="var", name=name, annotation=ann)
-                syms.append(VarSymbol(name=name, site=site, initializer=obj))
+                decls.append(VarDecl(name=name, site=site, obj=obj))
             continue
 
         site = Site(role="var", name=name, annotation=type(obj))
-        syms.append(VarSymbol(name=name, site=site, initializer=obj))
+        decls.append(VarDecl(name=name, site=site, obj=obj))
 
     for name, rann in mod_ann.items():
         if name in seen:
             continue
         site = Site(role="var", name=name, annotation=rann)
-        syms.append(VarSymbol(name=name, site=site))
+        decls.append(VarDecl(name=name, site=site))
 
-    return ModuleInfo(mod=mod, symbols=syms)
+    return ModuleDecl(name=modname, obj=mod, members=decls)
 
 
-def _scan_function(fn: t.Callable) -> FuncSymbol:
+def _scan_function(fn: t.Callable) -> FuncDecl:
     name = getattr(fn, "__qualname_override__", fn.__name__)
 
     raw_ann: dict[str, t.Any] = getattr(fn, "__annotations__", {}) or {}
@@ -82,15 +82,16 @@ def _scan_function(fn: t.Callable) -> FuncSymbol:
     if getattr(fn, "__isabstractmethod__", False):
         decos.append("abstractmethod")
 
-    return FuncSymbol(
+    return FuncDecl(
         name=name.split(".")[-1],
         params=tuple(params),
         ret=ret,
+        obj=fn,
         decorators=tuple(decos),
     )
 
 
-def _scan_class(cls: type) -> ClassSymbol:
+def _scan_class(cls: type) -> ClassDecl:
     name = getattr(cls, "__qualname_override__", cls.__name__)
 
     bases_src = getattr(cls, "__orig_bases__", None) or cls.__bases__
@@ -109,7 +110,7 @@ def _scan_class(cls: type) -> ClassSymbol:
         for fname, rann in raw_ann.items():
             td_fields.append(Site(role="td_field", name=fname, annotation=rann))
 
-    members: list[Symbol] = []
+    members: list[Decl] = []
 
     class_ann: dict[str, t.Any] = cls.__dict__.get("__annotations__", {}) or {}
     for fname, rann in class_ann.items():
@@ -117,14 +118,14 @@ def _scan_class(cls: type) -> ClassSymbol:
             continue
         site = Site(role="var", name=fname, annotation=rann)
         init_val = cls.__dict__.get(fname, Ellipsis)
-        members.append(VarSymbol(name=fname, site=site, initializer=init_val))
+        members.append(VarDecl(name=fname, site=site, obj=init_val))
 
     for mname, attr in cls.__dict__.items():
         raw = attr
         while hasattr(raw, "__wrapped__"):
             raw = raw.__wrapped__
-        decorators = ()
-        fn = None
+        decorators: tuple[str, ...] = ()
+        fn: t.Callable | None = None
         if inspect.isfunction(raw):
             fn = raw
         elif isinstance(raw, staticmethod):
@@ -144,12 +145,13 @@ def _scan_class(cls: type) -> ClassSymbol:
             mem = replace(mem, decorators=mem.decorators + decorators)
             members.append(mem)
 
-    return ClassSymbol(
+    return ClassDecl(
         name=name.split(".")[-1],
         bases=tuple(bases),
         td_fields=tuple(td_fields),
         is_typeddict=is_td,
         td_total=td_total,
         members=tuple(members),
+        obj=cls,
         comment=None,
     )

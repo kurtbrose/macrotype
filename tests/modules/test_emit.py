@@ -4,22 +4,23 @@ from types import ModuleType
 from typing import Annotated, Any, Callable, ClassVar, Literal, NewType, TypeAliasType, Union
 
 from macrotype.modules.emit import emit_module
-from macrotype.modules.symbols import (
-    AliasSymbol,
-    ClassSymbol,
-    FuncSymbol,
-    ModuleInfo,
+from macrotype.modules.ir import (
+    AliasDecl,
+    ClassDecl,
+    FuncDecl,
+    ModuleDecl,
     Site,
-    VarSymbol,
+    VarDecl,
 )
 
-# ---- table: ModuleInfo -> emitted lines ----
+# ---- table: ModuleDecl -> emitted lines ----
 mod1 = ModuleType("m1")
 case1 = (
-    ModuleInfo(
-        mod=mod1,
-        symbols=[
-            VarSymbol(name="x", site=Site(role="var", annotation=Any)),
+    ModuleDecl(
+        name=mod1.__name__,
+        obj=mod1,
+        members=[
+            VarDecl(name="x", site=Site(role="var", annotation=Any)),
         ],
     ),
     ["from typing import Any", "", "x: Any"],
@@ -27,25 +28,26 @@ case1 = (
 
 mod2 = ModuleType("m2")
 case2 = (
-    ModuleInfo(
-        mod=mod2,
-        symbols=[
-            VarSymbol(name="v", site=Site(role="var", annotation=Any)),
-            AliasSymbol(
+    ModuleDecl(
+        name=mod2.__name__,
+        obj=mod2,
+        members=[
+            VarDecl(name="v", site=Site(role="var", annotation=Any)),
+            AliasDecl(
                 name="Alias",
                 value=Site(role="alias_value", annotation=list[int]),
                 alias_type=TypeAliasType("Alias", list[int]),
             ),
-            FuncSymbol(
+            FuncDecl(
                 name="f",
                 params=(Site(role="param", name="x", annotation=int),),
                 ret=Site(role="return", annotation=str),
             ),
-            ClassSymbol(
+            ClassDecl(
                 name="C",
                 bases=(),
                 members=(
-                    VarSymbol(
+                    VarDecl(
                         name="y",
                         site=Site(role="var", name="y", annotation=ClassVar[int]),
                     ),
@@ -69,10 +71,11 @@ case2 = (
 
 mod3 = ModuleType("m3")
 case3 = (
-    ModuleInfo(
-        mod=mod3,
-        symbols=[
-            VarSymbol(name="lit", site=Site(role="var", annotation=Literal["hi"])),
+    ModuleDecl(
+        name=mod3.__name__,
+        obj=mod3,
+        members=[
+            VarDecl(name="lit", site=Site(role="var", annotation=Literal["hi"])),
         ],
     ),
     ["from typing import Literal", "", "lit: Literal['hi']"],
@@ -80,22 +83,23 @@ case3 = (
 
 mod4 = ModuleType("m4")
 case4 = (
-    ModuleInfo(
-        mod=mod4,
-        symbols=[
-            VarSymbol(
+    ModuleDecl(
+        name=mod4.__name__,
+        obj=mod4,
+        members=[
+            VarDecl(
                 name="cb1",
                 site=Site(role="var", annotation=Callable[[int, str], bool]),
             ),
-            VarSymbol(
+            VarDecl(
                 name="cb2",
                 site=Site(role="var", annotation=Callable[..., int]),
             ),
-            VarSymbol(
+            VarDecl(
                 name="nested",
                 site=Site(role="var", annotation=list[Callable[[int], str]]),
             ),
-            VarSymbol(
+            VarDecl(
                 name="combo",
                 site=Site(
                     role="var",
@@ -119,10 +123,11 @@ case4 = (
 
 mod5 = ModuleType("m5")
 case5 = (
-    ModuleInfo(
-        mod=mod4,
-        symbols=[
-            VarSymbol(
+    ModuleDecl(
+        name=mod4.__name__,
+        obj=mod4,
+        members=[
+            VarDecl(
                 name="ann",
                 site=Site(role="var", annotation=Annotated[int, "meta"]),
             ),
@@ -133,10 +138,11 @@ case5 = (
 
 mod6 = ModuleType("m6")
 case6 = (
-    ModuleInfo(
-        mod=mod5,
-        symbols=[
-            VarSymbol(
+    ModuleDecl(
+        name=mod5.__name__,
+        obj=mod5,
+        members=[
+            VarDecl(
                 name="nested",
                 site=Site(
                     role="var",
@@ -154,11 +160,12 @@ case6 = (
 
 mod7 = ModuleType("m7")
 case7 = (
-    ModuleInfo(
-        mod=mod7,
-        symbols=[
-            VarSymbol(name="u", site=Site(role="var", annotation=Union[int, str])),
-            VarSymbol(name="s", site=Site(role="var", annotation="A")),
+    ModuleDecl(
+        name=mod7.__name__,
+        obj=mod7,
+        members=[
+            VarDecl(name="u", site=Site(role="var", annotation=Union[int, str])),
+            VarDecl(name="s", site=Site(role="var", annotation="A")),
         ],
     ),
     [
@@ -171,10 +178,11 @@ case7 = (
 )
 mod8 = ModuleType("m8")
 case8 = (
-    ModuleInfo(
-        mod=mod8,
-        symbols=[
-            AliasSymbol(
+    ModuleDecl(
+        name=mod8.__name__,
+        obj=mod8,
+        members=[
+            AliasDecl(
                 name="UserId",
                 value=Site(role="alias_value", annotation=int),
                 alias_type=NewType,
@@ -186,10 +194,11 @@ case8 = (
 
 mod9 = ModuleType("m9")
 case9 = (
-    ModuleInfo(
-        mod=mod9,
-        symbols=[
-            ClassSymbol(name="P", bases=(), members=(), decorators=("runtime_checkable",)),
+    ModuleDecl(
+        name=mod9.__name__,
+        obj=mod9,
+        members=[
+            ClassDecl(name="P", bases=(), members=(), decorators=("runtime_checkable",)),
         ],
     ),
     [

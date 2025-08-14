@@ -6,13 +6,13 @@ import re
 import tokenize
 from types import ModuleType
 
-from macrotype.modules.symbols import (
-    AliasSymbol,
-    ClassSymbol,
-    FuncSymbol,
-    ModuleInfo,
-    Symbol,
-    VarSymbol,
+from macrotype.modules.ir import (
+    AliasDecl,
+    ClassDecl,
+    Decl,
+    FuncDecl,
+    ModuleDecl,
+    VarDecl,
 )
 
 
@@ -61,31 +61,30 @@ def _build_comment_map(obj: ModuleType | type) -> dict[str, str]:
     return _build_comment_map_from_lines(lines)
 
 
-def _attach(sym: Symbol, obj: object | None, cmap: dict[str, str]) -> None:
+def _attach(sym: Decl, obj: object | None, cmap: dict[str, str]) -> None:
     comment = cmap.get(sym.name)
     sym.comment = comment
 
     match sym:
-        case VarSymbol(site=site):
+        case VarDecl(site=site):
             site.comment = comment
-        case AliasSymbol(value=site):
+        case AliasDecl(value=site):
             if site:
                 site.comment = comment
-        case FuncSymbol():
+        case FuncDecl():
             pass
-        case ClassSymbol(td_fields=fields, members=members):
+        case ClassDecl(td_fields=fields, members=members):
             if inspect.isclass(obj):
                 inner_map = _build_comment_map(obj)
                 for f in fields:
                     f.comment = inner_map.get(f.name)
                 for m in members:
-                    m_obj = getattr(obj, m.name, None)
+                    m_obj = m.obj
                     _attach(m, m_obj, inner_map)
 
 
-def add_comments(mi: ModuleInfo) -> None:
+def add_comments(mi: ModuleDecl) -> None:
     """Attach same-line source comments to symbols within ``mi``."""
-    cmap = _build_comment_map(mi.mod)
-    for sym in mi.symbols:
-        obj = getattr(mi.mod, sym.name, None)
-        _attach(sym, obj, cmap)
+    cmap = _build_comment_map(mi.obj)
+    for sym in mi.members:
+        _attach(sym, sym.obj, cmap)

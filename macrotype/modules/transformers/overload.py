@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-"""Expand overloads and literal cases into multiple function symbols."""
-
 import enum
 import inspect
 import types
@@ -10,8 +6,8 @@ from dataclasses import replace
 from typing import Any, Callable
 
 from macrotype.meta_types import get_overloads as _get_overloads
+from macrotype.modules.ir import ClassDecl, Decl, FuncDecl, ModuleDecl
 from macrotype.modules.scanner import _scan_function
-from macrotype.modules.symbols import ClassSymbol, FuncSymbol, ModuleInfo, Symbol
 
 # Helper copied from ``pyi_extract`` to synthesize literal overloads
 
@@ -46,14 +42,14 @@ def _make_literal_overload(fn: Callable, args: tuple, kwargs: dict, result: Any)
     return new_fn
 
 
-def _expand_function(fn: Callable, sym: FuncSymbol) -> list[FuncSymbol]:
+def _expand_function(fn: Callable, sym: FuncDecl) -> list[FuncDecl]:
     ovs = _get_overloads(fn)
     cases = getattr(fn, "__overload_for__", [])
     if not ovs and not cases:
         return [sym]
 
     decos = sym.decorators + ("overload",)
-    members: list[FuncSymbol] = []
+    members: list[FuncDecl] = []
     for ov in ovs:
         ov_sym = _scan_function(ov)
         ov_sym = replace(ov_sym, name=sym.name, decorators=decos)
@@ -68,60 +64,45 @@ def _expand_function(fn: Callable, sym: FuncSymbol) -> list[FuncSymbol]:
     return members
 
 
-def _get_function(cls: type | None, sym: FuncSymbol) -> Callable | None:
-    if cls is None:
-        return None
-    attr = getattr(cls, sym.name, None)
-    if attr is None:
-        return None
-    for deco in sym.decorators:
-        if deco == "staticmethod" and isinstance(attr, staticmethod):
-            return attr.__func__
-        if deco == "classmethod" and isinstance(attr, classmethod):
-            return attr.__func__
-        if deco == "property" and isinstance(attr, property):
-            return attr.fget
-        if deco.endswith(".setter") and isinstance(attr, property):
-            return attr.fset
-        if deco.endswith(".deleter") and isinstance(attr, property):
-            return attr.fdel
-    if inspect.isfunction(attr):
-        return attr
+def _get_function(sym: FuncDecl) -> Callable | None:
+    obj = sym.obj
+    if callable(obj):
+        return obj
     return None
 
 
-def _transform_class(sym: ClassSymbol, cls: type) -> None:
+def _transform_class(sym: ClassDecl, cls: type) -> None:
     members = list(sym.members)
     for i, m in enumerate(list(members)):
-        if isinstance(m, FuncSymbol):
-            fn = _get_function(cls, m)
+        if isinstance(m, FuncDecl):
+            fn = _get_function(m)
             if fn is not None:
                 expanded = _expand_function(fn, m)
                 if expanded != [m]:
                     members[i : i + 1] = expanded
-        elif isinstance(m, ClassSymbol):
-            inner = getattr(cls, m.name, None)
+        elif isinstance(m, ClassDecl):
+            inner = m.obj
             if isinstance(inner, type):
                 _transform_class(m, inner)
     sym.members = tuple(members)
 
 
-def expand_overloads(mi: ModuleInfo) -> None:
+def expand_overloads(mi: ModuleDecl) -> None:
     """Expand overloads within ``mi`` into separate function symbols."""
-    new_symbols: list[Symbol] = []
-    for s in mi.symbols:
+    new_decls: list[Decl] = []
+    for s in mi.members:
         match s:
-            case FuncSymbol():
-                fn_obj = getattr(mi.mod, s.name, None)
+            case FuncDecl():
+                fn_obj = _get_function(s)
                 if callable(fn_obj):
-                    new_symbols.extend(_expand_function(fn_obj, s))
+                    new_decls.extend(_expand_function(fn_obj, s))
                 else:
-                    new_symbols.append(s)
-            case ClassSymbol():
-                cls = getattr(mi.mod, s.name, None)
+                    new_decls.append(s)
+            case ClassDecl():
+                cls = s.obj
                 if isinstance(cls, type):
                     _transform_class(s, cls)
-                new_symbols.append(s)
+                new_decls.append(s)
             case _:
-                new_symbols.append(s)
-    mi.symbols = new_symbols
+                new_decls.append(s)
+    mi.members = new_decls

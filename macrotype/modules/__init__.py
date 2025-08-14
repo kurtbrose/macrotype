@@ -5,11 +5,11 @@ from __future__ import annotations
 from types import ModuleType
 
 from .emit import emit_module
+from .ir import ModuleDecl
 from .scanner import scan_module
-from .symbols import ModuleInfo
 
 __all__ = [
-    "ModuleInfo",
+    "ModuleDecl",
     "add_comments",
     "from_module",
     "expand_overloads",
@@ -43,8 +43,8 @@ def __getattr__(name: str):
     raise AttributeError(name)
 
 
-def from_module(mod: ModuleType) -> ModuleInfo:
-    """Scan *mod* into a ModuleInfo and attach comments."""
+def from_module(mod: ModuleType) -> ModuleDecl:
+    """Scan *mod* into a ModuleDecl and attach comments."""
 
     from . import transformers as _t
 

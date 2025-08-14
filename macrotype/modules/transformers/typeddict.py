@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import typing as t
 
-from macrotype.modules.symbols import ClassSymbol, ModuleInfo
+from macrotype.modules.ir import ClassDecl, ModuleDecl
 
 
-def _transform_class(sym: ClassSymbol, cls: type, td_meta: type) -> None:
+def _transform_class(sym: ClassDecl, cls: type, td_meta: type) -> None:
     if isinstance(cls, td_meta):
         base_fields: set[str] = set()
         for base in cls.__mro__[1:]:
@@ -15,17 +15,17 @@ def _transform_class(sym: ClassSymbol, cls: type, td_meta: type) -> None:
             sym.td_fields = tuple(f for f in sym.td_fields if f.name not in base_fields)
             sym.td_total = None
     for m in sym.members:
-        if isinstance(m, ClassSymbol):
-            inner = getattr(cls, m.name, None)
+        if isinstance(m, ClassDecl):
+            inner = m.obj
             if isinstance(inner, type):
                 _transform_class(m, inner, td_meta)
 
 
-def prune_inherited_typeddict_fields(mi: ModuleInfo) -> None:
+def prune_inherited_typeddict_fields(mi: ModuleDecl) -> None:
     """Remove TypedDict fields shadowed by inherited bases within ``mi``."""
     td_meta = getattr(t, "_TypedDictMeta", ())
-    for sym in mi.get_all_symbols():
-        if isinstance(sym, ClassSymbol):
-            cls = getattr(mi.mod, sym.name, None)
+    for sym in mi.get_all_decls():
+        if isinstance(sym, ClassDecl):
+            cls = sym.obj
             if isinstance(cls, type):
                 _transform_class(sym, cls, td_meta)

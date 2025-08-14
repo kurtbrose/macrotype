@@ -1,63 +1,58 @@
-from __future__ import annotations
-
 """Convert typing.NewType functions into alias symbols."""
 
 import typing as t
-from typing import Any
 
-from macrotype.modules.symbols import (
-    AliasSymbol,
-    ClassSymbol,
-    FuncSymbol,
-    ModuleInfo,
+from macrotype.modules.ir import (
+    AliasDecl,
+    ClassDecl,
+    Decl,
+    FuncDecl,
+    ModuleDecl,
     Site,
-    Symbol,
-    VarSymbol,
+    VarDecl,
 )
 
 
-def _transform_symbols(symbols: list[Symbol], namespace: dict[str, Any]) -> list[Symbol]:
-    new_syms: list[Symbol] = []
-    for sym in symbols:
-        match sym:
-            case FuncSymbol(name=name, comment=comment, emit=emit):
-                obj = namespace.get(name)
+def _transform_decls(decls: list[Decl]) -> list[Decl]:
+    new_decls: list[Decl] = []
+    for decl in decls:
+        match decl:
+            case FuncDecl(name=name, obj=obj, comment=comment, emit=emit):
                 if callable(obj) and hasattr(obj, "__supertype__"):
-                    alias = AliasSymbol(
+                    alias = AliasDecl(
                         name=name,
                         value=Site(role="alias_value", annotation=obj.__supertype__),
                         alias_type=t.NewType,
                         comment=comment,
                         emit=emit,
+                        obj=obj,
                     )
-                    new_syms.append(alias)
+                    new_decls.append(alias)
                 else:
-                    new_syms.append(sym)
-            case VarSymbol(name=name, comment=comment, emit=emit):
-                obj = namespace.get(name)
+                    new_decls.append(decl)
+            case VarDecl(name=name, obj=obj, comment=comment, emit=emit):
                 if callable(obj) and hasattr(obj, "__supertype__"):
-                    alias = AliasSymbol(
+                    alias = AliasDecl(
                         name=name,
                         value=Site(role="alias_value", annotation=obj.__supertype__),
                         alias_type=t.NewType,
                         comment=comment,
                         emit=emit,
+                        obj=obj,
                     )
-                    new_syms.append(alias)
+                    new_decls.append(alias)
                 else:
-                    new_syms.append(sym)
-            case ClassSymbol(name=name, members=members):
-                obj = namespace.get(name)
-                if isinstance(obj, type):
-                    sym.members = tuple(_transform_symbols(list(members), vars(obj)))
-                new_syms.append(sym)
+                    new_decls.append(decl)
+            case ClassDecl(obj=cls, members=members):
+                if isinstance(cls, type):
+                    decl.members = tuple(_transform_decls(list(members)))
+                new_decls.append(decl)
             case _:
-                new_syms.append(sym)
-    return new_syms
+                new_decls.append(decl)
+    return new_decls
 
 
-def transform_newtypes(mi: ModuleInfo) -> None:
+def transform_newtypes(mi: ModuleDecl) -> None:
     """Replace typing.NewType callables in ``mi`` with alias symbols."""
 
-    glb = vars(mi.mod)
-    mi.symbols = _transform_symbols(mi.symbols, glb)
+    mi.members = _transform_decls(mi.members)

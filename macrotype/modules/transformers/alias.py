@@ -2,17 +2,17 @@ from __future__ import annotations
 
 import typing as t
 
-from macrotype.modules.symbols import AliasSymbol, ModuleInfo, Site
+from macrotype.modules.ir import AliasDecl, ModuleDecl, Site
 
 
-def synthesize_aliases(mi: ModuleInfo) -> None:
-    """Normalize alias-like objects into AliasSymbol instances."""
-    glb = vars(mi.mod)
+def synthesize_aliases(mi: ModuleDecl) -> None:
+    """Normalize alias-like objects into AliasDecl instances."""
+    glb = vars(mi.obj)
     annotations = glb.get("__annotations__", {}) or {}
-    for sym in mi.get_all_symbols():
-        if not isinstance(sym, AliasSymbol):
+    for sym in mi.get_all_decls():
+        if not isinstance(sym, AliasDecl):
             continue
-        obj = glb.get(sym.name)
+        obj = sym.obj
         if isinstance(obj, t.TypeAliasType):  # type: ignore[attr-defined]
             sym.value = Site(role="alias_value", annotation=obj.__value__)
             sym.alias_type = obj
