@@ -21,6 +21,7 @@ from macrotype.modules.transformers import (
     synthesize_aliases,
     transform_dataclasses,
     transform_enums,
+    transform_namedtuples,
     transform_newtypes,
 )
 
@@ -316,6 +317,26 @@ def test_typeddict_transform() -> None:
     assert len(derived.td_fields) == 1
     assert derived.td_fields[0].name == "c"
     assert derived.td_total is None
+
+
+def test_namedtuple_transform() -> None:
+    code = """
+    import typing as t
+
+    class NT(t.NamedTuple):
+        x: int
+        y: int
+    """
+    mod = mod_from_code(code, "namedtuple")
+    mi = scan_module(mod)
+    canonicalize_foreign_symbols(mi)
+    transform_namedtuples(mi)
+    nt = t.cast(
+        ClassSymbol, next(s for s in mi.symbols if isinstance(s, ClassSymbol) and s.name == "NT")
+    )
+    assert [b.annotation for b in nt.bases][0] is t.NamedTuple
+    member_names = {m.name for m in nt.members}
+    assert member_names == {"x", "y"}
 
 
 def test_enum_transform() -> None:
