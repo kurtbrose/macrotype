@@ -13,6 +13,7 @@ from macrotype.modules.scanner import scan_module
 from macrotype.modules.transformers import (
     add_comments,
     canonicalize_foreign_symbols,
+    canonicalize_local_aliases,
     expand_overloads,
     infer_constant_types,
     infer_param_defaults,
@@ -308,6 +309,25 @@ def test_foreign_symbol_transform() -> None:
     assert isinstance(const, VarDecl)
     annotated = by_name["annotated"]
     assert isinstance(annotated, VarDecl)
+
+
+def test_local_alias_transform() -> None:
+    code = """
+    def func(x: int) -> int:
+        return x
+
+    alias = func
+    """
+    mod = mod_from_code(code, "local_alias")
+    mi = scan_module(mod)
+    canonicalize_local_aliases(mi)
+    unwrap_decorated_functions(mi)
+    by_name = {s.name: s for s in mi.members}
+
+    alias = by_name["alias"]
+    assert isinstance(alias, TypeDefDecl)
+    funcs = [s for s in mi.members if isinstance(s, FuncDecl)]
+    assert len(funcs) == 1
 
 
 def test_overload_transform() -> None:
