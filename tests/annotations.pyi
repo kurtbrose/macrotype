@@ -344,6 +344,10 @@ class SelfFactory:
 class Runnable(Protocol):
     def run(self) -> int: ...
 
+@runtime_checkable
+class LaterRunnable(Protocol):
+    def run(self) -> int: ...
+
 class NoProtoMethods(Protocol): ...
 
 class Info(TypedDict):

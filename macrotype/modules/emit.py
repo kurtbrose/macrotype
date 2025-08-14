@@ -53,6 +53,10 @@ def _collect_typing_names(symbols: Iterable[Symbol]) -> set[str]:
     for sym in symbols:
         if not sym.emit:
             continue
+        for deco in getattr(sym, "decorators", ()):  # collect decorator names from typing
+            base = deco.split("(")[0].split(".")[-1]
+            if base in {"final", "override", "overload", "runtime_checkable"}:
+                names.add(base)
         match sym:
             case AliasSymbol(flags=flags):
                 if flags.get("is_typevar"):

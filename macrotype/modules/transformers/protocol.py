@@ -18,6 +18,9 @@ def _transform_class(sym: ClassSymbol, cls: type[Any]) -> None:
             for m in sym.members
             if not (isinstance(m, FuncSymbol) and m.name in _PROTOCOL_METHOD_NAMES)
         )
+        if getattr(cls, "_is_runtime_protocol", False):
+            if "runtime_checkable" not in sym.decorators:
+                sym.decorators = sym.decorators + ("runtime_checkable",)
     for m in sym.members:
         if isinstance(m, ClassSymbol):
             inner = getattr(cls, m.name, None)

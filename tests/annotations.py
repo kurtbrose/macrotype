@@ -499,6 +499,14 @@ class Runnable(Protocol):
     def run(self) -> int: ...
 
 
+# runtime_checkable applied after class definition should be preserved
+class LaterRunnable(Protocol):
+    def run(self) -> int: ...
+
+
+LaterRunnable = runtime_checkable(LaterRunnable)
+
+
 # Protocol auto methods should be pruned
 class NoProtoMethods(Protocol):
     pass
