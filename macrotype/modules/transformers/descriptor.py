@@ -3,6 +3,7 @@ from __future__ import annotations
 """Normalize method descriptors into function symbols."""
 
 import functools
+import inspect
 from dataclasses import replace
 from typing import Any
 
@@ -32,7 +33,22 @@ def _unwrap_descriptor(obj: Any) -> Any | None:
         return None
 
 
-def _descriptor_members(attr_name: str, attr: Any) -> list[FuncSymbol]:
+def _extract_partialmethod(
+    pm: functools.partialmethod, cls: type, name: str
+) -> Any:  # pragma: no cover - thin wrapper around stdlib behaviour
+    """Return a function object for ``partialmethod`` *pm* defined on *cls*."""
+
+    fn = pm.__get__(None, cls)
+    hints = getattr(pm.func, "__annotations__", {}).copy()
+    sig_params = inspect.signature(fn).parameters
+    fn.__annotations__ = {k: hints[k] for k in sig_params if k in hints}
+    if "return" in hints:
+        fn.__annotations__["return"] = hints["return"]
+    fn.__name__ = name
+    return fn
+
+
+def _descriptor_members(attr_name: str, attr: Any, cls: type) -> list[FuncSymbol]:
     """Return function symbols generated from descriptor *attr*."""
 
     unwrapped = _unwrap_descriptor(attr) or attr
@@ -68,6 +84,15 @@ def _descriptor_members(attr_name: str, attr: Any) -> list[FuncSymbol]:
 
             return members
 
+    if isinstance(unwrapped, functools.partialmethod):
+        fn_obj = _extract_partialmethod(unwrapped, cls, attr_name)
+        for flag in ("__final__", "__override__", "__isabstractmethod__"):
+            if getattr(attr, flag, False) and not getattr(fn_obj, flag, False):
+                setattr(fn_obj, flag, True)
+        fn_sym = _scan_function(fn_obj)
+        fn_sym = replace(fn_sym, name=attr_name)
+        return [fn_sym]
+
     return []
 
 
@@ -75,7 +100,7 @@ def _transform_class(sym: ClassSymbol, cls: type) -> None:
     members = list(sym.members)
 
     for attr_name, attr in cls.__dict__.items():
-        desc_members = _descriptor_members(attr_name, attr)
+        desc_members = _descriptor_members(attr_name, attr, cls)
         if desc_members:
             for i, m in enumerate(members):
                 if m.name == attr_name:

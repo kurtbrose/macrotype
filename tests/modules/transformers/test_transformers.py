@@ -123,6 +123,9 @@ def test_descriptor_transform() -> None:
 
         @functools.cached_property
         def cache(self) -> int: ...
+
+        def base(self, a: int, b: str) -> str: ...
+        pm = functools.partialmethod(base, 2)
     """
     mod = mod_from_code(code, "descriptor")
     mi = scan_module(mod)
@@ -141,6 +144,11 @@ def test_descriptor_transform() -> None:
     assert sm.decorators == ("staticmethod",)
     cp = next(m for m in dcls.members if isinstance(m, FuncSymbol) and m.name == "cache")
     assert cp.decorators == ("cached_property",)
+    pm = next(m for m in dcls.members if isinstance(m, FuncSymbol) and m.name == "pm")
+    assert pm.decorators == ()
+    assert [p.name for p in pm.params] == ["b"]
+    assert pm.params[0].annotation in (str, "str")
+    assert pm.ret and pm.ret.annotation in (str, "str")
 
 
 def test_flag_transform() -> None:
