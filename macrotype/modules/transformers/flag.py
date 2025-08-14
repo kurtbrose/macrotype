@@ -38,7 +38,7 @@ def _normalize_function(sym: FuncDecl, fn: Any, *, is_method: bool) -> None:
                 seen.add("final")
         elif base == "override":
             flags["override"] = True
-            if base not in seen:
+            if is_method and base not in seen:
                 norm.append("override")
                 seen.add("override")
         elif base == "abstractmethod":
