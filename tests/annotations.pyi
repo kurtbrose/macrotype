@@ -216,6 +216,13 @@ class BaseTD(TypedDict):
 class SubTD(BaseTD):
     sub_field: str
 
+class TDShadowBase(TypedDict):
+    base_only: int
+    shadow: str
+
+class TDShadowChild(TDShadowBase):
+    extra: float
+
 class GenericBox[TDV](TypedDict):
     item: TDV
 

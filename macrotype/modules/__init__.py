@@ -12,6 +12,7 @@ from .emit import emit_module
 from .flag_transform import normalize_flags
 from .overload_transform import expand_overloads
 from .scanner import ModuleInfo, scan_module
+from .typeddict_transform import prune_inherited_typeddict_fields
 
 
 def from_module(mod: ModuleType) -> ModuleInfo:
@@ -20,6 +21,7 @@ def from_module(mod: ModuleType) -> ModuleInfo:
     mi = scan_module(mod)
     synthesize_aliases(mi)
     transform_dataclasses(mi)
+    prune_inherited_typeddict_fields(mi)
     normalize_descriptors(mi)
     normalize_flags(mi)
     expand_overloads(mi)
@@ -35,6 +37,7 @@ __all__ = [
     "normalize_flags",
     "normalize_descriptors",
     "synthesize_aliases",
+    "prune_inherited_typeddict_fields",
     "emit_module",
     "scan_module",
     "transform_dataclasses",

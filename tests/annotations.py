@@ -298,6 +298,17 @@ class SubTD(BaseTD):
     sub_field: str
 
 
+# Edge case: TypedDict field shadowing should be pruned
+class TDShadowBase(TypedDict):
+    base_only: int
+    shadow: str
+
+
+class TDShadowChild(TDShadowBase):
+    shadow: str
+    extra: float
+
+
 # Edge case: Generic TypedDict should retain type parameters
 class GenericBox(TypedDict, Generic[TDV]):
     item: TDV
