@@ -475,3 +475,26 @@ def test_generic_transform() -> None:
 
     var = t.cast(ClassDecl, by_name["Variadic"])
     assert var.type_params == ("*Ts",)
+
+
+def test_function_generic_transform() -> None:
+    code = """
+    from typing import Callable, Concatenate, ParamSpec, TypeVar, TypeVarTuple
+
+    T = TypeVar("T")
+    Ts = TypeVarTuple("Ts")
+    P = ParamSpec("P")
+
+    def func(x: T, *args: *Ts, **kwargs: P) -> T:
+        return x
+
+    def wrap(fn: Callable[Concatenate[int, P], T]) -> Callable[P, T]:
+        return fn
+    """
+    mod = mod_from_code(code, "fn_generic")
+    mi = scan_module(mod)
+    transform_generics(mi)
+    fn = next(s for s in mi.members if isinstance(s, FuncDecl) and s.name == "func")
+    assert fn.type_params == ("**P", "*Ts", "T")
+    wrap = next(s for s in mi.members if isinstance(s, FuncDecl) and s.name == "wrap")
+    assert wrap.type_params == ("**P", "T")
