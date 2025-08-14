@@ -26,11 +26,6 @@ def _transform_class(sym: ClassDecl, cls: type[Any]) -> None:
         if getattr(cls, "_is_runtime_protocol", False):
             if "runtime_checkable" not in sym.decorators:
                 sym.decorators = sym.decorators + ("runtime_checkable",)
-    for m in sym.members:
-        if isinstance(m, ClassDecl):
-            inner = m.obj
-            if isinstance(inner, type):
-                _transform_class(m, inner)
 
 
 def prune_protocol_methods(mi: ModuleDecl) -> None:

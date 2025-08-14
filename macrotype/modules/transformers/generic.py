@@ -44,12 +44,6 @@ def _transform_class(sym: ClassDecl, cls: type) -> None:
         sym.type_params = tuple(type_params)
         sym.bases = tuple(new_bases)
 
-    for m in sym.members:
-        if isinstance(m, ClassDecl):
-            inner = m.obj
-            if isinstance(inner, type):
-                _transform_class(m, inner)
-
 
 def _transform_function(sym: FuncDecl, fn: Callable) -> None:
     tp_objs = getattr(fn, "__type_params__", None)

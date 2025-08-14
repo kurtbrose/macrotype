@@ -111,12 +111,6 @@ def _transform_class(sym: ClassDecl, cls: type) -> None:
 
     sym.members = tuple(members)
 
-    for m in sym.members:
-        if isinstance(m, ClassDecl):
-            inner = m.obj
-            if isinstance(inner, type):
-                _transform_class(m, inner)
-
 
 def normalize_descriptors(mi: ModuleDecl) -> None:
     """Normalize descriptors within ``mi`` into function symbols."""
