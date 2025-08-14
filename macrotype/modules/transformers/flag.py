@@ -5,10 +5,10 @@ from __future__ import annotations
 import inspect
 from typing import Any
 
-from macrotype.modules.symbols import ClassSymbol, FuncSymbol, ModuleInfo
+from macrotype.modules.ir import ClassDecl, FuncDecl, ModuleDecl
 
 
-def _normalize_function(sym: FuncSymbol, fn: Any, *, is_method: bool) -> None:
+def _normalize_function(sym: FuncDecl, fn: Any, *, is_method: bool) -> None:
     """Attach flag information for *fn* to ``sym``."""
 
     flags = sym.flags
@@ -53,7 +53,7 @@ def _normalize_function(sym: FuncSymbol, fn: Any, *, is_method: bool) -> None:
     sym.decorators = tuple(norm)
 
 
-def _normalize_class(sym: ClassSymbol, cls: type) -> None:
+def _normalize_class(sym: ClassDecl, cls: type) -> None:
     flags = sym.flags
     decos = list(sym.decorators)
 
@@ -79,25 +79,25 @@ def _normalize_class(sym: ClassSymbol, cls: type) -> None:
     sym.decorators = tuple(norm)
 
     for m in sym.members:
-        if isinstance(m, FuncSymbol):
-            fn = getattr(cls, m.name, None)
+        if isinstance(m, FuncDecl):
+            fn = m.obj
             if callable(fn):
                 _normalize_function(m, fn, is_method=True)
-        elif isinstance(m, ClassSymbol):
-            inner = getattr(cls, m.name, None)
+        elif isinstance(m, ClassDecl):
+            inner = m.obj
             if isinstance(inner, type):
                 _normalize_class(m, inner)
 
 
-def normalize_flags(mi: ModuleInfo) -> None:
+def normalize_flags(mi: ModuleDecl) -> None:
     """Attach ``final``/``override``/``abstract`` flags to symbols in ``mi``."""
 
-    for sym in mi.get_all_symbols():
-        if isinstance(sym, FuncSymbol):
-            fn = getattr(mi.mod, sym.name, None)
+    for sym in mi.members:
+        if isinstance(sym, FuncDecl):
+            fn = sym.obj
             if callable(fn):
                 _normalize_function(sym, fn, is_method=False)
-        elif isinstance(sym, ClassSymbol):
-            cls = getattr(mi.mod, sym.name, None)
+        elif isinstance(sym, ClassDecl):
+            cls = sym.obj
             if isinstance(cls, type):
                 _normalize_class(sym, cls)

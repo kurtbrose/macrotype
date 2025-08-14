@@ -1,31 +1,31 @@
 from __future__ import annotations
 
 import types
-from collections.abc import Callable
-from typing import Annotated, Any, ForwardRef, Iterable, get_args, get_origin
+from collections.abc import Callable as ABC_Callable
+from typing import Annotated, Any, Callable, ForwardRef, Iterable, get_args, get_origin
 
 INDENT = "    "
 
 import typing as t
 
-from .symbols import AliasSymbol, ClassSymbol, FuncSymbol, ModuleInfo, Symbol, VarSymbol
+from .ir import AliasDecl, ClassDecl, Decl, FuncDecl, ModuleDecl, VarDecl
 
 
-def emit_module(mi: ModuleInfo) -> list[str]:
-    """Emit `.pyi` lines for a ModuleInfo using annotations only."""
+def emit_module(mi: ModuleDecl) -> list[str]:
+    """Emit `.pyi` lines for a ModuleDecl using annotations only."""
     annotations = collect_all_annotations(mi)
     atoms: dict[int, Any] = {}
     for ann in annotations:
         atoms.update(flatten_annotation_atoms(ann))
 
-    context = mi.mod.__dict__
+    context = mi.obj.__dict__
     name_map = build_name_map(atoms.values(), context)
 
     lines: list[str] = []
-    for sym in mi.symbols:
+    for sym in mi.members:
         if not sym.emit:
             continue
-        lines.extend(_emit_symbol(sym, name_map, indent=0))
+        lines.extend(_emit_decl(sym, name_map, indent=0))
         lines.append("")
     if lines and lines[-1] == "":
         lines.pop()
@@ -34,9 +34,9 @@ def emit_module(mi: ModuleInfo) -> list[str]:
     typing_names = {
         name_map[id(a)]
         for a in atoms.values()
-        if getattr(a, "__module__", None) == "typing" or a is Callable
+        if getattr(a, "__module__", None) == "typing" or a in {Callable, ABC_Callable}
     }
-    typing_names.update(_collect_typing_names(mi.symbols))
+    typing_names.update(_collect_typing_names(mi.members))
 
     pre: list[str] = []
     if typing_names:
@@ -47,7 +47,7 @@ def emit_module(mi: ModuleInfo) -> list[str]:
     return pre + lines
 
 
-def _collect_typing_names(symbols: Iterable[Symbol]) -> set[str]:
+def _collect_typing_names(symbols: Iterable[Decl]) -> set[str]:
     names: set[str] = set()
     for sym in symbols:
         if not sym.emit:
@@ -57,12 +57,12 @@ def _collect_typing_names(symbols: Iterable[Symbol]) -> set[str]:
             if base in {"final", "override", "overload", "runtime_checkable"}:
                 names.add(base)
         match sym:
-            case AliasSymbol(alias_type=alias):
+            case AliasDecl(alias_type=alias):
                 if isinstance(alias, (t.TypeVar, t.ParamSpec, t.TypeVarTuple)):
                     names.add(type(alias).__name__)
                 elif alias is t.NewType:
                     names.add(alias.__name__)
-            case ClassSymbol(members=members):
+            case ClassDecl(members=members):
                 names.update(_collect_typing_names(members))
     return names
 
@@ -73,10 +73,10 @@ def _add_comment(line: str, comment: str | None) -> str:
     return line
 
 
-def collect_all_annotations(mi: ModuleInfo) -> list[Any]:
-    """Walk ModuleInfo and collect all annotations."""
+def collect_all_annotations(mi: ModuleDecl) -> list[Any]:
+    """Walk ModuleDecl and collect all annotations."""
     annos: list[Any] = []
-    for sym in mi.get_all_symbols():
+    for sym in mi.get_all_decls():
         if not sym.emit:
             continue
         for site in sym.get_annotation_sites():
@@ -156,13 +156,19 @@ def stringify_annotation(ann: Any, name_map: dict[int, str]) -> str:
     if origin is types.UnionType:
         return " | ".join(stringify_annotation(arg, name_map) for arg in args)
 
-    if origin is Callable:
+    from collections.abc import Callable as ABC_Callable
+
+    if origin in {Callable, ABC_Callable}:
         if not args:
             return "Callable"
-        params, ret = args
+        if len(args) == 2:
+            params, ret = args
+            params = params if params is not Ellipsis else [Ellipsis]
+        else:
+            *params, ret = args
         ret_str = stringify_annotation(ret, name_map)
-        name = name_map.get(id(origin), "Callable")
-        if params is Ellipsis:
+        name = name_map.get(id(origin), getattr(origin, "__name__", "Callable"))
+        if params == [Ellipsis]:
             return f"{name}[..., {ret_str}]"
         params_str = ", ".join(stringify_annotation(p, name_map) for p in params)
         return f"{name}[[{params_str}], {ret_str}]"
@@ -182,22 +188,22 @@ def stringify_annotation(ann: Any, name_map: dict[int, str]) -> str:
         inner = ", ".join(stringify_annotation(arg, name_map) for arg in args)
         return f"{name}[{inner}]"
     else:
-        return name_map.get(id(ann), repr(ann))
+        return name_map.get(id(ann), getattr(ann, "__name__", repr(ann)))
 
 
-def _emit_symbol(sym: Symbol, name_map: dict[int, str], *, indent: int) -> list[str]:
+def _emit_decl(sym: Decl, name_map: dict[int, str], *, indent: int) -> list[str]:
     if not sym.emit:
         return []
     pad = INDENT * indent
 
     match sym:
-        case VarSymbol(site=site):
+        case VarDecl(site=site):
             ty = stringify_annotation(site.annotation, name_map)
             line = f"{pad}{sym.name}: {ty}"
             line = _add_comment(line, sym.comment or site.comment)
             return [line]
 
-        case AliasSymbol(value=site, type_params=params, alias_type=alias):
+        case AliasDecl(value=site, type_params=params, alias_type=alias):
             keyword = param_str = ""
             match alias:
                 case t.TypeAliasType():  # type: ignore[attr-defined]
@@ -221,7 +227,7 @@ def _emit_symbol(sym: Symbol, name_map: dict[int, str], *, indent: int) -> list[
             line = _add_comment(line, sym.comment or site.comment)
             return [line]
 
-        case FuncSymbol(params=params, ret=ret, decorators=decos):
+        case FuncDecl(params=params, ret=ret, decorators=decos):
             pieces: list[str] = []
             for d in decos:
                 pieces.append(f"{pad}@{d}")
@@ -234,7 +240,7 @@ def _emit_symbol(sym: Symbol, name_map: dict[int, str], *, indent: int) -> list[
             pieces.append(line)
             return pieces
 
-        case ClassSymbol(bases=bases, td_fields=fields, members=members, decorators=decos):
+        case ClassDecl(bases=bases, td_fields=fields, members=members, decorators=decos):
             base_str = ""
             if bases:
                 base_str = (
@@ -252,7 +258,7 @@ def _emit_symbol(sym: Symbol, name_map: dict[int, str], *, indent: int) -> list[
                     lines.append(line)
             if members:
                 for m in members:
-                    lines.extend(_emit_symbol(m, name_map, indent=indent + 1))
+                    lines.extend(_emit_decl(m, name_map, indent=indent + 1))
             if not fields and not members:
                 lines.append(f"{pad}{INDENT}...")
             return lines

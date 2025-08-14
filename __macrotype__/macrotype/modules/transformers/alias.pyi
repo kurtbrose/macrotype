@@ -1,5 +1,3 @@
-# Generated via: macrotype macrotype/modules/transformers/alias.py -o __macrotype__/macrotype/modules/transformers/alias.pyi
-# Do not edit by hand
-from macrotype.modules.symbols import ModuleInfo
+from macrotype.modules.ir import ModuleDecl
 
-def synthesize_aliases(mi: ModuleInfo) -> None: ...
+def synthesize_aliases(mi: ModuleDecl) -> None: ...

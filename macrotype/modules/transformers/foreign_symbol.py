@@ -2,21 +2,21 @@ from __future__ import annotations
 
 import typing as t
 
-from macrotype.modules.symbols import AliasSymbol, ModuleInfo, Site, Symbol, VarSymbol
+from macrotype.modules.ir import AliasDecl, Decl, ModuleDecl, Site, VarDecl
 
 
-def canonicalize_foreign_symbols(mi: ModuleInfo) -> None:
+def canonicalize_foreign_symbols(mi: ModuleDecl) -> None:
     """Replace variables referencing foreign objects with aliases."""
 
-    glb = vars(mi.mod)
-    modname = mi.mod.__name__
+    glb = vars(mi.obj)
+    modname = mi.obj.__name__
     annotations: dict[str, t.Any] = glb.get("__annotations__", {}) or {}
-    new_syms: list[Symbol] = []
-    for sym in mi.symbols:
-        if not isinstance(sym, VarSymbol):
+    new_syms: list[Decl] = []
+    for sym in mi.members:
+        if not isinstance(sym, VarDecl):
             new_syms.append(sym)
             continue
-        obj = glb.get(sym.name, sym.initializer)
+        obj = sym.obj
         if obj is Ellipsis:
             new_syms.append(sym)
             continue
@@ -31,13 +31,14 @@ def canonicalize_foreign_symbols(mi: ModuleInfo) -> None:
             alias_name = getattr(obj, "__name__", None)
             if alias_name and alias_name != sym.name:
                 new_syms.append(
-                    AliasSymbol(
+                    AliasDecl(
                         name=sym.name,
                         value=Site(role="alias_value", annotation=obj),
+                        obj=obj,
                         comment=sym.comment,
                         emit=sym.emit,
                     )
                 )
             continue
         new_syms.append(sym)
-    mi.symbols = new_syms
+    mi.members = new_syms

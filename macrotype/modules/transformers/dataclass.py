@@ -3,7 +3,7 @@ from __future__ import annotations
 import dataclasses
 from typing import Any
 
-from macrotype.modules.symbols import ClassSymbol, ModuleInfo
+from macrotype.modules.ir import ClassDecl, ModuleDecl
 
 # Defaults used when recreating a ``@dataclass`` decorator.
 _DATACLASS_DEFAULTS: dict[str, Any] = {
@@ -93,7 +93,7 @@ def _dataclass_decorator(klass: type) -> str | None:
     return "dataclass" + (f"({', '.join(args)})" if args else "")
 
 
-def _transform_class(sym: ClassSymbol, cls: type) -> None:
+def _transform_class(sym: ClassDecl, cls: type) -> None:
     deco = _dataclass_decorator(cls)
     if deco:
         params = getattr(cls, "__dataclass_params__", None)
@@ -102,17 +102,17 @@ def _transform_class(sym: ClassSymbol, cls: type) -> None:
         sym.decorators = sym.decorators + (deco,)
 
     for m in sym.members:
-        if isinstance(m, ClassSymbol):
-            inner = getattr(cls, m.name, None)
+        if isinstance(m, ClassDecl):
+            inner = m.obj
             if isinstance(inner, type):
                 _transform_class(m, inner)
 
 
-def transform_dataclasses(mi: ModuleInfo) -> None:
+def transform_dataclasses(mi: ModuleDecl) -> None:
     """Attach dataclass decorators and strip auto methods within ``mi``."""
 
-    for sym in mi.get_all_symbols():
-        if isinstance(sym, ClassSymbol):
-            cls = getattr(mi.mod, sym.name, None)
+    for sym in mi.get_all_decls():
+        if isinstance(sym, ClassDecl):
+            cls = sym.obj
             if isinstance(cls, type):
                 _transform_class(sym, cls)

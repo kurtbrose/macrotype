@@ -7,8 +7,8 @@ import inspect
 from dataclasses import replace
 from typing import Any
 
+from macrotype.modules.ir import ClassDecl, FuncDecl, ModuleDecl
 from macrotype.modules.scanner import _scan_function
-from macrotype.modules.symbols import ClassSymbol, FuncSymbol, ModuleInfo
 
 # Mapping of descriptor types to the attribute holding the underlying
 # function and the decorator string to attach.
@@ -48,7 +48,7 @@ def _extract_partialmethod(
     return fn
 
 
-def _descriptor_members(attr_name: str, attr: Any, cls: type) -> list[FuncSymbol]:
+def _descriptor_members(attr_name: str, attr: Any, cls: type) -> list[FuncDecl]:
     """Return function symbols generated from descriptor *attr*."""
 
     unwrapped = _unwrap_descriptor(attr) or attr
@@ -96,7 +96,7 @@ def _descriptor_members(attr_name: str, attr: Any, cls: type) -> list[FuncSymbol
     return []
 
 
-def _transform_class(sym: ClassSymbol, cls: type) -> None:
+def _transform_class(sym: ClassDecl, cls: type) -> None:
     members = list(sym.members)
 
     for attr_name, attr in cls.__dict__.items():
@@ -112,17 +112,17 @@ def _transform_class(sym: ClassSymbol, cls: type) -> None:
     sym.members = tuple(members)
 
     for m in sym.members:
-        if isinstance(m, ClassSymbol):
-            inner = getattr(cls, m.name, None)
+        if isinstance(m, ClassDecl):
+            inner = m.obj
             if isinstance(inner, type):
                 _transform_class(m, inner)
 
 
-def normalize_descriptors(mi: ModuleInfo) -> None:
+def normalize_descriptors(mi: ModuleDecl) -> None:
     """Normalize descriptors within ``mi`` into function symbols."""
 
-    for sym in mi.get_all_symbols():
-        if isinstance(sym, ClassSymbol):
-            cls = getattr(mi.mod, sym.name, None)
+    for sym in mi.get_all_decls():
+        if isinstance(sym, ClassDecl):
+            cls = sym.obj
             if isinstance(cls, type):
                 _transform_class(sym, cls)
