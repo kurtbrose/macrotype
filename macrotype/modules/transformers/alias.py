@@ -29,11 +29,7 @@ def synthesize_aliases(mi: ModuleInfo) -> None:
                 else:
                     params.append(tp.__name__)
             sym.type_params = tuple(params)
-        if annotations.get(sym.name) is t.TypeAlias:
+        elif annotations.get(sym.name) is t.TypeAlias:
             sym.alias_type = t.TypeAlias
-        if isinstance(obj, t.TypeVar):
-            sym.alias_type = obj
-        elif isinstance(obj, t.ParamSpec):
-            sym.alias_type = obj
-        elif isinstance(obj, t.TypeVarTuple):
+        elif isinstance(obj, (t.TypeVar, t.ParamSpec, t.TypeVarTuple)):
             sym.alias_type = obj

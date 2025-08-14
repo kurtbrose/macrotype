@@ -171,7 +171,7 @@ case8 = (
             AliasSymbol(
                 name="UserId",
                 value=Site(role="alias_value", annotation=int),
-                alias_type=NewType("UserId", int),
+                alias_type=NewType,
             ),
         ],
     ),

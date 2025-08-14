@@ -2,6 +2,7 @@ from __future__ import annotations
 
 """Convert typing.NewType functions into alias symbols."""
 
+import typing as t
 from typing import Any
 
 from macrotype.modules.scanner import ModuleInfo
@@ -25,7 +26,7 @@ def _transform_symbols(symbols: list[Symbol], namespace: dict[str, Any]) -> list
                     alias = AliasSymbol(
                         name=name,
                         value=Site(role="alias_value", annotation=obj.__supertype__),
-                        alias_type=obj,
+                        alias_type=t.NewType,
                         comment=comment,
                         emit=emit,
                     )
@@ -38,7 +39,7 @@ def _transform_symbols(symbols: list[Symbol], namespace: dict[str, Any]) -> list
                     alias = AliasSymbol(
                         name=name,
                         value=Site(role="alias_value", annotation=obj.__supertype__),
-                        alias_type=obj,
+                        alias_type=t.NewType,
                         comment=comment,
                         emit=emit,
                     )

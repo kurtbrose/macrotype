@@ -86,7 +86,7 @@ def test_newtype_transform() -> None:
     by_name = {s.name: s for s in mi.symbols}
     user = by_name["UserId"]
     assert isinstance(user, AliasSymbol)
-    assert user.alias_type and hasattr(user.alias_type, "__supertype__")
+    assert user.alias_type is t.NewType
     assert user.value and user.value.annotation is int
 
 
