@@ -247,14 +247,21 @@ def _emit_decl(sym: Decl, name_map: dict[int, str], *, indent: int) -> list[str]
             pieces.append(line)
             return pieces
 
-        case ClassDecl(bases=bases, td_fields=fields, members=members, decorators=decos):
+        case ClassDecl(
+            bases=bases,
+            td_fields=fields,
+            members=members,
+            decorators=decos,
+            type_params=tp,
+        ):
             base_str = ""
             if bases:
                 base_str = (
                     f"({', '.join(stringify_annotation(b.annotation, name_map) for b in bases)})"
                 )
+            tp_str = f"[{', '.join(tp)}]" if tp else ""
             lines = [f"{pad}@{d}" for d in decos]
-            first = f"{pad}class {sym.name}{base_str}:"
+            first = f"{pad}class {sym.name}{tp_str}{base_str}:"
             first = _add_comment(first, sym.comment)
             lines.append(first)
             if fields:

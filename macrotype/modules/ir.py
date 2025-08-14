@@ -70,6 +70,7 @@ class ClassDecl(Decl):
     obj: object | None = None
     decorators: tuple[str, ...] = ()
     flags: dict[str, bool] = field(default_factory=dict)  # e.g., protocol, abstract
+    type_params: tuple[str, ...] = ()
 
     def get_children(self) -> tuple[Decl, ...]:
         return self.members

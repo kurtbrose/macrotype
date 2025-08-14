@@ -22,6 +22,7 @@ from macrotype.modules.transformers import (
     synthesize_aliases,
     transform_dataclasses,
     transform_enums,
+    transform_generics,
     transform_namedtuples,
     transform_newtypes,
     unwrap_decorated_functions,
@@ -446,3 +447,31 @@ def test_infer_param_defaults_transform() -> None:
     assert [p.name for p in fn.params] == ["a", "b"]
     assert fn.params[0].annotation is None
     assert fn.params[1].annotation in (int, "int")
+
+
+def test_generic_transform() -> None:
+    code = """
+    from typing import Generic, TypeVar, TypeVarTuple
+
+    T = TypeVar("T")
+    Ts = TypeVarTuple("Ts")
+
+    class Box(Generic[T]):
+        pass
+
+    class Variadic(Generic[*Ts]):
+        pass
+    """
+    mod = mod_from_code(code, "generic")
+    mi = scan_module(mod)
+    transform_generics(mi)
+    by_name = {s.name: s for s in mi.members}
+
+    box = t.cast(ClassDecl, by_name["Box"])
+    assert box.type_params == ("T",)
+    assert all(
+        getattr(b.annotation, "__origin__", b.annotation) is not t.Generic for b in box.bases
+    )
+
+    var = t.cast(ClassDecl, by_name["Variadic"])
+    assert var.type_params == ("*Ts",)

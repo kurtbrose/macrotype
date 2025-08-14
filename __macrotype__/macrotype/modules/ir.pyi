@@ -50,6 +50,7 @@ class ClassDecl(Decl):
     obj: None | object
     decorators: tuple[str, ...]
     flags: dict[str, bool]
+    type_params: tuple[str, ...]
     def get_children(self) -> tuple[Decl, ...]: ...
     def get_annotation_sites(self) -> tuple[Site, ...]: ...
 

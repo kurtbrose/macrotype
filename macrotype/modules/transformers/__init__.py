@@ -6,6 +6,7 @@ from .descriptor import normalize_descriptors
 from .enum import transform_enums
 from .flag import normalize_flags
 from .foreign_symbol import canonicalize_foreign_symbols
+from .generic import transform_generics
 from .namedtuple import transform_namedtuples
 from .newtype import transform_newtypes
 from .overload import expand_overloads
@@ -27,5 +28,6 @@ __all__ = [
     "prune_protocol_methods",
     "prune_inherited_typeddict_fields",
     "transform_namedtuples",
+    "transform_generics",
     "unwrap_decorated_functions",
 ]
