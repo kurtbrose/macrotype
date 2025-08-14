@@ -401,6 +401,7 @@ class HasFinalMethod:
     @final
     def do_final(self) -> None: ...
 
+@final
 def final_func(x: int) -> int: ...
 
 def pragma_func(x: int) -> int: ...  # pyright: ignore

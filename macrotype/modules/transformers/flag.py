@@ -16,12 +16,10 @@ def _normalize_function(sym: FuncDecl, fn: Any, *, is_method: bool) -> None:
 
     if getattr(fn, "__final__", False):
         flags["final"] = True
-        if is_method:
-            decos.append("final")
+        decos.append("final")
     if getattr(fn, "__override__", False):
         flags["override"] = True
-        if is_method:
-            decos.append("override")
+        decos.append("override")
     if getattr(fn, "__isabstractmethod__", False):
         flags["abstract"] = True
         if is_method:
@@ -33,7 +31,7 @@ def _normalize_function(sym: FuncDecl, fn: Any, *, is_method: bool) -> None:
         base = deco.split(".")[-1]
         if base == "final":
             flags["final"] = True
-            if is_method and base not in seen:
+            if base not in seen:
                 norm.append("final")
                 seen.add("final")
         elif base == "override":

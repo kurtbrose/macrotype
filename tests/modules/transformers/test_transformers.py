@@ -216,7 +216,7 @@ def test_flag_transform() -> None:
 
     func = t.cast(FuncDecl, by_name["f"])
     assert func.flags.get("final") is True
-    assert "final" not in func.decorators
+    assert "final" in func.decorators
 
 
 def test_runtime_checkable_transform() -> None:

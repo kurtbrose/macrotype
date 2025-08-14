@@ -1231,7 +1231,7 @@ class _ModuleBuilder:
         else:
             func = PyiFunction.from_function(
                 fn_obj,
-                skip_final=True,
+                skip_final=False,
                 globalns=self.globals,
                 localns=self.globals,
             )
