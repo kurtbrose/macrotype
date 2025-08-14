@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-"""Extract class type parameters from ``typing.Generic`` bases."""
+"""Extract type parameters for classes and functions."""
 
 import typing as t
-from typing import get_args, get_origin
+from typing import Callable, get_args, get_origin
 
-from macrotype.modules.ir import ClassDecl, ModuleDecl, Site
+from macrotype.modules.ir import ClassDecl, FuncDecl, ModuleDecl, Site
+from macrotype.types_ast import find_typevars
 
 
 def _format_type_param(param: t.Any) -> str:
@@ -50,11 +51,31 @@ def _transform_class(sym: ClassDecl, cls: type) -> None:
                 _transform_class(m, inner)
 
 
+def _transform_function(sym: FuncDecl, fn: Callable) -> None:
+    tp_objs = getattr(fn, "__type_params__", None)
+    if tp_objs:
+        sym.type_params = tuple(_format_type_param(tp) for tp in tp_objs)
+        return
+    try:
+        hints = t.get_type_hints(fn, include_extras=True)
+    except Exception:
+        hints = getattr(fn, "__annotations__", {}) or {}
+    annots = list(hints.values())
+    if annots:
+        params = sorted(set().union(*(find_typevars(a) for a in annots)))
+        sym.type_params = tuple(params)
+
+
 def transform_generics(mi: ModuleDecl) -> None:
-    """Attach class type parameters found in ``Generic`` bases."""
+    """Attach type parameters to classes and functions within ``mi``."""
 
     for sym in mi.get_all_decls():
-        if isinstance(sym, ClassDecl):
-            cls = sym.obj
-            if isinstance(cls, type):
-                _transform_class(sym, cls)
+        match sym:
+            case ClassDecl():
+                cls = sym.obj
+                if isinstance(cls, type):
+                    _transform_class(sym, cls)
+            case FuncDecl():
+                fn = sym.obj
+                if callable(fn):
+                    _transform_function(sym, fn)

@@ -1,3 +1,5 @@
+# Generated via: macrotype macrotype/modules/ir.py -o __macrotype__/macrotype/modules/ir.pyi
+# Do not edit by hand
 from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Literal
@@ -18,7 +20,7 @@ class Decl:
 
 @dataclass(kw_only=True)
 class Site:
-    role: Literal["var", "return", "param", "base", "alias_value", "td_field"]
+    role: Literal['var', 'return', 'param', 'base', 'alias_value', 'td_field']
     name: None | str
     index: None | int
     annotation: object
@@ -37,6 +39,7 @@ class FuncDecl(Decl):
     ret: None | Site
     obj: None | object
     decorators: tuple[str, ...]
+    type_params: tuple[str, ...]
     flags: dict[str, bool]
     def get_annotation_sites(self) -> tuple[Site, ...]: ...
 

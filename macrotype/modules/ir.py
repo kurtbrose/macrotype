@@ -51,6 +51,7 @@ class FuncDecl(Decl):
     ret: Optional[Site]
     obj: object | None = None
     decorators: tuple[str, ...] = ()
+    type_params: tuple[str, ...] = ()
     flags: dict[str, bool] = field(default_factory=dict)  # e.g., staticmethod, classmethod
 
     def get_annotation_sites(self) -> tuple[Site, ...]:

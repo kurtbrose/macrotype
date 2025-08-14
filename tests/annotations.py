@@ -786,6 +786,11 @@ def loop_over(x: bytes | bytearray) -> str:
     return str(x)
 
 
+# Basic generic function using ``TypeVar``
+def identity(x: T) -> T:
+    return x
+
+
 # Generic function using ``TypeVarTuple``
 def as_tuple(*args: Unpack[Ts]) -> tuple[Unpack[Ts]]:
     return tuple(args)
