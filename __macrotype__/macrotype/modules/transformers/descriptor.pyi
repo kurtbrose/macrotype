@@ -1,5 +1,4 @@
-from macrotype.modules.scanner import ModuleInfo
-from macrotype.modules.symbols import ClassSymbol, FuncSymbol
+from macrotype.modules.symbols import ClassSymbol, FuncSymbol, ModuleInfo
 from typing import Any
 
 _ATTR_DECORATORS: dict[type, tuple[str, str]]

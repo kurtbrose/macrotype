@@ -1,8 +1,7 @@
 # Generated via: macrotype macrotype/modules/emit.py -o __macrotype__/macrotype/emit.pyi
 # Do not edit by hand
 from collections.abc import Iterable
-from macrotype.modules.scanner import ModuleInfo
-from macrotype.modules.symbols import Symbol
+from macrotype.modules.symbols import ModuleInfo, Symbol
 from typing import Any, ParamSpec, TypeVar, TypeVarTuple
 
 INDENT: str

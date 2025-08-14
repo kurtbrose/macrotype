@@ -4,8 +4,14 @@ from types import ModuleType
 from typing import Annotated, Any, Callable, ClassVar, Literal, NewType, TypeAliasType, Union
 
 from macrotype.modules.emit import emit_module
-from macrotype.modules.scanner import ModuleInfo
-from macrotype.modules.symbols import AliasSymbol, ClassSymbol, FuncSymbol, Site, VarSymbol
+from macrotype.modules.symbols import (
+    AliasSymbol,
+    ClassSymbol,
+    FuncSymbol,
+    ModuleInfo,
+    Site,
+    VarSymbol,
+)
 
 # ---- table: ModuleInfo -> emitted lines ----
 mod1 = ModuleType("m1")

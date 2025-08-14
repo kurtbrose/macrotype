@@ -5,8 +5,7 @@ from __future__ import annotations
 import inspect
 from typing import Any
 
-from macrotype.modules.scanner import ModuleInfo
-from macrotype.modules.symbols import ClassSymbol, FuncSymbol
+from macrotype.modules.symbols import ClassSymbol, FuncSymbol, ModuleInfo
 
 
 def _normalize_function(sym: FuncSymbol, fn: Any, *, is_method: bool) -> None:
@@ -93,7 +92,7 @@ def _normalize_class(sym: ClassSymbol, cls: type) -> None:
 def normalize_flags(mi: ModuleInfo) -> None:
     """Attach ``final``/``override``/``abstract`` flags to symbols in ``mi``."""
 
-    for sym in mi.symbols:
+    for sym in mi.get_all_symbols():
         if isinstance(sym, FuncSymbol):
             fn = getattr(mi.mod, sym.name, None)
             if callable(fn):

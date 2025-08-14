@@ -4,8 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from macrotype.modules.scanner import ModuleInfo
-from macrotype.modules.symbols import ClassSymbol, FuncSymbol
+from macrotype.modules.symbols import ClassSymbol, FuncSymbol, ModuleInfo
 
 # Methods inserted by ``Protocol`` machinery which should be removed
 _PROTOCOL_METHOD_NAMES = {"_proto_hook", "_no_init_or_replace_init"}
@@ -31,7 +30,7 @@ def _transform_class(sym: ClassSymbol, cls: type[Any]) -> None:
 def prune_protocol_methods(mi: ModuleInfo) -> None:
     """Remove Protocol-generated methods within ``mi``."""
 
-    for sym in mi.symbols:
+    for sym in mi.get_all_symbols():
         if isinstance(sym, ClassSymbol):
             cls = getattr(mi.mod, sym.name, None)
             if isinstance(cls, type):

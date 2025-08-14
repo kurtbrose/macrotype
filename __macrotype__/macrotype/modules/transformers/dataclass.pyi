@@ -1,6 +1,5 @@
 from dataclasses import _DataclassParams
-from macrotype.modules.scanner import ModuleInfo
-from macrotype.modules.symbols import ClassSymbol
+from macrotype.modules.symbols import ClassSymbol, ModuleInfo
 from typing import Any
 
 _DATACLASS_DEFAULTS: dict[str, Any]

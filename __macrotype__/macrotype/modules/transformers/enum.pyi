@@ -2,8 +2,7 @@
 # Do not edit by hand
 from enum import EnumType
 
-from macrotype.modules.scanner import ModuleInfo
-from macrotype.modules.symbols import AliasSymbol, ClassSymbol
+from macrotype.modules.symbols import AliasSymbol, ClassSymbol, ModuleInfo
 
 def _enum_members(klass: EnumType) -> list[AliasSymbol]: ...
 def _auto_enum_methods(klass: type) -> set[str]: ...

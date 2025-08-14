@@ -4,8 +4,7 @@ from __future__ import annotations
 
 import typing as t
 
-from macrotype.modules.scanner import ModuleInfo
-from macrotype.modules.symbols import ClassSymbol, Site, VarSymbol
+from macrotype.modules.symbols import ClassSymbol, ModuleInfo, Site, VarSymbol
 
 
 def _transform_class(sym: ClassSymbol, cls: type) -> None:
@@ -31,7 +30,7 @@ def _transform_class(sym: ClassSymbol, cls: type) -> None:
 def transform_namedtuples(mi: ModuleInfo) -> None:
     """Convert NamedTuple classes in ``mi`` to standard form."""
 
-    for sym in mi.symbols:
+    for sym in mi.get_all_symbols():
         if isinstance(sym, ClassSymbol):
             cls = getattr(mi.mod, sym.name, None)
             if isinstance(cls, type):

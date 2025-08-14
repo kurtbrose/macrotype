@@ -1,6 +1,6 @@
 # Generated via: macrotype macrotype
 # Do not edit by hand
-from macrotype.modules.scanner import ModuleInfo
+from macrotype.modules.symbols import ModuleInfo
 
 ModuleType = module
 

@@ -5,7 +5,8 @@ from __future__ import annotations
 from types import ModuleType
 
 from .emit import emit_module
-from .scanner import ModuleInfo, scan_module
+from .scanner import scan_module
+from .symbols import ModuleInfo
 
 __all__ = [
     "ModuleInfo",
