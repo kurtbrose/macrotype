@@ -25,7 +25,7 @@ def _transform_symbols(symbols: list[Symbol], namespace: dict[str, Any]) -> list
                     alias = AliasSymbol(
                         name=name,
                         value=Site(role="alias_value", annotation=obj.__supertype__),
-                        flags={"is_newtype": True},
+                        alias_type=obj,
                         comment=comment,
                         emit=emit,
                     )
@@ -38,7 +38,7 @@ def _transform_symbols(symbols: list[Symbol], namespace: dict[str, Any]) -> list
                     alias = AliasSymbol(
                         name=name,
                         value=Site(role="alias_value", annotation=obj.__supertype__),
-                        flags={"is_newtype": True},
+                        alias_type=obj,
                         comment=comment,
                         emit=emit,
                     )

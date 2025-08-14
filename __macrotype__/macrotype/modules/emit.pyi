@@ -1,4 +1,4 @@
-# Generated via: macrotype macrotype/modules/emit.py -o __macrotype__/macrotype/emit.pyi
+# Generated via: macrotype macrotype/modules/emit.py -o __macrotype__/macrotype/modules/emit.pyi
 # Do not edit by hand
 from collections.abc import Iterable
 from macrotype.modules.scanner import ModuleInfo

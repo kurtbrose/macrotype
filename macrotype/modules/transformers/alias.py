@@ -16,6 +16,7 @@ def synthesize_aliases(mi: ModuleInfo) -> None:
         obj = glb.get(sym.name)
         if isinstance(obj, t.TypeAliasType):  # type: ignore[attr-defined]
             sym.value = Site(role="alias_value", annotation=obj.__value__)
+            sym.alias_type = obj
             params: list[str] = []
             for tp in getattr(obj, "__type_params__", ()):  # pragma: no cover - py312+
                 if glb.get(tp.__name__) is tp:
@@ -29,10 +30,10 @@ def synthesize_aliases(mi: ModuleInfo) -> None:
                     params.append(tp.__name__)
             sym.type_params = tuple(params)
         if annotations.get(sym.name) is t.TypeAlias:
-            sym.flags["is_typealias"] = True
+            sym.alias_type = t.TypeAlias
         if isinstance(obj, t.TypeVar):
-            sym.flags["is_typevar"] = True
+            sym.alias_type = obj
         elif isinstance(obj, t.ParamSpec):
-            sym.flags["is_paramspec"] = True
+            sym.alias_type = obj
         elif isinstance(obj, t.TypeVarTuple):
-            sym.flags["is_typevartuple"] = True
+            sym.alias_type = obj

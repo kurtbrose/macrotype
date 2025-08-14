@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from types import ModuleType
-from typing import Annotated, Any, Callable, ClassVar, Literal, Union
+from typing import Annotated, Any, Callable, ClassVar, Literal, NewType, TypeAliasType, Union
 
 from macrotype.modules.emit import emit_module
 from macrotype.modules.scanner import ModuleInfo
@@ -28,6 +28,7 @@ case2 = (
             AliasSymbol(
                 name="Alias",
                 value=Site(role="alias_value", annotation=list[int]),
+                alias_type=TypeAliasType("Alias", list[int]),
             ),
             FuncSymbol(
                 name="f",
@@ -170,7 +171,7 @@ case8 = (
             AliasSymbol(
                 name="UserId",
                 value=Site(role="alias_value", annotation=int),
-                flags={"is_newtype": True},
+                alias_type=NewType("UserId", int),
             ),
         ],
     ),
