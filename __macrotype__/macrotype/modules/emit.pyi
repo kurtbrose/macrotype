@@ -1,3 +1,5 @@
+# Generated via: macrotype macrotype/modules/emit.py -o __macrotype__/macrotype/modules/emit.pyi
+# Do not edit by hand
 from collections.abc import Callable, Iterable
 from typing import Any, ParamSpec, TypeVar, TypeVarTuple
 

@@ -14,6 +14,7 @@ from macrotype.modules.transformers import (
     add_comments,
     canonicalize_foreign_symbols,
     expand_overloads,
+    infer_param_defaults,
     normalize_descriptors,
     normalize_flags,
     prune_inherited_typeddict_fields,
@@ -431,3 +432,17 @@ def test_unwrap_decorated_function_transform() -> None:
     fn = next(s for s in mi.members if isinstance(s, FuncDecl) and s.name == "wrapped")
     assert [p.name for p in fn.params] == ["x"]
     assert fn.ret and fn.ret.annotation in (str, "str")
+
+
+def test_infer_param_defaults_transform() -> None:
+    code = """
+    def mult(a, b=1):
+        return a * b
+    """
+    mod = mod_from_code(code, "param_defaults")
+    mi = scan_module(mod)
+    infer_param_defaults(mi)
+    fn = next(s for s in mi.members if isinstance(s, FuncDecl) and s.name == "mult")
+    assert [p.name for p in fn.params] == ["a", "b"]
+    assert fn.params[0].annotation is None
+    assert fn.params[1].annotation in (int, "int")
