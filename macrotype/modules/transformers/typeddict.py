@@ -14,11 +14,6 @@ def _transform_class(sym: ClassDecl, cls: type, td_meta: type) -> None:
         if base_fields:
             sym.td_fields = tuple(f for f in sym.td_fields if f.name not in base_fields)
             sym.td_total = None
-    for m in sym.members:
-        if isinstance(m, ClassDecl):
-            inner = m.obj
-            if isinstance(inner, type):
-                _transform_class(m, inner, td_meta)
 
 
 def prune_inherited_typeddict_fields(mi: ModuleDecl) -> None:

@@ -20,11 +20,6 @@ def _transform_class(sym: ClassDecl, cls: type) -> None:
                 continue
             new_bases.append(b)
         sym.bases = tuple(new_bases)
-    for m in sym.members:
-        if isinstance(m, ClassDecl):
-            inner = m.obj
-            if isinstance(inner, type):
-                _transform_class(m, inner)
 
 
 def transform_namedtuples(mi: ModuleDecl) -> None:

@@ -71,7 +71,7 @@ def _get_function(sym: FuncDecl) -> Callable | None:
     return None
 
 
-def _transform_class(sym: ClassDecl, cls: type) -> None:
+def _transform_class(sym: ClassDecl) -> None:
     members = list(sym.members)
     for i, m in enumerate(list(members)):
         if isinstance(m, FuncDecl):
@@ -80,29 +80,26 @@ def _transform_class(sym: ClassDecl, cls: type) -> None:
                 expanded = _expand_function(fn, m)
                 if expanded != [m]:
                     members[i : i + 1] = expanded
-        elif isinstance(m, ClassDecl):
-            inner = m.obj
-            if isinstance(inner, type):
-                _transform_class(m, inner)
     sym.members = tuple(members)
 
 
 def expand_overloads(mi: ModuleDecl) -> None:
     """Expand overloads within ``mi`` into separate function symbols."""
+
+    for sym in mi.get_all_decls():
+        if isinstance(sym, ClassDecl):
+            cls = sym.obj
+            if isinstance(cls, type):
+                _transform_class(sym)
+
     new_decls: list[Decl] = []
     for s in mi.members:
-        match s:
-            case FuncDecl():
-                fn_obj = _get_function(s)
-                if callable(fn_obj):
-                    new_decls.extend(_expand_function(fn_obj, s))
-                else:
-                    new_decls.append(s)
-            case ClassDecl():
-                cls = s.obj
-                if isinstance(cls, type):
-                    _transform_class(s, cls)
+        if isinstance(s, FuncDecl):
+            fn_obj = _get_function(s)
+            if callable(fn_obj):
+                new_decls.extend(_expand_function(fn_obj, s))
+            else:
                 new_decls.append(s)
-            case _:
-                new_decls.append(s)
+        else:
+            new_decls.append(s)
     mi.members = new_decls

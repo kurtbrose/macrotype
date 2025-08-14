@@ -83,10 +83,6 @@ def _normalize_class(sym: ClassDecl, cls: type) -> None:
             fn = m.obj
             if callable(fn):
                 _normalize_function(m, fn, is_method=True)
-        elif isinstance(m, ClassDecl):
-            inner = m.obj
-            if isinstance(inner, type):
-                _normalize_class(m, inner)
 
 
 def normalize_flags(mi: ModuleDecl) -> None:
@@ -97,7 +93,9 @@ def normalize_flags(mi: ModuleDecl) -> None:
             fn = sym.obj
             if callable(fn):
                 _normalize_function(sym, fn, is_method=False)
-        elif isinstance(sym, ClassDecl):
+
+    for sym in mi.get_all_decls():
+        if isinstance(sym, ClassDecl):
             cls = sym.obj
             if isinstance(cls, type):
                 _normalize_class(sym, cls)

@@ -5,7 +5,7 @@ from __future__ import annotations
 import inspect
 from typing import Callable
 
-from macrotype.modules.ir import ClassDecl, FuncDecl, ModuleDecl, Site
+from macrotype.modules.ir import FuncDecl, ModuleDecl, Site
 
 
 def _infer_function(sym: FuncDecl, fn: Callable) -> None:
@@ -37,26 +37,10 @@ def _infer_function(sym: FuncDecl, fn: Callable) -> None:
     sym.params = tuple(new_params)
 
 
-def _transform_class(sym: ClassDecl, cls: type) -> None:
-    for m in sym.members:
-        if isinstance(m, FuncDecl):
-            fn = m.obj
-            if callable(fn):
-                _infer_function(m, fn)
-        elif isinstance(m, ClassDecl):
-            inner = m.obj
-            if isinstance(inner, type):
-                _transform_class(m, inner)
-
-
 def infer_param_defaults(mi: ModuleDecl) -> None:
     """Infer parameter types from default values within ``mi``."""
-    for sym in mi.members:
+    for sym in mi.get_all_decls():
         if isinstance(sym, FuncDecl):
             fn = sym.obj
             if callable(fn):
                 _infer_function(sym, fn)
-        elif isinstance(sym, ClassDecl):
-            cls = sym.obj
-            if isinstance(cls, type):
-                _transform_class(sym, cls)

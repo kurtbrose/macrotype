@@ -101,12 +101,6 @@ def _transform_class(sym: ClassDecl, cls: type) -> None:
         sym.members = tuple(m for m in sym.members if m.name not in auto_methods)
         sym.decorators = sym.decorators + (deco,)
 
-    for m in sym.members:
-        if isinstance(m, ClassDecl):
-            inner = m.obj
-            if isinstance(inner, type):
-                _transform_class(m, inner)
-
 
 def transform_dataclasses(mi: ModuleDecl) -> None:
     """Attach dataclass decorators and strip auto methods within ``mi``."""
