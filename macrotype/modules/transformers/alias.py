@@ -2,15 +2,14 @@ from __future__ import annotations
 
 import typing as t
 
-from macrotype.modules.scanner import ModuleInfo
-from macrotype.modules.symbols import AliasSymbol, Site
+from macrotype.modules.symbols import AliasSymbol, ModuleInfo, Site
 
 
 def synthesize_aliases(mi: ModuleInfo) -> None:
     """Normalize alias-like objects into AliasSymbol instances."""
     glb = vars(mi.mod)
     annotations = glb.get("__annotations__", {}) or {}
-    for sym in mi.symbols:
+    for sym in mi.get_all_symbols():
         if not isinstance(sym, AliasSymbol):
             continue
         obj = glb.get(sym.name)

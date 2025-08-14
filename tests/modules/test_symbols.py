@@ -6,11 +6,12 @@ import typing
 import pytest
 
 from macrotype.modules import from_module
-from macrotype.modules.scanner import ModuleInfo, scan_module
+from macrotype.modules.scanner import scan_module
 from macrotype.modules.symbols import (
     AliasSymbol,
     ClassSymbol,
     FuncSymbol,
+    ModuleInfo,
     Symbol,
     VarSymbol,
 )
@@ -177,6 +178,13 @@ def test_expand_overloads_transform() -> None:
     mixed = [s for s in mi.symbols if s.name == "mixed_overload"]
     assert len(mixed) == 3
     assert mixed[-1].params[0].annotation == (int | str)
+
+
+def test_get_all_symbols_includes_nested() -> None:
+    ann = importlib.import_module("tests.annotations")
+    mi = scan_module(ann)
+    names = {s.name for s in mi.get_all_symbols()}
+    assert "Nested" in names
 
 
 def test_flag_transform() -> None:

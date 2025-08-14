@@ -1,5 +1,4 @@
-from macrotype.modules.scanner import ModuleInfo
-from macrotype.modules.symbols import ClassSymbol, FuncSymbol
+from macrotype.modules.symbols import ClassSymbol, FuncSymbol, ModuleInfo
 from typing import Any
 
 def _normalize_function(sym: FuncSymbol, fn: Any, *, is_method: bool) -> None: ...

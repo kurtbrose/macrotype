@@ -1,6 +1,5 @@
 from macrotype.meta_types import get_overloads
-from macrotype.modules.scanner import ModuleInfo
-from macrotype.modules.symbols import ClassSymbol, FuncSymbol
+from macrotype.modules.symbols import ClassSymbol, FuncSymbol, ModuleInfo
 from typing import Any, Callable
 
 _get_overloads = get_overloads

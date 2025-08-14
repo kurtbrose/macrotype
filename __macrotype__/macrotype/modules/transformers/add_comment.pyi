@@ -1,5 +1,4 @@
-from macrotype.modules.scanner import ModuleInfo
-from macrotype.modules.symbols import Symbol
+from macrotype.modules.symbols import ModuleInfo, Symbol
 
 ModuleType = module
 

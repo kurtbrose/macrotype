@@ -6,8 +6,14 @@ import re
 import tokenize
 from types import ModuleType
 
-from macrotype.modules.scanner import ModuleInfo
-from macrotype.modules.symbols import AliasSymbol, ClassSymbol, FuncSymbol, Symbol, VarSymbol
+from macrotype.modules.symbols import (
+    AliasSymbol,
+    ClassSymbol,
+    FuncSymbol,
+    ModuleInfo,
+    Symbol,
+    VarSymbol,
+)
 
 
 def _line_comment(line: str) -> str | None:

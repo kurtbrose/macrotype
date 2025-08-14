@@ -10,8 +10,8 @@ from dataclasses import replace
 from typing import Any, Callable
 
 from macrotype.meta_types import get_overloads as _get_overloads
-from macrotype.modules.scanner import ModuleInfo, _scan_function
-from macrotype.modules.symbols import ClassSymbol, FuncSymbol, Symbol
+from macrotype.modules.scanner import _scan_function
+from macrotype.modules.symbols import ClassSymbol, FuncSymbol, ModuleInfo, Symbol
 
 # Helper copied from ``pyi_extract`` to synthesize literal overloads
 

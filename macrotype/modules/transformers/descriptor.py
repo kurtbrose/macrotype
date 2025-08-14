@@ -7,8 +7,8 @@ import inspect
 from dataclasses import replace
 from typing import Any
 
-from macrotype.modules.scanner import ModuleInfo, _scan_function
-from macrotype.modules.symbols import ClassSymbol, FuncSymbol
+from macrotype.modules.scanner import _scan_function
+from macrotype.modules.symbols import ClassSymbol, FuncSymbol, ModuleInfo
 
 # Mapping of descriptor types to the attribute holding the underlying
 # function and the decorator string to attach.
@@ -121,7 +121,7 @@ def _transform_class(sym: ClassSymbol, cls: type) -> None:
 def normalize_descriptors(mi: ModuleInfo) -> None:
     """Normalize descriptors within ``mi`` into function symbols."""
 
-    for sym in mi.symbols:
+    for sym in mi.get_all_symbols():
         if isinstance(sym, ClassSymbol):
             cls = getattr(mi.mod, sym.name, None)
             if isinstance(cls, type):

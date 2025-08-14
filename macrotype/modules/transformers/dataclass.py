@@ -3,8 +3,7 @@ from __future__ import annotations
 import dataclasses
 from typing import Any
 
-from macrotype.modules.scanner import ModuleInfo
-from macrotype.modules.symbols import ClassSymbol
+from macrotype.modules.symbols import ClassSymbol, ModuleInfo
 
 # Defaults used when recreating a ``@dataclass`` decorator.
 _DATACLASS_DEFAULTS: dict[str, Any] = {
@@ -112,7 +111,7 @@ def _transform_class(sym: ClassSymbol, cls: type) -> None:
 def transform_dataclasses(mi: ModuleInfo) -> None:
     """Attach dataclass decorators and strip auto methods within ``mi``."""
 
-    for sym in mi.symbols:
+    for sym in mi.get_all_symbols():
         if isinstance(sym, ClassSymbol):
             cls = getattr(mi.mod, sym.name, None)
             if isinstance(cls, type):

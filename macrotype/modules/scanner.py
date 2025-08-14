@@ -2,18 +2,10 @@ from __future__ import annotations
 
 import inspect
 import typing as t
-from dataclasses import dataclass, replace
+from dataclasses import replace
 from types import ModuleType
 
-from .symbols import AliasSymbol, ClassSymbol, FuncSymbol, Site, Symbol, VarSymbol
-
-
-@dataclass
-class ModuleInfo:
-    """Scanned representation of a Python module."""
-
-    mod: ModuleType  # Original loaded module
-    symbols: list[Symbol]
+from .symbols import AliasSymbol, ClassSymbol, FuncSymbol, ModuleInfo, Site, Symbol, VarSymbol
 
 
 def _is_dunder(name: str) -> bool:

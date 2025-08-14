@@ -5,11 +5,11 @@ from __future__ import annotations
 import typing as t
 from typing import Any
 
-from macrotype.modules.scanner import ModuleInfo
 from macrotype.modules.symbols import (
     AliasSymbol,
     ClassSymbol,
     FuncSymbol,
+    ModuleInfo,
     Site,
     Symbol,
     VarSymbol,

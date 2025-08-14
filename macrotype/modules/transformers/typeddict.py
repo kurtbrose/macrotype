@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import typing as t
 
-from macrotype.modules.scanner import ModuleInfo
-from macrotype.modules.symbols import ClassSymbol
+from macrotype.modules.symbols import ClassSymbol, ModuleInfo
 
 
 def _transform_class(sym: ClassSymbol, cls: type, td_meta: type) -> None:
@@ -25,7 +24,7 @@ def _transform_class(sym: ClassSymbol, cls: type, td_meta: type) -> None:
 def prune_inherited_typeddict_fields(mi: ModuleInfo) -> None:
     """Remove TypedDict fields shadowed by inherited bases within ``mi``."""
     td_meta = getattr(t, "_TypedDictMeta", ())
-    for sym in mi.symbols:
+    for sym in mi.get_all_symbols():
         if isinstance(sym, ClassSymbol):
             cls = getattr(mi.mod, sym.name, None)
             if isinstance(cls, type):

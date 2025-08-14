@@ -1,5 +1,4 @@
-from macrotype.modules.scanner import ModuleInfo
-from macrotype.modules.symbols import ClassSymbol
+from macrotype.modules.symbols import ClassSymbol, ModuleInfo
 
 def _transform_class(sym: ClassSymbol, cls: type, td_meta: type) -> None: ...
 def prune_inherited_typeddict_fields(mi: ModuleInfo) -> None: ...

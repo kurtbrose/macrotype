@@ -8,8 +8,7 @@ INDENT = "    "
 
 import typing as t
 
-from .scanner import ModuleInfo
-from .symbols import AliasSymbol, ClassSymbol, FuncSymbol, Symbol, VarSymbol
+from .symbols import AliasSymbol, ClassSymbol, FuncSymbol, ModuleInfo, Symbol, VarSymbol
 
 
 def emit_module(mi: ModuleInfo) -> list[str]:
@@ -77,30 +76,11 @@ def _add_comment(line: str, comment: str | None) -> str:
 def collect_all_annotations(mi: ModuleInfo) -> list[Any]:
     """Walk ModuleInfo and collect all annotations."""
     annos: list[Any] = []
-
-    def visit(sym: Symbol):
+    for sym in mi.get_all_symbols():
         if not sym.emit:
-            return
-        match sym:
-            case VarSymbol(site=site):
-                annos.append(site.annotation)
-            case AliasSymbol(value=site):
-                annos.append(site.annotation)
-            case FuncSymbol(params=params, ret=ret):
-                for p in params:
-                    annos.append(p.annotation)
-                if ret:
-                    annos.append(ret.annotation)
-            case ClassSymbol(bases=bases, td_fields=fields, members=members):
-                for b in bases:
-                    annos.append(b.annotation)
-                for f in fields:
-                    annos.append(f.annotation)
-                for m in members:
-                    visit(m)
-
-    for s in mi.symbols:
-        visit(s)
+            continue
+        for site in sym.get_annotation_sites():
+            annos.append(site.annotation)
     return annos
 
 
