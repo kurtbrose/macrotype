@@ -1,0 +1,3 @@
+from macrotype.modules.ir import ModuleDecl
+
+def transform_generics(mi: ModuleDecl) -> None: ...

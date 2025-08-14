@@ -16,6 +16,7 @@ __all__ = [
     "normalize_flags",
     "normalize_descriptors",
     "canonicalize_foreign_symbols",
+    "transform_generics",
     "synthesize_aliases",
     "prune_inherited_typeddict_fields",
     "prune_protocol_methods",
@@ -29,6 +30,7 @@ def __getattr__(name: str):
     if name in {
         "add_comments",
         "canonicalize_foreign_symbols",
+        "transform_generics",
         "expand_overloads",
         "normalize_descriptors",
         "normalize_flags",
@@ -51,6 +53,7 @@ def from_module(mod: ModuleType) -> ModuleDecl:
     mi = scan_module(mod)
     _t.canonicalize_foreign_symbols(mi)
     _t.synthesize_aliases(mi)
+    _t.transform_generics(mi)
     _t.transform_dataclasses(mi)
     _t.prune_inherited_typeddict_fields(mi)
     _t.normalize_descriptors(mi)
