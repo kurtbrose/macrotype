@@ -9,6 +9,7 @@ from .foreign_symbol import canonicalize_foreign_symbols
 from .namedtuple import transform_namedtuples
 from .newtype import transform_newtypes
 from .overload import expand_overloads
+from .param_default import infer_param_defaults
 from .protocol import prune_protocol_methods
 from .typeddict import prune_inherited_typeddict_fields
 
@@ -22,6 +23,7 @@ __all__ = [
     "canonicalize_foreign_symbols",
     "expand_overloads",
     "transform_newtypes",
+    "infer_param_defaults",
     "prune_protocol_methods",
     "prune_inherited_typeddict_fields",
     "transform_namedtuples",

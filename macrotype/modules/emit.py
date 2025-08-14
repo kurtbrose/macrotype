@@ -231,9 +231,16 @@ def _emit_decl(sym: Decl, name_map: dict[int, str], *, indent: int) -> list[str]
             pieces: list[str] = []
             for d in decos:
                 pieces.append(f"{pad}@{d}")
-            param_strs = [
-                f"{p.name}: {stringify_annotation(p.annotation, name_map)}" for p in params
-            ]
+            param_strs: list[str] = []
+            for p in params:
+                name = p.name or ""
+                if name in {"*", "/"}:
+                    param_strs.append(name)
+                    continue
+                if p.annotation is None:
+                    param_strs.append(name)
+                else:
+                    param_strs.append(f"{name}: {stringify_annotation(p.annotation, name_map)}")
             ret_str = f" -> {stringify_annotation(ret.annotation, name_map)}" if ret else ""
             line = f"{pad}def {sym.name}({', '.join(param_strs)}){ret_str}: ..."
             line = _add_comment(line, sym.comment)
