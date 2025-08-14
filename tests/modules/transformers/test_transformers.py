@@ -216,6 +216,22 @@ def test_flag_transform() -> None:
     assert "final" not in func.decorators
 
 
+def test_runtime_checkable_transform() -> None:
+    code = """
+    from typing import Protocol, runtime_checkable
+
+    class P(Protocol):
+        def run(self) -> int: ...
+
+    P = runtime_checkable(P)
+    """
+    mod = mod_from_code(code, "runtime")
+    mi = scan_module(mod)
+    prune_protocol_methods(mi)
+    cls = next(s for s in mi.symbols if isinstance(s, ClassSymbol) and s.name == "P")
+    assert "runtime_checkable" in cls.decorators
+
+
 def test_foreign_symbol_transform() -> None:
     code = """
 

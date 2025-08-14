@@ -176,7 +176,24 @@ case8 = (
     ),
     ["from typing import NewType", "", 'UserId = NewType("UserId", int)'],
 )
-CASES = [case1, case2, case3, case4, case5, case6, case7, case8]
+
+mod9 = ModuleType("m9")
+case9 = (
+    ModuleInfo(
+        mod=mod9,
+        symbols=[
+            ClassSymbol(name="P", bases=(), members=(), decorators=("runtime_checkable",)),
+        ],
+    ),
+    [
+        "from typing import runtime_checkable",
+        "",
+        "@runtime_checkable",
+        "class P:",
+        "    ...",
+    ],
+)
+CASES = [case1, case2, case3, case4, case5, case6, case7, case8, case9]
 
 
 def test_emit_module_table() -> None:

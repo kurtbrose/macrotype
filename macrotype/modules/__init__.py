@@ -17,6 +17,7 @@ __all__ = [
     "canonicalize_foreign_symbols",
     "synthesize_aliases",
     "prune_inherited_typeddict_fields",
+    "prune_protocol_methods",
     "emit_module",
     "scan_module",
     "transform_dataclasses",
@@ -31,6 +32,7 @@ def __getattr__(name: str):
         "normalize_descriptors",
         "normalize_flags",
         "prune_inherited_typeddict_fields",
+        "prune_protocol_methods",
         "synthesize_aliases",
         "transform_dataclasses",
     }:
@@ -52,6 +54,7 @@ def from_module(mod: ModuleType) -> ModuleInfo:
     _t.prune_inherited_typeddict_fields(mi)
     _t.normalize_descriptors(mi)
     _t.normalize_flags(mi)
+    _t.prune_protocol_methods(mi)
     _t.expand_overloads(mi)
     _t.add_comments(mi)
     return mi
