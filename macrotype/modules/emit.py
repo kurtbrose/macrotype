@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import types
 from typing import Annotated, Any, Callable, ForwardRef, Iterable, get_args, get_origin
 
@@ -48,7 +49,8 @@ def collect_all_annotations(mi: ModuleDecl) -> list[Any]:
         if not sym.emit:
             continue
         for site in sym.get_annotation_sites():
-            annos.append(site.annotation)
+            if site.annotation is not inspect._empty:
+                annos.append(site.annotation)
     return annos
 
 
@@ -214,7 +216,7 @@ def _emit_decl(sym: Decl, name_map: dict[int, str], *, indent: int) -> list[str]
                 if name in {"*", "/"}:
                     param_strs.append(name)
                     continue
-                if p.annotation is None:
+                if p.annotation is inspect._empty:
                     param_strs.append(name)
                 else:
                     param_strs.append(f"{name}: {stringify_annotation(p.annotation, name_map)}")

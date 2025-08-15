@@ -109,6 +109,8 @@ UNANNOTATED_STR: str
 
 UNANNOTATED_FLOAT: float
 
+EXPLICIT_NONE: None
+
 class CustomInt(int): ...
 
 UNANNOTATED_CUSTOM_INT: CustomInt
@@ -124,6 +126,8 @@ COMMENTED_VAR: int  # pragma: var
 def mult(a, b: int): ...
 
 def takes_optional(x): ...
+
+def takes_none_param(x: None) -> None: ...
 
 def _alias_target() -> None: ...
 
