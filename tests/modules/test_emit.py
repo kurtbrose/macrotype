@@ -321,6 +321,22 @@ case13 = (
     ],
 )
 
+mod14 = ModuleType("m13")
+mod14.NONE_ALIAS = None
+case14 = (
+    ModuleDecl(
+        name=mod13.__name__,
+        obj=mod13,
+        members=[
+            VarDecl(
+                name="x",
+                site=Site(role="var", annotation=mod13.NONE_ALIAS),
+            ),
+        ],
+    ),
+    ["x: None"],
+)
+
 CASES = [
     case1,
     case2,
@@ -335,6 +351,7 @@ CASES = [
     case11,
     case12,
     case13,
+    case14,
 ]
 
 

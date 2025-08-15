@@ -115,6 +115,8 @@ UNANNOTATED_FLOAT: float
 
 EXPLICIT_NONE: None
 
+def takes_none_alias(x: None) -> None: ...
+
 class CustomInt(int): ...
 
 UNANNOTATED_CUSTOM_INT: CustomInt

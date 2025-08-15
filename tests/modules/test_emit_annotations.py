@@ -1,5 +1,8 @@
 from importlib import import_module
+from types import ModuleType
+from typing import Annotated
 
+from macrotype.meta_types import emit_as, set_module
 from macrotype.modules import emit_module, from_module
 
 
@@ -31,3 +34,22 @@ def test_emit_annotations_enums() -> None:
     idx = lines.index("class PointEnum(Enum):")
     assert lines[idx + 1] == "    INLINE = Point(x=1, y=2)"
     assert lines[idx + 2] == "    REF = ORIGIN"
+
+
+def test_emit_annotations_inline_meta() -> None:
+    mod = ModuleType("m")
+    mod.__file__ = __file__
+
+    @emit_as("InlineMeta")
+    class Inner:
+        pass
+
+    set_module(Inner, "tests.factory")
+
+    mod.InlineMeta = Inner
+    mod.__annotations__ = {"x": Annotated[int, Inner]}
+    mod.x = 1
+
+    mi = from_module(mod)
+    lines = emit_module(mi)
+    assert "x: Annotated[int, InlineMeta]" in lines

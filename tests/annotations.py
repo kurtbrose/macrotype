@@ -148,6 +148,14 @@ UNANNOTATED_FLOAT = 1.23
 EXPLICIT_NONE: None = None
 
 
+# Aliasing None shouldn't affect annotation rendering
+NONE_ALIAS = None
+
+
+def takes_none_alias(x: NONE_ALIAS) -> NONE_ALIAS:
+    pass
+
+
 # Edge case: subclass constants should preserve subclass type
 class CustomInt(int):
     pass
