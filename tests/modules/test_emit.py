@@ -272,7 +272,37 @@ case11 = (
     ["from dataclasses import InitVar", "", "iv: InitVar[list[int]]"],
 )
 
-CASES = [case1, case2, case3, case4, case5, case6, case7, case8, case9, case10, case11]
+mod12 = ModuleType("m12")
+mod12.NONE_ALIAS = None
+case12 = (
+    ModuleDecl(
+        name=mod12.__name__,
+        obj=mod12,
+        members=[
+            FuncDecl(
+                name="use_none_alias",
+                params=(Site(role="param", name="x", annotation=mod12.NONE_ALIAS),),
+                ret=Site(role="return", annotation=mod12.NONE_ALIAS),
+            ),
+        ],
+    ),
+    ["def use_none_alias(x: None) -> None: ..."],
+)
+
+CASES = [
+    case1,
+    case2,
+    case3,
+    case4,
+    case5,
+    case6,
+    case7,
+    case8,
+    case9,
+    case10,
+    case11,
+    case12,
+]
 
 
 def test_emit_module_table() -> None:
