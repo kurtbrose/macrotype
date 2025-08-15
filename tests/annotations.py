@@ -645,6 +645,14 @@ def local_alias_target(x: int) -> int:
 LOCAL_ALIAS = local_alias_target
 
 
+# Alias to ``None`` should expand to literal ``None`` in annotations
+NONE_ALIAS = None
+
+
+def use_none_alias(x: NONE_ALIAS) -> NONE_ALIAS:
+    return x
+
+
 def echo_literal(value: LiteralString) -> LiteralString:
     return value
 

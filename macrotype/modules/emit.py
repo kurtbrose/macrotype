@@ -102,13 +102,23 @@ def flatten_annotation_atoms(ann: Any) -> dict[int, Any]:
 
 def build_name_map(atoms: Iterable[Any], context: dict[str, Any]) -> dict[int, str]:
     """Map annotation atoms to names based on module context."""
-    reverse = {id(v): k for k, v in context.items()}
+
+    def _is_primitive(val: Any) -> bool:
+        if val is None or val is Ellipsis or val is NotImplemented:
+            return True
+        return isinstance(val, (int, float, bool, str, bytes, complex))
+
+    reverse = {
+        id(v): k for k, v in context.items() if not _is_primitive(v) and not inspect.isroutine(v)
+    }
     name_map: dict[int, str] = {}
 
     for atom in atoms:
         atom_id = id(atom)
         if isinstance(atom, ForwardRef):
             name_map[atom_id] = atom.__forward_arg__
+        elif _is_primitive(atom) or inspect.isroutine(atom):
+            name_map[atom_id] = repr(atom)
         elif atom_id in reverse:
             name_map[atom_id] = reverse[atom_id]
         elif hasattr(atom, "__name__"):
