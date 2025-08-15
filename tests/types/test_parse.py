@@ -3,6 +3,7 @@ from __future__ import annotations
 import builtins
 import enum
 import typing as t
+from dataclasses import InitVar
 from types import EllipsisType
 
 import pytest
@@ -138,6 +139,12 @@ CASES: list[tuple[object, TyRoot]] = [
     # sets
     (set[int], r(TyApp(base=b("set"), args=(b("int"),)))),
     (frozenset[str], r(TyApp(base=b("frozenset"), args=(b("str"),)))),
+    # dataclasses.InitVar
+    (InitVar[int], r(TyApp(base=TyType(type_=InitVar), args=(b("int"),)))),
+    (
+        InitVar[list[int]],
+        r(TyApp(base=TyType(type_=InitVar), args=(TyApp(base=b("list"), args=(b("int"),)),))),
+    ),
     # unions / optionals
     (t.Union[int, str], r(TyUnion(options=(b("int"), b("str"))))),
     (int | str, r(TyUnion(options=(b("int"), b("str"))))),

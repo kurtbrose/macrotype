@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import builtins
 import typing as t
+from dataclasses import InitVar
 
 from macrotype.types.ir import (
     Ty,
@@ -73,6 +74,11 @@ CASES: list[tuple[object, Ty]] = [
     (
         t.Callable[..., "User"],  # noqa: F821
         TyCallable(params=..., ret=TyType(type_=User)),
+    ),
+    # 7) dataclasses.InitVar inner resolves
+    (
+        InitVar["User"],  # noqa: F821
+        TyApp(base=TyType(type_=InitVar), args=(TyType(type_=User),)),
     ),
 ]
 

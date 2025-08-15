@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import builtins
 import typing as t
+from dataclasses import InitVar
 from types import EllipsisType
 
 from macrotype.types.ir import (
@@ -85,6 +86,11 @@ CASES = [
     (
         TyApp(base=b("tuple"), args=(TyApp(base=typ("List"), args=(b("int"),)),)),
         TyApp(base=b("tuple"), args=(TyApp(base=b("list"), args=(b("int"),)),)),
+    ),
+    # dataclasses.InitVar is unaffected
+    (
+        TyApp(base=TyType(type_=InitVar), args=(b("int"),)),
+        TyApp(base=TyType(type_=InitVar), args=(b("int"),)),
     ),
 ]
 

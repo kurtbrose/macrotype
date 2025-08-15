@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import builtins
 import typing as t
+from dataclasses import InitVar
 from types import EllipsisType
 
 import pytest
@@ -51,6 +52,7 @@ GOOD = [
         base=b("tuple"),
         args=(TyUnpack(inner=TyTypeVarTuple(name="Ts")),),
     ),  # tuple[Unpack[Ts]]
+    TyApp(base=TyType(type_=InitVar), args=(b("int"),)),  # InitVar[int]
 ]
 
 

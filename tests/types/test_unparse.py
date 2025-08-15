@@ -1,4 +1,5 @@
 import builtins
+from dataclasses import InitVar
 from types import EllipsisType
 
 from macrotype.types.ir import (
@@ -57,6 +58,19 @@ CASES: list[tuple[TyRoot, str]] = [
     (
         TyRoot(ty=TyUnpack(inner=TyTypeVarTuple(name="Ts"))),
         "typing.Unpack[Ts]",
+    ),
+    (
+        TyRoot(ty=TyApp(base=TyType(type_=InitVar), args=(b("int"),))),
+        "dataclasses.InitVar[int]",
+    ),
+    (
+        TyRoot(
+            ty=TyApp(
+                base=TyType(type_=InitVar),
+                args=(TyApp(base=b("list"), args=(b("int"),)),),
+            )
+        ),
+        "dataclasses.InitVar[list[int]]",
     ),
 ]
 

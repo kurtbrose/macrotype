@@ -106,19 +106,26 @@ def _litval_of(val: object) -> LitVal:
     return val  # type: ignore[return-value]
 
 
+def _origin_args(tp: object) -> tuple[object | None, tuple[object, ...]]:
+    origin = get_origin(tp)
+    if origin is not None:
+        return origin, get_args(tp)
+    if not isinstance(tp, type) and hasattr(tp, "type"):
+        return type(tp), (getattr(tp, "type"),)
+    return None, ()
+
+
 # ---------- Main parser ----------
 
 
 def _to_ir(tp: object, env: ParseEnv) -> Ty:
     """Parse a Python typing object into IR. Non-strict; preserves opaque bits."""
 
-    origin = get_origin(tp)
+    origin, args = _origin_args(tp)
     if origin is None:
         if tp in (t.ClassVar, t.Final, t.Required, t.NotRequired):
             raise ValueError("Qualifiers like ClassVar/Final are only valid at the root")
         return _tytype_of(tp)
-
-    args = get_args(tp)
 
     if origin in (t.ClassVar, t.Final, t.Required, t.NotRequired):
         raise ValueError("Qualifiers like ClassVar/Final are only valid at the root")
