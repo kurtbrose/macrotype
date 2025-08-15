@@ -92,10 +92,6 @@ def from_module(mod: ModuleType, *, strict: bool = False) -> ModuleDecl:
 
         for decl in mi.iter_all_decls():
             for site in decl.get_annotation_sites():
-                try:
-                    site.annotation = normalize_annotation(site.annotation)
-                except Exception:
-                    # Fall back to the original annotation if normalization fails
-                    pass
+                site.annotation = normalize_annotation(site.annotation)
 
     return mi
