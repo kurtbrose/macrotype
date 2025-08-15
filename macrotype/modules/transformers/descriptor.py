@@ -2,6 +2,7 @@ from __future__ import annotations
 
 """Normalize method descriptors into function symbols."""
 
+import enum
 import functools
 import inspect
 from dataclasses import replace
@@ -9,6 +10,8 @@ from typing import Any
 
 from macrotype.modules.ir import ClassDecl, FuncDecl, ModuleDecl
 from macrotype.modules.scanner import _scan_function
+
+from .enum import _auto_enum_methods
 
 # Mapping of descriptor types to the attribute holding the underlying
 # function and the decorator string to attach.
@@ -99,7 +102,10 @@ def _descriptor_members(attr_name: str, attr: Any, cls: type) -> list[FuncDecl]:
 def _transform_class(sym: ClassDecl, cls: type) -> None:
     members = list(sym.members)
 
+    auto = _auto_enum_methods(cls) if isinstance(cls, enum.EnumMeta) else set()
     for attr_name, attr in cls.__dict__.items():
+        if attr_name in auto:
+            continue
         desc_members = _descriptor_members(attr_name, attr, cls)
         if desc_members:
             for i, m in enumerate(members):
