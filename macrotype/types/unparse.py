@@ -49,8 +49,7 @@ def _apply_annos(inner: Any, tree) -> Any:
     node = tree
     out = inner
     while node:
-        args = (out, *node.annos)
-        out = t.Annotated[args]
+        out = t.Annotated[(out, *node.annos)]
         node = node.child
     return out
 

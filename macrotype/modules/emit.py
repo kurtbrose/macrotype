@@ -88,6 +88,14 @@ def flatten_annotation_atoms(ann: Any) -> dict[int, Any]:
             atoms[obj_id] = obj
             continue
 
+        if origin is Annotated:
+            first, *metas = args
+            stack.append(first)
+            for meta in metas:
+                atoms[id(meta)] = meta
+            atoms[id(origin)] = origin
+            continue
+
         if origin is not None:
             atoms[id(origin)] = origin
             stack.extend(args)
@@ -178,10 +186,7 @@ def stringify_annotation(ann: Any, name_map: dict[int, str]) -> str:
         first, *metas = args
         parts = [stringify_annotation(first, name_map)]
         for meta in metas:
-            if isinstance(meta, str):
-                parts.append(repr(meta))
-            else:
-                parts.append(stringify_annotation(meta, name_map))
+            parts.append(name_map.get(id(meta), repr(meta)))
         return f"Annotated[{', '.join(parts)}]"
 
     if origin is tuple and args == ((),):

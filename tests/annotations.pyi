@@ -1,4 +1,4 @@
-# Generated via: macrotype tests/annotations.py -o tests/annotations.pyi
+# Generated via: macrotype -o - tests/annotations.py
 # Do not edit by hand
 # pyright: basic
 from abc import ABC, abstractmethod
@@ -158,6 +158,11 @@ ANNOTATED_OPTIONAL_META: Annotated[None | int, 'meta']
 ANNOTATED_FINAL_META: Final[Annotated[int, 'meta']]
 
 ANNOTATED_WRAP_GENERIC: Annotated[list[Annotated[int, 'inner']], 'outer']
+
+class MetaRepr:
+    def __repr__(self) -> str: ...
+
+ANNOTATED_OBJ_META: Annotated[int, MetaRepr()]
 
 class UserBox[T]: ...
 

@@ -26,6 +26,13 @@ def b(n: str) -> TyType:
     return TyType(type_=getattr(builtins, n))
 
 
+class MetaObj:
+    def __repr__(self) -> str:  # pragma: no cover - simple repr
+        return "MetaObj()"
+
+
+META = MetaObj()
+
 CASES: list[tuple[TyRoot, str]] = [
     (TyRoot(ty=TyAny()), "typing.Any"),
     (TyRoot(ty=TyNever()), "typing.Never"),
@@ -74,6 +81,10 @@ CASES: list[tuple[TyRoot, str]] = [
             )
         ),
         "dataclasses.InitVar[list[int]]",
+    ),
+    (
+        TyRoot(ty=TyType(type_=int, annotations=TyAnnoTree(annos=(META,)))),
+        "typing.Annotated[int, MetaObj()]",
     ),
 ]
 
