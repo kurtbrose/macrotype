@@ -272,7 +272,25 @@ case11 = (
     ["from dataclasses import InitVar", "", "iv: InitVar[list[int]]"],
 )
 
-CASES = [case1, case2, case3, case4, case5, case6, case7, case8, case9, case10, case11]
+
+mod12 = ModuleType("m12")
+MetaObj = type("MetaObj", (), {"__module__": mod12.__name__, "__repr__": lambda self: "MetaObj()"})
+meta_obj = MetaObj()
+case12 = (
+    ModuleDecl(
+        name=mod12.__name__,
+        obj=mod12,
+        members=[
+            VarDecl(
+                name="ann_obj",
+                site=Site(role="var", annotation=Annotated[int, meta_obj]),
+            ),
+        ],
+    ),
+    ["from typing import Annotated", "", "ann_obj: Annotated[int, MetaObj()]"],
+)
+
+CASES = [case1, case2, case3, case4, case5, case6, case7, case8, case9, case10, case11, case12]
 
 
 def test_emit_module_table() -> None:

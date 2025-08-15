@@ -226,6 +226,16 @@ ANNOTATED_FINAL_META: Annotated[Final[int], "meta"] = 2
 # Outer Annotated around a generic with inner Annotated element
 ANNOTATED_WRAP_GENERIC: Annotated[list[Annotated[int, "inner"]], "outer"] = []
 
+
+# Annotated metadata using arbitrary object to verify pass-through
+class MetaRepr:
+    def __repr__(self) -> str:  # pragma: no cover - simple repr
+        return "MetaRepr()"
+
+
+META_REPR = MetaRepr()
+ANNOTATED_OBJ_META: Annotated[int, META_REPR] = 0
+
 # Built-in generic without dedicated handler
 GENERIC_DEQUE: Deque[int]
 # Deque with nested list to exercise TypeNode inside GenericNode
