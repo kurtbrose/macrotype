@@ -378,7 +378,7 @@ class Info(TypedDict):
 
 def with_kwargs(**kwargs: Unpack[Info]) -> Info: ...
 
-def sum_of(*args: tuple[int, ...]) -> int: ...
+def sum_of(*args: tuple[int]) -> int: ...
 
 def dict_echo(**kwargs: dict[str, Any]) -> dict[str, Any]: ...
 
@@ -635,6 +635,12 @@ CONST: Final[str]
 ANY_VAR: Any
 
 FUNC_ELLIPSIS: Callable[..., int]
+
+TUPLE_UNANN: tuple
+
+TUPLE_EMPTY: tuple[]
+
+TUPLE_ONE: tuple[int]
 
 TUPLE_VAR: tuple[int, ...]
 

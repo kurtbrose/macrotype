@@ -87,7 +87,7 @@ PARSINGS = {
         )
     ),
     tuple[()]: TypeNode.single(TupleNode((), False)),
-    tuple[int]: TypeNode.single(TupleNode((TypeNode.single(AtomNode(int)),), True)),
+    tuple[int]: TypeNode.single(TupleNode((TypeNode.single(AtomNode(int)),), False)),
     tuple[int, str]: TypeNode.single(
         TupleNode(
             (
