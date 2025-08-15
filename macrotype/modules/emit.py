@@ -188,7 +188,7 @@ def stringify_annotation(ann: Any, name_map: dict[int, str]) -> str:
             ret_str = stringify_annotation(ret, name_map)
             if params is Ellipsis:
                 return f"{name}[..., {ret_str}]"
-            if isinstance(params, t.ParamSpec):
+            if isinstance(params, t.ParamSpec) or get_origin(params) is t.Concatenate:
                 params_str = stringify_annotation(params, name_map)
                 return f"{name}[{params_str}, {ret_str}]"
             if not isinstance(params, (list, tuple)):
