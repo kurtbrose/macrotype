@@ -130,6 +130,16 @@ def stringify_annotation(ann: Any, name_map: dict[int, str]) -> str:
     if isinstance(ann, str):
         return repr(ann)
 
+    if ann.__class__ is t.ParamSpecArgs:
+        origin = getattr(ann, "__origin__", None)
+        name = name_map.get(id(origin), getattr(origin, "__name__", repr(origin)))
+        return f"{name}.args"
+
+    if ann.__class__ is t.ParamSpecKwargs:
+        origin = getattr(ann, "__origin__", None)
+        name = name_map.get(id(origin), getattr(origin, "__name__", repr(origin)))
+        return f"{name}.kwargs"
+
     origin, args = _origin_and_args(ann)
 
     if origin is types.UnionType:

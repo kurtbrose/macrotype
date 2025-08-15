@@ -93,6 +93,8 @@ type LabeledTuple[*Ts] = tuple[str, Unpack[Ts]]
 
 type RecursiveList[T] = T | list[RecursiveList[T]]
 
+def with_paramspec_args_kwargs[**P](fn: Callable[P, int], *args: P.args, **kwargs: P.kwargs) -> int: ...
+
 ANNOTATED_FINAL: Final[int]
 
 ANNOTATED_CLASSVAR: int

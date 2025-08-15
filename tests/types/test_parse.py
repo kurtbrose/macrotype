@@ -198,6 +198,8 @@ CASES: list[tuple[object, TyRoot]] = [
         r(TyTypeVar(name="T", bound=None, constraints=(), cov=False, contrav=False)),
     ),
     (P, r(TyParamSpec(name="P"))),
+    (P.args, r(TyParamSpec(name="P", flavor="args"))),
+    (P.kwargs, r(TyParamSpec(name="P", flavor="kwargs"))),
     (Ts, r(TyTypeVarTuple(name="Ts"))),
     (t.Unpack[Ts], r(TyUnpack(inner=TyTypeVarTuple(name="Ts")))),
     # typing.Type / builtins.type

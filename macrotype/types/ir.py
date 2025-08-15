@@ -3,7 +3,7 @@ from __future__ import annotations
 import enum
 from dataclasses import dataclass, field
 from types import EllipsisType
-from typing import NewType, Optional, TypeAlias
+from typing import Literal, NewType, Optional, TypeAlias
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -162,6 +162,7 @@ class TyParamSpec(Ty):
     """
 
     name: str
+    flavor: Literal["args", "kwargs"] | None = None
 
 
 @dataclass(frozen=True, kw_only=True)

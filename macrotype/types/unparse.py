@@ -94,6 +94,10 @@ def _unparse_no_annos(n: Ty) -> Any:
             return t.Callable[params_list, _unparse(r)]
         case TyUnpack(inner=i):
             return t.Unpack[_unparse(i)]
+        case TyParamSpec(name=n, flavor="args"):
+            return t.ParamSpec(n).args
+        case TyParamSpec(name=n, flavor="kwargs"):
+            return t.ParamSpec(n).kwargs
         case TyParamSpec(name=n):
             return t.ParamSpec(n)
         case TyTypeVar(name=n, bound=b, constraints=cs, cov=cv, contrav=cn):

@@ -127,6 +127,14 @@ def _to_ir(tp: object, env: ParseEnv) -> Ty:
             raise ValueError("Qualifiers like ClassVar/Final are only valid at the root")
         return _tytype_of(tp)
 
+    if tp.__class__ is t.ParamSpecArgs:
+        name = getattr(origin, "__name__", repr(origin))
+        return TyParamSpec(name=name, flavor="args")
+
+    if tp.__class__ is t.ParamSpecKwargs:
+        name = getattr(origin, "__name__", repr(origin))
+        return TyParamSpec(name=name, flavor="kwargs")
+
     if origin in (t.ClassVar, t.Final, t.Required, t.NotRequired):
         raise ValueError("Qualifiers like ClassVar/Final are only valid at the root")
 
@@ -220,7 +228,7 @@ def parse_root(tp: object, env: Optional[ParseEnv] = None) -> TyRoot:
             args = get_args(obj)
             obj = args[0] if args else _missing
             qualifiers.add(origin)
-        elif obj in valid_qualifiers:
+        elif any(obj is q for q in valid_qualifiers):
             qualifiers.add(obj)
             obj = _missing
         else:

@@ -1064,12 +1064,6 @@ def find_typevars(type_obj: Any) -> set[str]:
                 found.add(f"**{typ.__name__}")
             elif isinstance(typ, typing.TypeVarTuple):
                 found.add(f"*{typ.__name__}")
-        elif isinstance(node, AtomNode):
-            typ = node.type_
-            if isinstance(typ, typing.ParamSpecArgs):
-                found.add(f"**{typ.__origin__.__name__}")
-            elif isinstance(typ, typing.ParamSpecKwargs):
-                found.add(f"**{typ.__origin__.__name__}")
         elif isinstance(node, TypeNode):
             for alt in node.alts:
                 _collect(alt)
@@ -1090,10 +1084,6 @@ def find_typevars(type_obj: Any) -> set[str]:
             collected.add(t.__name__)
         elif isinstance(t, typing.ParamSpec):
             collected.add(f"**{t.__name__}")
-        elif isinstance(t, typing.ParamSpecArgs):
-            collected.add(f"**{t.__origin__.__name__}")
-        elif isinstance(t, typing.ParamSpecKwargs):
-            collected.add(f"**{t.__origin__.__name__}")
         elif isinstance(t, typing.TypeVarTuple):
             collected.add(f"*{t.__name__}")
         elif hasattr(t, "__parameters__"):

@@ -98,6 +98,11 @@ type IntFunc[**P] = Callable[P, int]
 type LabeledTuple[*Ts] = tuple[str, *Ts]
 type RecursiveList[T] = T | list[RecursiveList[T]]
 
+
+# Function using ParamSpecArgs and ParamSpecKwargs
+def with_paramspec_args_kwargs(fn: Callable[P, int], *args: P.args, **kwargs: P.kwargs) -> int: ...
+
+
 GLOBAL: int
 CONST: Final[str]
 # Variable typed ``Any`` to ensure explicit Any is preserved
