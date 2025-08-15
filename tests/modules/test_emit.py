@@ -1,13 +1,29 @@
 from __future__ import annotations
 
 import pathlib
+import typing as t
 from dataclasses import InitVar
 from types import ModuleType
-from typing import Annotated, Any, Callable, ClassVar, Literal, NewType, TypeAliasType, Union
+from typing import (
+    Annotated,
+    Any,
+    Callable,
+    ClassVar,
+    Literal,
+    NewType,
+    ParamSpec,
+    TypeAliasType,
+    Union,
+)
 
 from macrotype.meta_types import set_module
 from macrotype.modules import resolve_imports
-from macrotype.modules.emit import emit_module
+from macrotype.modules.emit import (
+    build_name_map,
+    emit_module,
+    flatten_annotation_atoms,
+    stringify_annotation,
+)
 from macrotype.modules.ir import (
     ClassDecl,
     FuncDecl,
@@ -213,6 +229,19 @@ case9 = (
         "    ...",
     ],
 )
+
+
+def test_paramspec_unpacked_in_generic():
+    P = ParamSpec("P")
+    ann1 = tuple[t.Unpack[P.args]]
+    nm1 = build_name_map(flatten_annotation_atoms(ann1), locals())
+    assert stringify_annotation(ann1, nm1) == "tuple[*P.args]"
+
+    ann2 = Callable[[t.Unpack[P.args], t.Unpack[P.kwargs]], int]
+    nm2 = build_name_map(flatten_annotation_atoms(ann2), locals())
+    assert stringify_annotation(ann2, nm2) == "Callable[[*P.args, **P.kwargs], int]"
+
+
 mod10 = ModuleType("m10")
 orig = pathlib.Path.__module__
 set_module(pathlib.Path, "pathlib._local")

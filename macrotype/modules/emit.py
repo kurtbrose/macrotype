@@ -162,6 +162,18 @@ def stringify_annotation(ann: Any, name_map: dict[int, str]) -> str:
         params_str = ", ".join(stringify_annotation(p, name_map) for p in params)
         return f"{name}[[{params_str}], {ret_str}]"
 
+    if origin is t.Unpack:
+        (inner,) = args
+        if inner.__class__ is t.ParamSpecArgs:
+            ps = getattr(inner, "__origin__", None)
+            name = name_map.get(id(ps), getattr(ps, "__name__", repr(ps)))
+            return f"*{name}.args"
+        if inner.__class__ is t.ParamSpecKwargs:
+            ps = getattr(inner, "__origin__", None)
+            name = name_map.get(id(ps), getattr(ps, "__name__", repr(ps)))
+            return f"**{name}.kwargs"
+        return f"Unpack[{stringify_annotation(inner, name_map)}]"
+
     if origin is Annotated:
         first, *metas = args
         parts = [stringify_annotation(first, name_map)]
