@@ -30,7 +30,7 @@ def resolve_imports(mi: ModuleDecl) -> None:
     typing_names = {
         name_map[id(a)]
         for a in atoms.values()
-        if getattr(a, "__module__", None) == "typing" or a in {Callable, ABC_Callable}
+        if getattr(a, "__module__", None) == "typing" or a is Callable or a is ABC_Callable
     }
     typing_names.update(_collect_typing_names(mi.members))
 

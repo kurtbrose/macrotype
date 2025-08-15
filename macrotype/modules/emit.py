@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import enum
 import inspect
 import types
 from typing import Annotated, Any, Callable, ForwardRef, Iterable, get_args, get_origin
@@ -17,6 +18,9 @@ def emit_module(mi: ModuleDecl) -> list[str]:
     atoms: dict[int, Any] = {}
     for ann in annotations:
         atoms.update(flatten_annotation_atoms(ann))
+    for sym in mi.get_all_decls():
+        if isinstance(sym, TypeDefDecl) and sym.value is not None:
+            atoms.update(flatten_annotation_atoms(sym.value.annotation))
 
     context = mi.obj.__dict__
     name_map = build_name_map(atoms.values(), context)
@@ -196,6 +200,17 @@ def stringify_annotation(ann: Any, name_map: dict[int, str]) -> str:
         return name_map.get(id(ann), getattr(ann, "__name__", repr(ann)))
 
 
+def stringify_value(val: Any, name_map: dict[int, str]) -> str:
+    """Emit string form of a value used in an assignment."""
+    if isinstance(val, enum.Enum):
+        cls = val.__class__
+        cls_name = name_map.get(id(cls), getattr(cls, "__name__", repr(cls)))
+        return f"{cls_name}.{val.name}"
+    if isinstance(val, str):
+        return repr(val)
+    return name_map.get(id(val), repr(val))
+
+
 def _emit_decl(sym: Decl, name_map: dict[int, str], *, indent: int) -> list[str]:
     if not sym.emit:
         return []
@@ -211,6 +226,8 @@ def _emit_decl(sym: Decl, name_map: dict[int, str], *, indent: int) -> list[str]
         case TypeDefDecl(value=site, type_params=params, obj_type=alias):
             keyword = param_str = ""
             match alias:
+                case None:
+                    rhs = stringify_value(site.annotation, name_map)
                 case t.TypeAliasType():  # type: ignore[attr-defined]
                     keyword = "type "
                     rhs = stringify_annotation(site.annotation, name_map)

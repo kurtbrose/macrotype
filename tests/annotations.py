@@ -521,6 +521,15 @@ class StrEnum(str, Enum):
     B = "b"
 
 
+ORIGIN = Point(x=0, y=0)
+
+
+# Enum with custom value types to ensure constructor and variable names are emitted
+class PointEnum(Enum):
+    INLINE = Point(x=1, y=2)
+    REF = ORIGIN
+
+
 class NamedPoint(NamedTuple):
     x: int
     y: int
