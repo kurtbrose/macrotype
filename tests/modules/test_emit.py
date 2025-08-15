@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pathlib
+from dataclasses import InitVar
 from types import ModuleType
 from typing import Annotated, Any, Callable, ClassVar, Literal, NewType, TypeAliasType, Union
 
@@ -227,7 +228,22 @@ case10 = (
 )
 set_module(pathlib.Path, orig)
 
-CASES = [case1, case2, case3, case4, case5, case6, case7, case8, case9, case10]
+mod11 = ModuleType("m11")
+case11 = (
+    ModuleDecl(
+        name=mod11.__name__,
+        obj=mod11,
+        members=[
+            VarDecl(
+                name="iv",
+                site=Site(role="var", annotation=InitVar[list[int]]),
+            ),
+        ],
+    ),
+    ["from dataclasses import InitVar", "", "iv: InitVar[list[int]]"],
+)
+
+CASES = [case1, case2, case3, case4, case5, case6, case7, case8, case9, case10, case11]
 
 
 def test_emit_module_table() -> None:

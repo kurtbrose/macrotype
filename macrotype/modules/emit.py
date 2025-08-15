@@ -52,6 +52,17 @@ def collect_all_annotations(mi: ModuleDecl) -> list[Any]:
     return annos
 
 
+def _origin_and_args(obj: Any) -> tuple[Any | None, tuple[Any, ...]]:
+    """Best-effort ``origin``/``args`` helper for arbitrary generics."""
+
+    origin = get_origin(obj)
+    if origin is not None:
+        return origin, get_args(obj)
+    if not isinstance(obj, type) and hasattr(obj, "type"):
+        return type(obj), (getattr(obj, "type"),)
+    return None, ()
+
+
 def flatten_annotation_atoms(ann: Any) -> dict[int, Any]:
     """Flatten all atomic components of a type annotation."""
     visited: dict[int, Any] = {}
@@ -65,8 +76,7 @@ def flatten_annotation_atoms(ann: Any) -> dict[int, Any]:
             continue
         visited[obj_id] = obj
 
-        origin = get_origin(obj)
-        args = get_args(obj)
+        origin, args = _origin_and_args(obj)
 
         if isinstance(obj, (list, tuple)) and origin is None:
             stack.extend(obj)
@@ -76,10 +86,10 @@ def flatten_annotation_atoms(ann: Any) -> dict[int, Any]:
             atoms[obj_id] = obj
             continue
 
-        if origin:
+        if origin is not None:
             atoms[id(origin)] = origin
             stack.extend(args)
-        elif isinstance(args, tuple):
+        elif args:
             atoms[obj_id] = obj
             stack.extend(args)
         else:
@@ -118,8 +128,7 @@ def stringify_annotation(ann: Any, name_map: dict[int, str]) -> str:
     if isinstance(ann, str):
         return repr(ann)
 
-    origin = get_origin(ann)
-    args = get_args(ann)
+    origin, args = _origin_and_args(ann)
 
     if origin is types.UnionType:
         return " | ".join(stringify_annotation(arg, name_map) for arg in args)
@@ -151,7 +160,7 @@ def stringify_annotation(ann: Any, name_map: dict[int, str]) -> str:
                 parts.append(stringify_annotation(meta, name_map))
         return f"Annotated[{', '.join(parts)}]"
 
-    if origin:
+    if origin is not None:
         name = name_map.get(id(origin), getattr(origin, "__name__", repr(origin)))
         inner = ", ".join(stringify_annotation(arg, name_map) for arg in args)
         return f"{name}[{inner}]"
