@@ -3,6 +3,7 @@ from __future__ import annotations
 import inspect
 import linecache
 import textwrap
+import types
 import typing as t
 from types import ModuleType
 
@@ -100,6 +101,18 @@ def test_typevar_alias_transform() -> None:
     assert isinstance(t_alias, TypeDefDecl)
     assert isinstance(p_alias, TypeDefDecl)
     assert isinstance(ts_alias, TypeDefDecl)
+
+
+def test_genericalias_transform() -> None:
+    code = """
+    Alias = list[int]
+    """
+    mod = mod_from_code(code, "ga")
+    mi = scan_module(mod)
+    synthesize_aliases(mi)
+    alias = t.cast(TypeDefDecl, {s.name: s for s in mi.members}["Alias"])
+    assert isinstance(alias.obj_type, types.GenericAlias)
+    assert alias.value.annotation == list[int]
 
 
 def test_newtype_transform() -> None:

@@ -275,6 +275,8 @@ def _emit_decl(sym: Decl, name_map: dict[int, str], *, indent: int) -> list[str]
                 case t.NewType:
                     ty = stringify_annotation(site.annotation, name_map)
                     rhs = f'NewType("{sym.name}", {ty})'
+                case types.GenericAlias():
+                    rhs = stringify_annotation(site.annotation, name_map)
                 case _:
                     raise NotImplementedError(f"Unsupported alias type: {alias!r}")
             line = f"{pad}{keyword}{sym.name}{param_str} = {rhs}"

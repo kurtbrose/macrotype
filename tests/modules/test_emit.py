@@ -337,6 +337,22 @@ case14 = (
     ["x: None"],
 )
 
+mod15 = ModuleType("m15")
+case15 = (
+    ModuleDecl(
+        name=mod15.__name__,
+        obj=mod15,
+        members=[
+            TypeDefDecl(
+                name="GA",
+                value=Site(role="alias_value", annotation=list[int]),
+                obj_type=list[int],
+            )
+        ],
+    ),
+    ["GA = list[int]"],
+)
+
 CASES = [
     case1,
     case2,
@@ -352,6 +368,7 @@ CASES = [
     case12,
     case13,
     case14,
+    case15,
 ]
 
 
