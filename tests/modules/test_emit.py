@@ -290,7 +290,36 @@ case12 = (
     ["from typing import Annotated", "", "ann_obj: Annotated[int, MetaObj()]"],
 )
 
-CASES = [case1, case2, case3, case4, case5, case6, case7, case8, case9, case10, case11, case12]
+mod13 = ModuleType("m13")
+mod13.NONE_ALIAS = None
+case13 = (
+    ModuleDecl(
+        name=mod13.__name__,
+        obj=mod13,
+        members=[
+            VarDecl(
+                name="x",
+                site=Site(role="var", annotation=mod13.NONE_ALIAS),
+            ),
+        ],
+    ),
+    ["x: None"],
+)
+CASES = [
+    case1,
+    case2,
+    case3,
+    case4,
+    case5,
+    case6,
+    case7,
+    case8,
+    case9,
+    case10,
+    case11,
+    case12,
+    case13,
+]
 
 
 def test_emit_module_table() -> None:

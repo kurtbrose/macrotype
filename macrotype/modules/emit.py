@@ -116,7 +116,10 @@ def build_name_map(atoms: Iterable[Any], context: dict[str, Any]) -> dict[int, s
     """Map annotation atoms to names based on module context."""
     module_name = context.get("__name__")
     reverse: dict[int, str] = {}
+    primitives = (type(None), bool, int, float, complex, str, bytes)
     for k, v in context.items():
+        if isinstance(v, primitives) or inspect.isroutine(v):
+            continue
         reverse.setdefault(id(v), k)
 
     name_map: dict[int, str] = {}
