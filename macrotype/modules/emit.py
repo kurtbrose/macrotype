@@ -12,6 +12,13 @@ import typing as t
 from .ir import ClassDecl, Decl, FuncDecl, ModuleDecl, TypeDefDecl, VarDecl
 
 
+def _qualname(obj: Any, default: str | None = None) -> str:
+    """Return the best available name for *obj* honoring ``__qualname_override__``."""
+    if default is None:
+        default = repr(obj)
+    return getattr(obj, "__qualname_override__", getattr(obj, "__name__", default))
+
+
 def emit_module(mi: ModuleDecl) -> list[str]:
     """Emit `.pyi` lines for a ModuleDecl using annotations only."""
     annotations = collect_all_annotations(mi)
@@ -132,15 +139,14 @@ def build_name_map(atoms: Iterable[Any], context: dict[str, Any]) -> dict[int, s
         if atom_id in reverse:
             name = reverse[atom_id]
             mod = getattr(atom, "__module__", None)
-            if mod not in {module_name, "builtins"} and hasattr(atom, "__name__"):
-                name_map[atom_id] = atom.__name__
+            if mod not in {module_name, "builtins"} and (
+                hasattr(atom, "__qualname_override__") or hasattr(atom, "__name__")
+            ):
+                name_map[atom_id] = _qualname(atom)
             else:
                 name_map[atom_id] = name
             continue
-        if hasattr(atom, "__name__"):
-            name_map[atom_id] = atom.__name__
-        else:
-            name_map[atom_id] = repr(atom)
+        name_map[atom_id] = _qualname(atom)
 
     return name_map
 
@@ -158,12 +164,12 @@ def stringify_annotation(ann: Any, name_map: dict[int, str]) -> str:
 
     if ann.__class__ is t.ParamSpecArgs:
         origin = getattr(ann, "__origin__", None)
-        name = name_map.get(id(origin), getattr(origin, "__name__", repr(origin)))
+        name = name_map.get(id(origin), _qualname(origin))
         return f"{name}.args"
 
     if ann.__class__ is t.ParamSpecKwargs:
         origin = getattr(ann, "__origin__", None)
-        name = name_map.get(id(origin), getattr(origin, "__name__", repr(origin)))
+        name = name_map.get(id(origin), _qualname(origin))
         return f"{name}.kwargs"
 
     origin, args = _origin_and_args(ann)
@@ -176,7 +182,7 @@ def stringify_annotation(ann: Any, name_map: dict[int, str]) -> str:
     if origin in {Callable, ABC_Callable}:
         if not args:
             return "Callable"
-        name = name_map.get(id(origin), getattr(origin, "__name__", "Callable"))
+        name = name_map.get(id(origin), _qualname(origin, "Callable"))
         if len(args) == 2:
             params, ret = args
             ret_str = stringify_annotation(ret, name_map)
@@ -197,11 +203,11 @@ def stringify_annotation(ann: Any, name_map: dict[int, str]) -> str:
         (inner,) = args
         if inner.__class__ is t.ParamSpecArgs:
             ps = getattr(inner, "__origin__", None)
-            name = name_map.get(id(ps), getattr(ps, "__name__", repr(ps)))
+            name = name_map.get(id(ps), _qualname(ps))
             return f"*{name}.args"
         if inner.__class__ is t.ParamSpecKwargs:
             ps = getattr(inner, "__origin__", None)
-            name = name_map.get(id(ps), getattr(ps, "__name__", repr(ps)))
+            name = name_map.get(id(ps), _qualname(ps))
             return f"**{name}.kwargs"
         return f"Unpack[{stringify_annotation(inner, name_map)}]"
 
@@ -209,26 +215,26 @@ def stringify_annotation(ann: Any, name_map: dict[int, str]) -> str:
         first, *metas = args
         parts = [stringify_annotation(first, name_map)]
         for meta in metas:
-            parts.append(name_map.get(id(meta), repr(meta)))
+            parts.append(name_map.get(id(meta), _qualname(meta)))
         return f"Annotated[{', '.join(parts)}]"
 
     if origin is tuple and args == ((),):
-        name = name_map.get(id(origin), getattr(origin, "__name__", repr(origin)))
+        name = name_map.get(id(origin), _qualname(origin))
         return f"{name}[()]"
 
     if origin is not None:
-        name = name_map.get(id(origin), getattr(origin, "__name__", repr(origin)))
+        name = name_map.get(id(origin), _qualname(origin))
         inner = ", ".join(stringify_annotation(arg, name_map) for arg in args)
         return f"{name}[{inner}]"
     else:
-        return name_map.get(id(ann), getattr(ann, "__name__", repr(ann)))
+        return name_map.get(id(ann), _qualname(ann))
 
 
 def stringify_value(val: Any, name_map: dict[int, str]) -> str:
     """Emit string form of a value used in an assignment."""
     if isinstance(val, enum.Enum):
         cls = val.__class__
-        cls_name = name_map.get(id(cls), getattr(cls, "__name__", repr(cls)))
+        cls_name = name_map.get(id(cls), _qualname(cls))
         return f"{cls_name}.{val.name}"
     if isinstance(val, (int, float, bool)) or val is None:
         return repr(val)
