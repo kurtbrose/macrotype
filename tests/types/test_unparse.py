@@ -70,6 +70,33 @@ CASES: list[tuple[TyRoot, str]] = [
         "typing.Unpack[Ts]",
     ),
     (
+        TyRoot(
+            ty=TyApp(
+                base=b("tuple"),
+                args=(b("int"), TyUnpack(inner=TyTypeVarTuple(name="Ts"))),
+            )
+        ),
+        "tuple[int, typing.Unpack[Ts]]",
+    ),
+    (
+        TyRoot(
+            ty=TyApp(
+                base=b("tuple"),
+                args=(TyUnpack(inner=TyTypeVarTuple(name="Ts")), b("int")),
+            )
+        ),
+        "tuple[typing.Unpack[Ts], int]",
+    ),
+    (
+        TyRoot(
+            ty=TyCallable(
+                params=(TyUnpack(inner=TyTypeVarTuple(name="Ts")),),
+                ret=b("int"),
+            )
+        ),
+        "typing.Callable[[typing.Unpack[Ts]], int]",
+    ),
+    (
         TyRoot(ty=TyApp(base=TyType(type_=InitVar), args=(b("int"),))),
         "dataclasses.InitVar[int]",
     ),

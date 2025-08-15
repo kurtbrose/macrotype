@@ -96,6 +96,7 @@ type AliasUnion = int | str
 type ListOrSet[T] = list[T] | set[T]
 type IntFunc[**P] = Callable[P, int]
 type LabeledTuple[*Ts] = tuple[str, *Ts]
+type TupleUnpackFirst[*Ts] = tuple[*Ts, int]  # Unpack before trailing element
 type RecursiveList[T] = T | list[RecursiveList[T]]
 
 

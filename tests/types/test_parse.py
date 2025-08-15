@@ -136,6 +136,24 @@ CASES: list[tuple[object, TyRoot]] = [
             )
         ),
     ),
+    (
+        tuple[int, t.Unpack[Ts]],
+        r(
+            TyApp(
+                base=b("tuple"),
+                args=(b("int"), TyUnpack(inner=TyTypeVarTuple(name="Ts"))),
+            )
+        ),
+    ),
+    (
+        tuple[t.Unpack[Ts], int],
+        r(
+            TyApp(
+                base=b("tuple"),
+                args=(TyUnpack(inner=TyTypeVarTuple(name="Ts")), b("int")),
+            )
+        ),
+    ),
     # sets
     (set[int], r(TyApp(base=b("set"), args=(b("int"),)))),
     (frozenset[str], r(TyApp(base=b("frozenset"), args=(b("str"),)))),
@@ -177,6 +195,15 @@ CASES: list[tuple[object, TyRoot]] = [
                         args=(b("int"), TyParamSpec(name="P")),
                     ),
                 ),
+                ret=b("int"),
+            )
+        ),
+    ),
+    (
+        t.Callable[[t.Unpack[Ts]], int],
+        r(
+            TyCallable(
+                params=(TyUnpack(inner=TyTypeVarTuple(name="Ts")),),
                 ret=b("int"),
             )
         ),

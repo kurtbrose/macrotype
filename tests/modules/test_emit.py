@@ -290,21 +290,53 @@ case12 = (
     ["from typing import Annotated", "", "ann_obj: Annotated[int, MetaObj()]"],
 )
 
+Ts = t.TypeVarTuple("Ts")
+set_module(Ts, "m13")
 mod13 = ModuleType("m13")
-mod13.NONE_ALIAS = None
+mod13.Ts = Ts
 case13 = (
+    ModuleDecl(
+        name=mod13.__name__,
+        obj=mod13,
+        members=[
+            TypeDefDecl(
+                name="Alias",
+                value=Site(role="alias_value", annotation=tuple[t.Unpack[Ts], int]),
+                obj_type=TypeAliasType("Alias", tuple[t.Unpack[Ts], int], type_params=(Ts,)),
+                type_params=("*Ts",),
+            ),
+            FuncDecl(
+                name="collect",
+                params=(Site(role="param", name="*args", annotation=t.Unpack[Ts]),),
+                ret=Site(role="return", annotation=tuple[t.Unpack[Ts]]),
+            ),
+        ],
+    ),
+    [
+        "from typing import Unpack",
+        "",
+        "type Alias[*Ts] = tuple[Unpack[Ts], int]",
+        "",
+        "def collect(*args: Unpack[Ts]) -> tuple[Unpack[Ts]]: ...",
+    ],
+)
+
+mod14 = ModuleType("m13")
+mod14.NONE_ALIAS = None
+case14 = (
     ModuleDecl(
         name=mod13.__name__,
         obj=mod13,
         members=[
             VarDecl(
                 name="x",
-                site=Site(role="var", annotation=mod13.NONE_ALIAS),
+                site=Site(role="var", annotation=mod14.NONE_ALIAS),
             ),
         ],
     ),
     ["x: None"],
 )
+
 CASES = [
     case1,
     case2,
@@ -319,6 +351,7 @@ CASES = [
     case11,
     case12,
     case13,
+    case14,
 ]
 
 
