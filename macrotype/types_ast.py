@@ -308,8 +308,8 @@ class TupleNode(Generic[*Ctx], ContainerNode[typing.Union[*Ctx]]):
     handles: ClassVar[tuple[Any, ...]] = (tuple,)
     """
     ``tuple[T1, T2, …]`` is class-specific if any element type is. The
-    variadic forms ``tuple[T, …]`` and ``tuple[T]`` are treated as
-    ``TupleNode[T]`` with ``variable=True``.
+    variadic form ``tuple[T, …]`` is treated as ``TupleNode[T]`` with
+    ``variable=True``.
     """
 
     items: tuple[TypeNode, ...]
@@ -343,7 +343,7 @@ class TupleNode(Generic[*Ctx], ContainerNode[typing.Union[*Ctx]]):
                     )
                 if isinstance(inner, UnpackNode):
                     return cls(items=(TypeNode.single(inner),), variable=False)
-            return cls(items=(first,), variable=True)
+            return cls(items=(first,), variable=False)
         return cls(
             items=tuple(TypeNode.single(parse_type(arg)) for arg in args),
             variable=False,
@@ -954,6 +954,10 @@ def _format_runtime_type(type_obj: Any) -> TypeRenderInfo:
         arg_fmt = format_type(args[0])
         used.update(arg_fmt.used)
         return TypeRenderInfo(f"tuple[{arg_fmt.text}, ...]", used)
+
+    if origin is tuple and not args:
+        used.add(tuple)
+        return TypeRenderInfo("tuple[()]", used)
 
     if origin:
         origin_name = getattr(origin, "__qualname__", str(origin))

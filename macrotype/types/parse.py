@@ -155,6 +155,8 @@ def _to_ir(tp: object, env: ParseEnv) -> Ty:
         return TyLiteral(values=tuple(_litval_of(a) for a in args))
 
     if origin is tuple:
+        if args == ((),):
+            return TyApp(base=TyType(type_=tuple), args=())
         return TyApp(
             base=TyType(type_=tuple),
             args=tuple(_to_ir(a, env) for a in args),

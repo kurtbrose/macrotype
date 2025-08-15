@@ -109,6 +109,12 @@ CONST: Final[str]
 ANY_VAR: Any
 # Variable using ``Callable`` with ellipsis argument list
 FUNC_ELLIPSIS: Callable[..., int]
+# Unannotated tuple type
+TUPLE_UNANN: tuple
+# Empty tuple type
+TUPLE_EMPTY: tuple[()]
+# Single-element tuple type
+TUPLE_ONE: tuple[int]
 # Variable using tuple ellipsis syntax
 TUPLE_VAR: tuple[int, ...]
 # Variable using set and frozenset types to test container formatting

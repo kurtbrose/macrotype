@@ -51,6 +51,9 @@ CASES: list[tuple[TyRoot, str]] = [
     ),
     (TyRoot(ty=TyCallable(params=..., ret=b("int"))), "typing.Callable[..., int]"),
     (TyRoot(ty=b("int"), is_classvar=True), "typing.ClassVar[int]"),
+    (TyRoot(ty=b("tuple")), "<class 'tuple'>"),
+    (TyRoot(ty=TyApp(base=b("tuple"), args=())), "tuple[()]"),
+    (TyRoot(ty=TyApp(base=b("tuple"), args=(b("int"),))), "tuple[int]"),
     (
         TyRoot(ty=TyApp(base=b("tuple"), args=(b("int"), b("Ellipsis")))),
         "tuple[int, ...]",

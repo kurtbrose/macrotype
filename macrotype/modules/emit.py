@@ -184,6 +184,10 @@ def stringify_annotation(ann: Any, name_map: dict[int, str]) -> str:
                 parts.append(stringify_annotation(meta, name_map))
         return f"Annotated[{', '.join(parts)}]"
 
+    if origin is tuple and args == ((),):
+        name = name_map.get(id(origin), getattr(origin, "__name__", repr(origin)))
+        return f"{name}[()]"
+
     if origin is not None:
         name = name_map.get(id(origin), getattr(origin, "__name__", repr(origin)))
         inner = ", ".join(stringify_annotation(arg, name_map) for arg in args)
