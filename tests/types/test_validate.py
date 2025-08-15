@@ -49,10 +49,22 @@ GOOD = [
         params=(TyApp(base=typ("Concatenate"), args=(b("int"), TyParamSpec(name="P"))),),
         ret=b("int"),
     ),  # Callable[Concatenate[int, P], int]
+    TyCallable(
+        params=(TyUnpack(inner=TyTypeVarTuple(name="Ts")),),
+        ret=b("int"),
+    ),  # Callable[[Unpack[Ts]], int]
     TyApp(
         base=b("tuple"),
         args=(TyUnpack(inner=TyTypeVarTuple(name="Ts")),),
     ),  # tuple[Unpack[Ts]]
+    TyApp(
+        base=b("tuple"),
+        args=(b("int"), TyUnpack(inner=TyTypeVarTuple(name="Ts"))),
+    ),  # tuple[int, Unpack[Ts]]
+    TyApp(
+        base=b("tuple"),
+        args=(TyUnpack(inner=TyTypeVarTuple(name="Ts")), b("int")),
+    ),  # tuple[Unpack[Ts], int]
     TyApp(base=TyType(type_=InitVar), args=(b("int"),)),  # InitVar[int]
 ]
 

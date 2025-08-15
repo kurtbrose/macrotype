@@ -1,4 +1,4 @@
-# Generated via: macrotype -o - tests/annotations.py
+# Generated via: macrotype tests/annotations.py -o tests/annotations.pyi
 # Do not edit by hand
 # pyright: basic
 from abc import ABC, abstractmethod
@@ -90,6 +90,8 @@ type ListOrSet[T] = list[T] | set[T]
 type IntFunc[**P] = Callable[P, int]
 
 type LabeledTuple[*Ts] = tuple[str, Unpack[Ts]]
+
+type TupleUnpackFirst[*Ts] = tuple[Unpack[Ts], int]
 
 type RecursiveList[T] = T | list[RecursiveList[T]]
 

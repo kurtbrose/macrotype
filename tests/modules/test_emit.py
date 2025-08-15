@@ -290,7 +290,52 @@ case12 = (
     ["from typing import Annotated", "", "ann_obj: Annotated[int, MetaObj()]"],
 )
 
-CASES = [case1, case2, case3, case4, case5, case6, case7, case8, case9, case10, case11, case12]
+Ts = t.TypeVarTuple("Ts")
+set_module(Ts, "m13")
+mod13 = ModuleType("m13")
+mod13.Ts = Ts
+case13 = (
+    ModuleDecl(
+        name=mod13.__name__,
+        obj=mod13,
+        members=[
+            TypeDefDecl(
+                name="Alias",
+                value=Site(role="alias_value", annotation=tuple[t.Unpack[Ts], int]),
+                obj_type=TypeAliasType("Alias", tuple[t.Unpack[Ts], int], type_params=(Ts,)),
+                type_params=("*Ts",),
+            ),
+            FuncDecl(
+                name="collect",
+                params=(Site(role="param", name="*args", annotation=t.Unpack[Ts]),),
+                ret=Site(role="return", annotation=tuple[t.Unpack[Ts]]),
+            ),
+        ],
+    ),
+    [
+        "from typing import Unpack",
+        "",
+        "type Alias[*Ts] = tuple[Unpack[Ts], int]",
+        "",
+        "def collect(*args: Unpack[Ts]) -> tuple[Unpack[Ts]]: ...",
+    ],
+)
+
+CASES = [
+    case1,
+    case2,
+    case3,
+    case4,
+    case5,
+    case6,
+    case7,
+    case8,
+    case9,
+    case10,
+    case11,
+    case12,
+    case13,
+]
 
 
 def test_emit_module_table() -> None:
