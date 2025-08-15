@@ -330,7 +330,7 @@ case14 = (
         members=[
             VarDecl(
                 name="x",
-                site=Site(role="var", annotation=mod13.NONE_ALIAS),
+                site=Site(role="var", annotation=mod14.NONE_ALIAS),
             ),
         ],
     ),
