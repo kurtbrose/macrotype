@@ -130,6 +130,16 @@ def stringify_annotation(ann: Any, name_map: dict[int, str]) -> str:
     if isinstance(ann, str):
         return repr(ann)
 
+    if ann.__class__ is t.ParamSpecArgs:
+        origin = getattr(ann, "__origin__", None)
+        name = name_map.get(id(origin), getattr(origin, "__name__", repr(origin)))
+        return f"{name}.args"
+
+    if ann.__class__ is t.ParamSpecKwargs:
+        origin = getattr(ann, "__origin__", None)
+        name = name_map.get(id(origin), getattr(origin, "__name__", repr(origin)))
+        return f"{name}.kwargs"
+
     origin, args = _origin_and_args(ann)
 
     if origin is types.UnionType:
@@ -151,6 +161,18 @@ def stringify_annotation(ann: Any, name_map: dict[int, str]) -> str:
             return f"{name}[..., {ret_str}]"
         params_str = ", ".join(stringify_annotation(p, name_map) for p in params)
         return f"{name}[[{params_str}], {ret_str}]"
+
+    if origin is t.Unpack:
+        (inner,) = args
+        if inner.__class__ is t.ParamSpecArgs:
+            ps = getattr(inner, "__origin__", None)
+            name = name_map.get(id(ps), getattr(ps, "__name__", repr(ps)))
+            return f"*{name}.args"
+        if inner.__class__ is t.ParamSpecKwargs:
+            ps = getattr(inner, "__origin__", None)
+            name = name_map.get(id(ps), getattr(ps, "__name__", repr(ps)))
+            return f"**{name}.kwargs"
+        return f"Unpack[{stringify_annotation(inner, name_map)}]"
 
     if origin is Annotated:
         first, *metas = args
