@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from types import ModuleType
 from typing import Any, Callable, get_args, get_origin, get_type_hints
 
+from .modules.source import PRAGMA_PREFIX
 from .types_ast import (
     InvalidTypeError,
     TypeNode,
@@ -1471,6 +1472,7 @@ class PyiModule:
     def from_module(cls, mod: ModuleType) -> PyiModule:
         """Create a :class:`PyiModule` from a live module object."""
         comments = getattr(mod, "__macrotype_comments__", {})
-        header = getattr(mod, "__macrotype_header_pragmas__", [])
+        header_lines = getattr(mod, "__macrotype_header_lines__", [])
+        pragmas = [h for h in header_lines if PRAGMA_PREFIX.match(h)]
         line_map = getattr(mod, "__macrotype_line_map__", {})
-        return _ModuleBuilder(mod, line_map).build(header_comments=header, comments=comments)
+        return _ModuleBuilder(mod, line_map).build(header_comments=pragmas, comments=comments)

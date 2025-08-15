@@ -10,6 +10,7 @@ from .scanner import scan_module
 
 __all__ = [
     "ModuleDecl",
+    "add_source_info",
     "add_comments",
     "from_module",
     "expand_overloads",
@@ -35,6 +36,7 @@ __all__ = [
 
 def __getattr__(name: str):
     if name in {
+        "add_source_info",
         "add_comments",
         "canonicalize_foreign_symbols",
         "canonicalize_local_aliases",
@@ -69,6 +71,7 @@ def from_module(mod: ModuleType, *, strict: bool = False) -> ModuleDecl:
     from . import transformers as _t
 
     mi = scan_module(mod)
+    _t.add_source_info(mi)
     _t.canonicalize_foreign_symbols(mi)
     _t.unwrap_decorated_functions(mi)
     _t.canonicalize_local_aliases(mi)
