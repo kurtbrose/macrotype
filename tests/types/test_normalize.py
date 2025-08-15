@@ -80,6 +80,10 @@ CASES = [
     ),
     # Tuple elements normalized recursively
     (
+        TyApp(base=b("tuple"), args=()),
+        TyApp(base=b("tuple"), args=()),
+    ),
+    (
         TyApp(base=b("tuple"), args=(typ("List"),)),
         TyApp(base=b("tuple"), args=(b("list"),)),
     ),

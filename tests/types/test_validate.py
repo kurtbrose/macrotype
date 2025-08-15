@@ -38,6 +38,7 @@ GOOD = [
     b("int"),
     TyUnion(options=(b("int"), b("str"))),
     TyLiteral(values=(1, "x", (True, 2))),
+    TyApp(base=b("tuple"), args=()),  # tuple[()]
     TyApp(base=b("tuple"), args=(b("int"), b("str"))),
     TyApp(base=b("tuple"), args=(b("int"), b("Ellipsis"))),  # tuple[int, ...]
     TyApp(base=b("tuple"), args=(b("int"), b("str"), b("Ellipsis"))),  # tuple[int, str, ...]
