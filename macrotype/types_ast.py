@@ -957,7 +957,7 @@ def _format_runtime_type(type_obj: Any) -> TypeRenderInfo:
 
     if origin is tuple and not args:
         used.add(tuple)
-        return TypeRenderInfo("tuple[]", used)
+        return TypeRenderInfo("tuple[()]", used)
 
     if origin:
         origin_name = getattr(origin, "__qualname__", str(origin))

@@ -638,7 +638,7 @@ FUNC_ELLIPSIS: Callable[..., int]
 
 TUPLE_UNANN: tuple
 
-TUPLE_EMPTY: tuple[]
+TUPLE_EMPTY: tuple[()]
 
 TUPLE_ONE: tuple[int]
 
