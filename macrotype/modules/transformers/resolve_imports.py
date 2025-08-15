@@ -23,6 +23,12 @@ def resolve_imports(mi: ModuleDecl) -> None:
     atoms: dict[int, t.Any] = {}
     for ann in annotations:
         atoms.update(flatten_annotation_atoms(ann))
+    for sym in mi.get_all_decls():
+        for deco in getattr(sym, "decorators", ()):  # capture decorator objects
+            base = deco.split("(")[0].split(".")[-1]
+            obj = getattr(mi.obj, base, None)
+            if obj is not None:
+                atoms[id(obj)] = obj
 
     context = mi.obj.__dict__
     name_map = build_name_map(atoms.values(), context)
@@ -30,7 +36,14 @@ def resolve_imports(mi: ModuleDecl) -> None:
     typing_names = {
         name_map[id(a)]
         for a in atoms.values()
-        if getattr(a, "__module__", None) == "typing" or a in {Callable, ABC_Callable}
+        if (
+            (
+                getattr(a, "__module__", None) == "typing"
+                and not isinstance(a, (t.TypeVar, t.ParamSpec, t.TypeVarTuple))
+            )
+            or a is Callable
+            or a is ABC_Callable
+        )
     }
     typing_names.update(_collect_typing_names(mi.members))
 
@@ -44,6 +57,10 @@ def resolve_imports(mi: ModuleDecl) -> None:
             continue
         modname = _MODULE_ALIASES.get(modname, modname)
         if modname in {"builtins", "typing", mi.obj.__name__}:
+            continue
+        if modname == "enum" and name in {"Flag", "ReprEnum"}:
+            continue
+        if modname == "types" and name == "UnionType":
             continue
         external[modname].add(name)
 

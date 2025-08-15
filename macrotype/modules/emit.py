@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import enum
 import inspect
 import types
 from typing import Annotated, Any, Callable, ForwardRef, Iterable, get_args, get_origin
@@ -17,6 +18,9 @@ def emit_module(mi: ModuleDecl) -> list[str]:
     atoms: dict[int, Any] = {}
     for ann in annotations:
         atoms.update(flatten_annotation_atoms(ann))
+    for sym in mi.get_all_decls():
+        if isinstance(sym, TypeDefDecl) and sym.value is not None:
+            atoms.update(flatten_annotation_atoms(sym.value.annotation))
 
     context = mi.obj.__dict__
     name_map = build_name_map(atoms.values(), context)
@@ -102,16 +106,27 @@ def flatten_annotation_atoms(ann: Any) -> dict[int, Any]:
 
 def build_name_map(atoms: Iterable[Any], context: dict[str, Any]) -> dict[int, str]:
     """Map annotation atoms to names based on module context."""
-    reverse = {id(v): k for k, v in context.items()}
+    module_name = context.get("__name__")
+    reverse: dict[int, str] = {}
+    for k, v in context.items():
+        reverse.setdefault(id(v), k)
+
     name_map: dict[int, str] = {}
 
     for atom in atoms:
         atom_id = id(atom)
         if isinstance(atom, ForwardRef):
             name_map[atom_id] = atom.__forward_arg__
-        elif atom_id in reverse:
-            name_map[atom_id] = reverse[atom_id]
-        elif hasattr(atom, "__name__"):
+            continue
+        if atom_id in reverse:
+            name = reverse[atom_id]
+            mod = getattr(atom, "__module__", None)
+            if mod not in {module_name, "builtins"} and hasattr(atom, "__name__"):
+                name_map[atom_id] = atom.__name__
+            else:
+                name_map[atom_id] = name
+            continue
+        if hasattr(atom, "__name__"):
             name_map[atom_id] = atom.__name__
         else:
             name_map[atom_id] = repr(atom)
@@ -150,15 +165,20 @@ def stringify_annotation(ann: Any, name_map: dict[int, str]) -> str:
     if origin in {Callable, ABC_Callable}:
         if not args:
             return "Callable"
+        name = name_map.get(id(origin), getattr(origin, "__name__", "Callable"))
         if len(args) == 2:
             params, ret = args
-            params = params if params is not Ellipsis else [Ellipsis]
+            ret_str = stringify_annotation(ret, name_map)
+            if params is Ellipsis:
+                return f"{name}[..., {ret_str}]"
+            if isinstance(params, t.ParamSpec):
+                params_str = stringify_annotation(params, name_map)
+                return f"{name}[{params_str}, {ret_str}]"
+            if not isinstance(params, (list, tuple)):
+                params = [params]
         else:
             *params, ret = args
-        ret_str = stringify_annotation(ret, name_map)
-        name = name_map.get(id(origin), getattr(origin, "__name__", "Callable"))
-        if params == [Ellipsis]:
-            return f"{name}[..., {ret_str}]"
+            ret_str = stringify_annotation(ret, name_map)
         params_str = ", ".join(stringify_annotation(p, name_map) for p in params)
         return f"{name}[[{params_str}], {ret_str}]"
 
@@ -196,6 +216,19 @@ def stringify_annotation(ann: Any, name_map: dict[int, str]) -> str:
         return name_map.get(id(ann), getattr(ann, "__name__", repr(ann)))
 
 
+def stringify_value(val: Any, name_map: dict[int, str]) -> str:
+    """Emit string form of a value used in an assignment."""
+    if isinstance(val, enum.Enum):
+        cls = val.__class__
+        cls_name = name_map.get(id(cls), getattr(cls, "__name__", repr(cls)))
+        return f"{cls_name}.{val.name}"
+    if isinstance(val, (int, float, bool)) or val is None:
+        return repr(val)
+    if isinstance(val, str):
+        return repr(val)
+    return name_map.get(id(val), repr(val))
+
+
 def _emit_decl(sym: Decl, name_map: dict[int, str], *, indent: int) -> list[str]:
     if not sym.emit:
         return []
@@ -211,6 +244,8 @@ def _emit_decl(sym: Decl, name_map: dict[int, str], *, indent: int) -> list[str]
         case TypeDefDecl(value=site, type_params=params, obj_type=alias):
             keyword = param_str = ""
             match alias:
+                case None:
+                    rhs = stringify_value(site.annotation, name_map)
                 case t.TypeAliasType():  # type: ignore[attr-defined]
                     keyword = "type "
                     rhs = stringify_annotation(site.annotation, name_map)

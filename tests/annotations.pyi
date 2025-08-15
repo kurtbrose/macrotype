@@ -347,6 +347,10 @@ class StrEnum(str, Enum):
     A = 'a'
     B = 'b'
 
+class PointEnum(Enum):
+    INLINE = Point(x=1, y=2)
+    REF = Point(x=0, y=0)
+
 class NamedPoint(NamedTuple):
     x: int
     y: int

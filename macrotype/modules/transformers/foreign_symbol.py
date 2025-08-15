@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import typing as t
 
-from macrotype.modules.ir import Decl, ModuleDecl, Site, TypeDefDecl, VarDecl
+from macrotype.modules.ir import ClassDecl, Decl, FuncDecl, ModuleDecl, Site, TypeDefDecl, VarDecl
 
 
 def canonicalize_foreign_symbols(mi: ModuleDecl) -> None:
@@ -13,10 +13,15 @@ def canonicalize_foreign_symbols(mi: ModuleDecl) -> None:
     annotations: dict[str, t.Any] = glb.get("__annotations__", {}) or {}
     new_syms: list[Decl] = []
     for sym in mi.members:
+        obj = getattr(sym, "obj", None)
+        if isinstance(sym, (ClassDecl, FuncDecl)):
+            if hasattr(obj, "__module__") and obj.__module__ != modname:
+                continue
+            new_syms.append(sym)
+            continue
         if not isinstance(sym, VarDecl):
             new_syms.append(sym)
             continue
-        obj = sym.obj
         if obj is Ellipsis:
             new_syms.append(sym)
             continue
