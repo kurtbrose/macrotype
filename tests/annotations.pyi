@@ -67,7 +67,9 @@ type AliasBoundU[U] = list[U]
 
 MyList = list[int]
 
-Other = dict
+Other = dict[str, int]
+
+ListIntGA = list[int]
 
 ForwardAlias = FutureClass
 

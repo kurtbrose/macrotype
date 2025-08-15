@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import types
 import typing as t
 
 from macrotype.modules.ir import ClassDecl, Decl, ModuleDecl, Site, TypeDefDecl, VarDecl
@@ -11,7 +12,7 @@ def _transform_alias_vars(decls: list[Decl]) -> list[Decl]:
     for sym in decls:
         match sym:
             case VarDecl(name=name, obj=obj, comment=comment, emit=emit, site=site):
-                if isinstance(obj, (t.TypeVar, t.ParamSpec, t.TypeVarTuple)):
+                if isinstance(obj, (t.TypeVar, t.ParamSpec, t.TypeVarTuple, types.GenericAlias)):
                     alias = TypeDefDecl(
                         name=name,
                         value=Site(role="alias_value", annotation=obj, comment=site.comment),
@@ -59,5 +60,5 @@ def synthesize_aliases(mi: ModuleDecl) -> None:
             sym.type_params = tuple(params)
         elif annotations.get(sym.name) is t.TypeAlias:
             sym.obj_type = t.TypeAlias
-        elif isinstance(obj, (t.TypeVar, t.ParamSpec, t.TypeVarTuple)):
+        elif isinstance(obj, (t.TypeVar, t.ParamSpec, t.TypeVarTuple, types.GenericAlias)):
             sym.obj_type = obj

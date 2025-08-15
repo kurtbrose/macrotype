@@ -80,6 +80,9 @@ MyList: TypeAlias = list[int]
 # Simple alias to builtin container
 Other = dict[str, int]
 
+# Alias using GenericAlias
+ListIntGA = list[int]
+
 # Edge case: alias referencing a forward-declared class
 ForwardAlias: TypeAlias = "FutureClass"
 

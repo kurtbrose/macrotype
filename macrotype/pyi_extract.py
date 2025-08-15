@@ -1170,7 +1170,18 @@ class _ModuleBuilder:
                 self._add(var)
             else:
                 alias_name = getattr(obj, "__name__", None)
-                if alias_name and alias_name != name:
+                if isinstance(obj, types.GenericAlias):
+                    fmt = self._format_annotation(obj, name)
+                    self._add(
+                        PyiAlias(
+                            name=name,
+                            value=fmt.text,
+                            used_types=fmt.used,
+                            line=self.line_map.get(name),
+                        )
+                    )
+                    self.used_types.update(fmt.used)
+                elif alias_name and alias_name != name:
                     self._add(
                         PyiAlias(
                             name=name,
