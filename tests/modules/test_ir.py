@@ -224,7 +224,7 @@ def test_flag_transform() -> None:
 
 
 def test_strict_mode_normalizes_union() -> None:
-    ann = importlib.import_module("tests.annotations")
+    ann = importlib.import_module("tests.strict_union")
 
     mi_default = from_module(ann)
     var_default = next(
@@ -238,3 +238,9 @@ def test_strict_mode_normalizes_union() -> None:
     )
     assert var_strict.site.annotation == (int | str)
     assert typing.get_origin(var_strict.site.annotation) is types.UnionType
+
+
+def test_strict_mode_raises_on_invalid_annotation() -> None:
+    mod = importlib.import_module("tests.strict_error")
+    with pytest.raises(TypeError):
+        from_module(mod, strict=True)

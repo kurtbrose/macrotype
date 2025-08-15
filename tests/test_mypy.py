@@ -4,7 +4,12 @@ from pathlib import Path
 
 import pytest
 
-_SKIP = {"annotations_unsupported.pyi", "annotations_13.pyi", "typechecking.pyi"}
+_SKIP = {
+    "annotations_unsupported.pyi",
+    "annotations_13.pyi",
+    "typechecking.pyi",
+    "strict_error.pyi",
+}
 
 
 def _pyi_files() -> list[Path]:

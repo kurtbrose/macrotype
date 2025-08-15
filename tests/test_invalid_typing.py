@@ -50,3 +50,14 @@ def test_forward_ref_raises_error(tmp_path):
     msg = str(exc.value)
     assert "Unresolved forward reference" in msg
     assert f"{path}:2" in msg
+
+
+def test_misplaced_ellipsis_in_tuple_raises_error() -> None:
+    path = Path(__file__).with_name("strict_error.py")
+    mod = load_module_from_path(path)
+    with pytest.raises(InvalidTypeError) as exc:
+        stub_lines(mod)
+    msg = str(exc.value)
+    assert "Ellipsis" in msg
+    assert f"{path}:4" in msg
+    assert "final position" in msg
