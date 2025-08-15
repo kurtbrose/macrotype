@@ -113,10 +113,10 @@ def load_module_from_path(
             with patch_typing():
                 module = importlib.import_module(name)
             if getattr(module, "__file__", None) and not hasattr(
-                module, "__macrotype_header_pragmas__"
+                module, "__macrotype_header_lines__"
             ):
                 header, comments, lines = extract_source_info(Path(module.__file__).read_text())
-                module.__macrotype_header_pragmas__ = header
+                module.__macrotype_header_lines__ = header
                 module.__macrotype_comments__ = comments
                 module.__macrotype_line_map__ = lines
             return module
@@ -126,9 +126,9 @@ def load_module_from_path(
     if name in sys.modules:
         module = sys.modules[name]
         if getattr(module, "__file__", None) and Path(module.__file__).resolve() == path.resolve():
-            if not hasattr(module, "__macrotype_header_pragmas__"):
+            if not hasattr(module, "__macrotype_header_lines__"):
                 header, comments, lines = extract_source_info(Path(module.__file__).read_text())
-                module.__macrotype_header_pragmas__ = header
+                module.__macrotype_header_lines__ = header
                 module.__macrotype_comments__ = comments
                 module.__macrotype_line_map__ = lines
             return module
@@ -143,7 +143,7 @@ def load_module_from_path(
         with patch_typing():
             spec.loader.exec_module(module)
         header, comments, lines = extract_source_info(Path(path).read_text())
-        module.__macrotype_header_pragmas__ = header
+        module.__macrotype_header_lines__ = header
         module.__macrotype_comments__ = comments
         module.__macrotype_line_map__ = lines
         return module
@@ -153,7 +153,7 @@ def load_module_from_path(
     module.__file__ = str(path)
     sys.modules[name] = module
     header, comments, lines = extract_source_info(code)
-    module.__macrotype_header_pragmas__ = header
+    module.__macrotype_header_lines__ = header
     module.__macrotype_comments__ = comments
     module.__macrotype_line_map__ = lines
     _exec_with_type_checking(code, module)
@@ -170,7 +170,7 @@ def load_module_from_code(
     name = module_name or name
     module = ModuleType(name)
     header, comments, lines = extract_source_info(code)
-    module.__macrotype_header_pragmas__ = header
+    module.__macrotype_header_lines__ = header
     module.__macrotype_comments__ = comments
     module.__macrotype_line_map__ = lines
     if type_checking:

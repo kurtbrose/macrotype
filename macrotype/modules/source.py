@@ -4,7 +4,13 @@ from __future__ import annotations
 
 import ast
 import io
+import re
 import tokenize
+
+# Comments matching this pattern are considered "pragma" headers that should be
+# preserved in generated stubs.  Other leading comments are treated as regular
+# source comments.
+PRAGMA_PREFIX = re.compile(r"#\s*(?:type:|pyright:|mypy:|pyre-|pyre:)")
 
 
 def extract_source_info(code: str) -> tuple[list[str], dict[int, str], dict[str, int]]:
@@ -45,4 +51,4 @@ def extract_source_info(code: str) -> tuple[list[str], dict[int, str], dict[str,
     return header, comments, line_map
 
 
-__all__ = ["extract_source_info"]
+__all__ = ["extract_source_info", "PRAGMA_PREFIX"]
