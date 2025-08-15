@@ -9,6 +9,7 @@ from typing import (
     Any,
     Callable,
     ClassVar,
+    Concatenate,
     Literal,
     NewType,
     ParamSpec,
@@ -229,6 +230,17 @@ case9 = (
         "    ...",
     ],
 )
+
+
+def test_callable_paramspec():
+    P = ParamSpec("P")
+    ann1 = Callable[P, int]
+    nm1 = build_name_map(flatten_annotation_atoms(ann1), locals())
+    assert stringify_annotation(ann1, nm1) == "Callable[P, int]"
+
+    ann2 = Callable[Concatenate[int, P], int]
+    nm2 = build_name_map(flatten_annotation_atoms(ann2), locals())
+    assert stringify_annotation(ann2, nm2) == "Callable[Concatenate[int, P], int]"
 
 
 def test_paramspec_unpacked_in_generic():
