@@ -1,4 +1,4 @@
-# Generated via: macrotype tests/annotations.py -o -
+# Generated via: macrotype tests/annotations.py -o tests/annotations.pyi
 # Do not edit by hand
 # pyright: basic
 from abc import ABC, abstractmethod
@@ -124,6 +124,16 @@ COMMENTED_VAR: int  # pragma: var
 def mult(a, b: int): ...
 
 def takes_optional(x): ...
+
+def _alias_target() -> None: ...
+
+PRIMARY_ALIAS = _alias_target
+
+SECONDARY_ALIAS = _alias_target
+
+def _wrap(fn): ...
+
+def wrapped_with_default(x: int, y: int) -> int: ...
 
 def commented_func(x: int) -> None: ...  # pragma: func
 
@@ -611,8 +621,6 @@ class OptionalUndefinedCls:
 class RequiredUndefinedCls:
     a: int
     b: str
-
-def _wrap(fn): ...
 
 def wrapped_callable(x: int, y: str) -> str: ...
 

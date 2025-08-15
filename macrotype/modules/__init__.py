@@ -16,6 +16,12 @@ __all__ = [
     "normalize_flags",
     "normalize_descriptors",
     "canonicalize_foreign_symbols",
+    "canonicalize_local_aliases",
+    "unwrap_decorated_functions",
+    "infer_param_defaults",
+    "transform_newtypes",
+    "transform_enums",
+    "transform_namedtuples",
     "transform_generics",
     "synthesize_aliases",
     "prune_inherited_typeddict_fields",
@@ -31,6 +37,12 @@ def __getattr__(name: str):
     if name in {
         "add_comments",
         "canonicalize_foreign_symbols",
+        "canonicalize_local_aliases",
+        "unwrap_decorated_functions",
+        "infer_param_defaults",
+        "transform_newtypes",
+        "transform_enums",
+        "transform_namedtuples",
         "transform_generics",
         "expand_overloads",
         "normalize_descriptors",
@@ -58,10 +70,16 @@ def from_module(mod: ModuleType, *, strict: bool = False) -> ModuleDecl:
 
     mi = scan_module(mod)
     _t.canonicalize_foreign_symbols(mi)
+    _t.unwrap_decorated_functions(mi)
+    _t.canonicalize_local_aliases(mi)
     _t.synthesize_aliases(mi)
+    _t.transform_newtypes(mi)
+    _t.transform_enums(mi)
+    _t.transform_namedtuples(mi)
     _t.transform_generics(mi)
     _t.transform_dataclasses(mi)
     _t.prune_inherited_typeddict_fields(mi)
+    _t.infer_param_defaults(mi)
     _t.normalize_descriptors(mi)
     _t.normalize_flags(mi)
     _t.prune_protocol_methods(mi)

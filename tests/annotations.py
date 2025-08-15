@@ -165,6 +165,28 @@ def takes_optional(x=None):
     return x
 
 
+# Duplicate local aliases should be canonicalized
+def _alias_target() -> None: ...
+
+
+PRIMARY_ALIAS = _alias_target
+SECONDARY_ALIAS = _alias_target
+
+
+# Decorated function should be unwrapped and defaults inferred
+def _wrap(fn):
+    @functools.wraps(fn)
+    def inner(*args, **kwargs):
+        return fn(*args, **kwargs)
+
+    return inner
+
+
+@_wrap
+def wrapped_with_default(x: int, y=1) -> int:
+    return x + y
+
+
 def commented_func(x: int) -> None:  # pragma: func
     pass
 
