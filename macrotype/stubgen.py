@@ -2,16 +2,14 @@ from __future__ import annotations
 
 import ast
 import importlib
-import io
-import re
 import shutil
 import sys
-import tokenize
 import typing
 from pathlib import Path
 from types import ModuleType
 
 from .meta_types import patch_typing
+from .modules.source import extract_source_info
 
 
 def _header_lines(command: str | None) -> list[str]:
@@ -19,47 +17,6 @@ def _header_lines(command: str | None) -> list[str]:
     if command:
         return [f"# Generated via: {command}", "# Do not edit by hand"]
     return []
-
-
-_PRAGMA_PREFIX = re.compile(r"#\s*(?:type:|pyright:|mypy:|pyre-|pyre:)")
-
-
-def _extract_source_info(code: str) -> tuple[list[str], dict[int, str], dict[str, int]]:
-    """Return header pragmas, comment map, and name line map for *code*."""
-
-    comments: dict[int, str] = {}
-    header: list[str] = []
-    first_code = None
-    tokens = tokenize.generate_tokens(io.StringIO(code).readline)
-    for tok_type, tok_str, start, _, _ in tokens:
-        if tok_type == tokenize.COMMENT:
-            comments[start[0]] = tok_str
-            if first_code is None and _PRAGMA_PREFIX.match(tok_str):
-                header.append(tok_str)
-        elif first_code is None and tok_type not in (
-            tokenize.COMMENT,
-            tokenize.NL,
-            tokenize.NEWLINE,
-            tokenize.ENCODING,
-        ):
-            first_code = start[0]
-
-    tree = ast.parse(code)
-    line_map: dict[str, int] = {}
-    for node in tree.body:
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-            line_map[node.name] = node.lineno
-        elif isinstance(node, ast.AnnAssign):
-            if isinstance(node.target, ast.Name):
-                line_map[node.target.id] = node.lineno
-        elif isinstance(node, ast.Assign):
-            for t in node.targets:
-                if isinstance(t, ast.Name):
-                    line_map[t.id] = node.lineno
-        elif hasattr(ast, "TypeAlias") and isinstance(node, ast.TypeAlias):
-            line_map[node.name] = node.lineno
-
-    return header, comments, line_map
 
 
 def _guess_module_name(path: Path) -> str | None:
@@ -158,7 +115,7 @@ def load_module_from_path(
             if getattr(module, "__file__", None) and not hasattr(
                 module, "__macrotype_header_pragmas__"
             ):
-                header, comments, lines = _extract_source_info(Path(module.__file__).read_text())
+                header, comments, lines = extract_source_info(Path(module.__file__).read_text())
                 module.__macrotype_header_pragmas__ = header
                 module.__macrotype_comments__ = comments
                 module.__macrotype_line_map__ = lines
@@ -170,7 +127,7 @@ def load_module_from_path(
         module = sys.modules[name]
         if getattr(module, "__file__", None) and Path(module.__file__).resolve() == path.resolve():
             if not hasattr(module, "__macrotype_header_pragmas__"):
-                header, comments, lines = _extract_source_info(Path(module.__file__).read_text())
+                header, comments, lines = extract_source_info(Path(module.__file__).read_text())
                 module.__macrotype_header_pragmas__ = header
                 module.__macrotype_comments__ = comments
                 module.__macrotype_line_map__ = lines
@@ -185,7 +142,7 @@ def load_module_from_path(
         sys.modules[name] = module
         with patch_typing():
             spec.loader.exec_module(module)
-        header, comments, lines = _extract_source_info(Path(path).read_text())
+        header, comments, lines = extract_source_info(Path(path).read_text())
         module.__macrotype_header_pragmas__ = header
         module.__macrotype_comments__ = comments
         module.__macrotype_line_map__ = lines
@@ -195,7 +152,7 @@ def load_module_from_path(
     module = ModuleType(name)
     module.__file__ = str(path)
     sys.modules[name] = module
-    header, comments, lines = _extract_source_info(code)
+    header, comments, lines = extract_source_info(code)
     module.__macrotype_header_pragmas__ = header
     module.__macrotype_comments__ = comments
     module.__macrotype_line_map__ = lines
@@ -212,7 +169,7 @@ def load_module_from_code(
 ) -> ModuleType:
     name = module_name or name
     module = ModuleType(name)
-    header, comments, lines = _extract_source_info(code)
+    header, comments, lines = extract_source_info(code)
     module.__macrotype_header_pragmas__ = header
     module.__macrotype_comments__ = comments
     module.__macrotype_line_map__ = lines

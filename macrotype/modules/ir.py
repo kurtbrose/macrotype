@@ -92,6 +92,13 @@ class TypeDefDecl(Decl):
 
 
 @dataclass(kw_only=True)
+class SourceInfo:
+    headers: list[str]
+    comments: dict[int, str]
+    line_map: dict[str, int]
+
+
+@dataclass(kw_only=True)
 class ImportBlock:
     typing: set[str] = field(default_factory=set)
     froms: dict[str, set[str]] = field(default_factory=dict)
@@ -112,6 +119,7 @@ class ModuleDecl(Decl):
     obj: ModuleType
     members: list[Decl]
     imports: ImportBlock = field(default_factory=ImportBlock)
+    source: SourceInfo | None = None
 
     def get_children(self) -> tuple[Decl, ...]:
         return tuple(self.members)
