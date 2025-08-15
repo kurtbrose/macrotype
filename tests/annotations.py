@@ -132,6 +132,8 @@ UNANNOTATED_CONST = 42
 UNANNOTATED_STR = "hi"
 # Edge case: unannotated float constant should be included
 UNANNOTATED_FLOAT = 1.23
+# Explicit None annotation should remain None
+EXPLICIT_NONE: None = None
 
 
 # Edge case: subclass constants should preserve subclass type
@@ -163,6 +165,11 @@ def mult(a, b=1):
 # Defaults of ``None`` do not refine "Any"
 def takes_optional(x=None):
     return x
+
+
+# Explicit None parameter annotation should emit None, not NoneType
+def takes_none_param(x: None) -> None:
+    pass
 
 
 # Duplicate local aliases should be canonicalized

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import linecache
 import textwrap
 import typing as t
@@ -122,11 +123,25 @@ def test_constant_transform() -> None:
         pass
 
     members = [
-        VarDecl(name="ANSWER", site=Site(role="var", name="ANSWER"), obj=42),
-        VarDecl(name="GREETING", site=Site(role="var", name="GREETING"), obj="hi"),
-        VarDecl(name="RATE", site=Site(role="var", name="RATE"), obj=1.5),
-        VarDecl(name="FLAG", site=Site(role="var", name="FLAG"), obj=True),
-        VarDecl(name="CUSTOM", site=Site(role="var", name="CUSTOM"), obj=CustomInt(1)),
+        VarDecl(
+            name="ANSWER", site=Site(role="var", name="ANSWER", annotation=inspect._empty), obj=42
+        ),
+        VarDecl(
+            name="GREETING",
+            site=Site(role="var", name="GREETING", annotation=inspect._empty),
+            obj="hi",
+        ),
+        VarDecl(
+            name="RATE", site=Site(role="var", name="RATE", annotation=inspect._empty), obj=1.5
+        ),
+        VarDecl(
+            name="FLAG", site=Site(role="var", name="FLAG", annotation=inspect._empty), obj=True
+        ),
+        VarDecl(
+            name="CUSTOM",
+            site=Site(role="var", name="CUSTOM", annotation=inspect._empty),
+            obj=CustomInt(1),
+        ),
     ]
     mi = ModuleDecl(name="consts", obj=ModuleType("consts"), members=members)
     infer_constant_types(mi)
@@ -140,7 +155,7 @@ def test_constant_transform() -> None:
     assert greet.site.annotation is str
     assert rate.site.annotation is float
     assert flag.site.annotation is bool
-    assert custom.site.annotation is None
+    assert custom.site.annotation is inspect._empty
 
 
 def test_dataclass_transform() -> None:
@@ -514,7 +529,7 @@ def test_infer_param_defaults_transform() -> None:
     infer_param_defaults(mi)
     fn = next(s for s in mi.members if isinstance(s, FuncDecl) and s.name == "mult")
     assert [p.name for p in fn.params] == ["a", "b"]
-    assert fn.params[0].annotation is None
+    assert fn.params[0].annotation is inspect._empty
     assert fn.params[1].annotation in (int, "int")
 
 

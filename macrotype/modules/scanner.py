@@ -57,7 +57,10 @@ def scan_module(mod: ModuleType) -> ModuleDecl:
                 decls.append(VarDecl(name=name, site=site, obj=obj))
             continue
 
-        site = Site(role="var", name=name, annotation=type(obj))
+        ann = type(obj)
+        if obj is None:
+            ann = t.Any
+        site = Site(role="var", name=name, annotation=ann)
         decls.append(VarDecl(name=name, site=site, obj=obj))
 
     for name, rann in mod_ann.items():
