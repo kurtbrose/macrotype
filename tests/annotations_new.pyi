@@ -1,17 +1,24 @@
 # Generated via: macrotype tests/annotations_new.py --modules -o tests/annotations_new.pyi
 # Do not edit by hand
 from collections import deque
+from dataclasses import InitVar, dataclass
+from enum import Enum, IntEnum, IntFlag
 from functools import cached_property
 from re import Pattern
 from typing import (
     Annotated,
     Any,
     Callable,
+    ClassVar,
     Concatenate,
     Final,
     Literal,
+    NamedTuple,
     NewType,
+    NotRequired,
     ParamSpec,
+    Required,
+    TypedDict,
     TypeVar,
     TypeVarTuple,
     Unpack,
@@ -36,6 +43,163 @@ ContravariantT = TypeVar("ContravariantT", contravariant=True)
 TDV = TypeVar("TDV")
 
 UserId = NewType("UserId", int)
+
+class ManualProperty:
+    @property
+    def both(self) -> int: ...
+    @both.setter
+    def both(self, value: int) -> None: ...
+    @both.deleter
+    def both(self) -> None: ...
+
+class SampleDict(TypedDict):
+    name: str
+    age: int
+
+class PartialDict(TypedDict):
+    id: int
+    hint: str
+
+class MixedDict(TypedDict):
+    required_field: int
+    optional_field: NotRequired[str]
+    required_override: Required[int]
+
+class BaseTD(TypedDict):
+    base_field: int
+
+class SubTD(BaseTD):
+    base_field: int
+    sub_field: str
+
+class TDShadowBase(TypedDict):
+    base_only: int
+    shadow: str
+
+class TDShadowChild(TDShadowBase):
+    base_only: int
+    shadow: str
+    extra: float
+
+class GenericBox[TDV](TypedDict):
+    item: TDV
+
+class Slotted:
+    x: int
+    y: str
+
+class HasPartialMethod:
+    def base(self, a: int, b: str) -> str: ...
+    def pm(self, b: str) -> str: ...
+
+def make_wrapper(t: type): ...
+
+GeneratedInt = GeneratedInt
+
+@overload
+def over(x: int) -> int: ...
+@overload
+def over(x: str) -> str: ...
+@dataclass
+class Point:
+    x: int
+    y: int
+
+@dataclass(frozen=True, slots=True)
+class Frozen:
+    a: int
+    b: int
+
+@dataclass(kw_only=True)
+class KwOnlyPoint:
+    x: int
+    y: int
+
+@dataclass(eq=False)
+class NoAutoEq:
+    x: int
+    def __eq__(self, other: object) -> bool: ...
+
+@dataclass(order=True, match_args=False, slots=True, weakref_slot=True)
+class OptionDataclass:
+    value: int
+
+@dataclass
+class InitVarExample:
+    x: int
+    init_only: InitVar[int]
+    init_list: InitVar[list[int]]
+    def __post_init__(self, init_only: int, init_list: list[int]) -> None: ...
+
+@dataclass
+class Outer:
+    x: int
+    @dataclass
+    class Inner:
+        y: int
+
+@dataclass
+class ClassVarExample:
+    x: int
+    y: ClassVar[int]
+
+class ClassVarListExample:
+    items: ClassVar[list[int]]
+
+class OldGeneric[T]:
+    value: T
+    def get[T](self) -> T: ...
+
+class NewGeneric[T]:
+    value: T
+    def get[T](self) -> T: ...
+
+class BoundClass[T]:
+    value: T
+
+class ConstrainedClass[T]:
+    value: T
+
+class Color(Enum):
+    RED = int
+    GREEN = int
+
+class Priority(IntEnum):
+    LOW = int
+    MEDIUM = int
+    HIGH = int
+
+class Permission(IntFlag):
+    READ = int
+    WRITE = int
+    EXECUTE = int
+
+class StrEnum(str, Enum):
+    A = str
+    B = str
+
+class PointEnum(Enum):
+    INLINE = Point
+    REF = Point
+
+class NamedPoint(NamedTuple):
+    x: int
+    y: int
+    @staticmethod
+    def __new__(_cls, x: int, y: int): ...
+    @classmethod
+    def _make(cls, iterable): ...
+
+class VarNamedTuple[*Ts](NamedTuple):
+    items: tuple[Unpack[Ts]]
+    @staticmethod
+    def __new__(_cls, items: tuple[Unpack[Ts]]): ...
+    @classmethod
+    def _make(cls, iterable): ...
+    @classmethod
+    def __class_getitem__(cls, params): ...
+
+def use_tuple(tp: tuple[int, ...]) -> tuple[int, ...]: ...
 
 class UserBox[T]: ...
 

@@ -156,7 +156,7 @@ def test_td_inheritance(idx: dict[str, object]) -> None:
 
 
 def test_dataclass_transform() -> None:
-    ann = importlib.import_module("tests.annotations")
+    ann = importlib.import_module("tests.annotations_new")
     mi = from_module(ann)
     frozen = next(s for s in mi.members if s.name == "Frozen")
     assert isinstance(frozen, ClassDecl)

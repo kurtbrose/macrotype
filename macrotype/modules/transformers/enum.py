@@ -12,7 +12,7 @@ def _enum_members(klass: enum.EnumMeta) -> list[TypeDefDecl]:
 
     members: list[TypeDefDecl] = []
     for member_name, member in klass.__members__.items():
-        site = Site(role="alias_value", annotation=member.value)
+        site = Site(role="alias_value", annotation=type(member.value))
         members.append(TypeDefDecl(name=member_name, value=site, obj=member))
     return members
 
