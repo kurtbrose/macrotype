@@ -15,7 +15,7 @@ def test_macrotype_check(tmp_path: Path, tool: str) -> None:
         "-m",
         "macrotype.cli.typecheck",
         tool,
-        "tests/annotations.py",
+        "tests/annotations_new.py",
         "-o",
         str(stub_dir),
         "--",
@@ -28,4 +28,4 @@ def test_macrotype_check(tmp_path: Path, tool: str) -> None:
         env=os.environ,
     )
     assert result.returncode == 0, result.stdout + result.stderr
-    assert (stub_dir / "tests" / "annotations.pyi").exists()
+    assert (stub_dir / "tests" / "annotations_new.pyi").exists()

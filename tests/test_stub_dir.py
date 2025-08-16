@@ -6,7 +6,7 @@ import pytest
 
 
 def _check_overlay(stub_dir: Path, dest: Path) -> None:
-    overlay = stub_dir / "tests" / "annotations.pyi"
+    overlay = stub_dir / "tests" / "annotations_new.pyi"
     assert overlay.exists()
     if overlay.is_symlink():
         assert overlay.resolve() == dest.resolve()
@@ -17,13 +17,14 @@ def _check_overlay(stub_dir: Path, dest: Path) -> None:
 @pytest.mark.parametrize("overlay_subdir", [None, "stubs"])
 def test_cli_stub_overlay_dir(tmp_path, overlay_subdir):
     repo_root = Path(__file__).resolve().parents[1]
-    src = Path(__file__).with_name("annotations.py")
-    dest = tmp_path / "annotations.pyi"
+    src = Path(__file__).with_name("annotations_new.py")
+    dest = tmp_path / "annotations_new.pyi"
     args = [
         sys.executable,
         "-m",
         "macrotype",
         str(src),
+        "--modules",
         "-o",
         str(dest),
     ]

@@ -1,12 +1,29 @@
 from __future__ import annotations
 
 import inspect
+import sys
 import types
 import typing as t
 from dataclasses import replace
 from types import ModuleType
 
 from .ir import ClassDecl, Decl, FuncDecl, ModuleDecl, Site, TypeDefDecl, VarDecl
+
+
+def _eval_annotation(
+    ann: t.Any, glb: dict[str, t.Any], lcl: dict[str, t.Any] | None = None
+) -> t.Any:
+    if isinstance(ann, str):
+        expr = ann
+        if (expr.startswith("'") and expr.endswith("'")) or (
+            expr.startswith('"') and expr.endswith('"')
+        ):
+            expr = expr[1:-1]
+        try:
+            return eval(expr, glb, lcl or {})
+        except Exception:  # pragma: no cover - fall back to original
+            return ann
+    return ann
 
 
 def _is_dunder(name: str) -> bool:
@@ -23,7 +40,7 @@ def scan_module(mod: ModuleType) -> ModuleDecl:
     seen: set[str] = set()
 
     for name, obj in list(glb.items()):
-        if _is_dunder(name):
+        if _is_dunder(name) or name == "TYPE_CHECKING":
             continue
         seen.add(name)
 
@@ -33,6 +50,8 @@ def scan_module(mod: ModuleType) -> ModuleDecl:
             continue
 
         if inspect.isclass(obj):
+            if getattr(obj, "__module__", None) != modname:
+                continue
             qualname = getattr(obj, "__qualname_override__", obj.__name__)
             if qualname != name:
                 site = Site(role="alias_value", annotation=obj)
@@ -43,7 +62,7 @@ def scan_module(mod: ModuleType) -> ModuleDecl:
 
         if inspect.isfunction(obj):
             if obj.__name__ == "<lambda>":
-                ann = mod_ann.get(name, type(obj))
+                ann = _eval_annotation(mod_ann.get(name, type(obj)), glb)
                 site = Site(role="var", name=name, annotation=ann)
                 decls.append(VarDecl(name=name, site=site, obj=obj))
             else:
@@ -56,7 +75,7 @@ def scan_module(mod: ModuleType) -> ModuleDecl:
             continue
 
         if name in mod_ann:
-            ann = mod_ann[name]
+            ann = _eval_annotation(mod_ann[name], glb)
             if ann is t.TypeAlias:
                 site = Site(role="alias_value", annotation=obj)
                 decls.append(TypeDefDecl(name=name, value=site, obj=obj))
@@ -101,9 +120,10 @@ def scan_module(mod: ModuleType) -> ModuleDecl:
         continue
 
     for name, rann in mod_ann.items():
-        if name in seen:
+        if name in seen or name == "TYPE_CHECKING":
             continue
-        site = Site(role="var", name=name, annotation=rann)
+        ann = _eval_annotation(rann, glb)
+        site = Site(role="var", name=name, annotation=ann)
         decls.append(VarDecl(name=name, site=site))
 
     return ModuleDecl(name=modname, obj=mod, members=decls)
@@ -118,13 +138,16 @@ def _scan_function(fn: t.Callable) -> FuncDecl:
         sig = inspect.signature(fn)
         for p in sig.parameters.values():
             ann = raw_ann.get(p.name, inspect._empty)
+            if ann is not inspect._empty:
+                ann = _eval_annotation(ann, fn.__globals__)
             params.append(Site(role="param", name=p.name, annotation=ann))
     except (TypeError, ValueError):
         pass
 
     ret = None
     if "return" in raw_ann:
-        ret = Site(role="return", annotation=raw_ann["return"])
+        ann = _eval_annotation(raw_ann["return"], fn.__globals__)
+        ret = Site(role="return", annotation=ann)
 
     decos: list[str] = []
     if getattr(fn, "__isabstractmethod__", False):
@@ -158,16 +181,22 @@ def _scan_class(cls: type) -> ClassDecl:
     if is_td:
         td_total = cls.__dict__.get("__total__", True)
         raw_ann = cls.__dict__.get("__annotations__", {}) or {}
+        mod = sys.modules.get(cls.__module__)
+        glb = mod.__dict__ if mod else {}
         for fname, rann in raw_ann.items():
-            td_fields.append(Site(role="td_field", name=fname, annotation=rann))
+            ann = _eval_annotation(rann, glb, dict(cls.__dict__))
+            td_fields.append(Site(role="td_field", name=fname, annotation=ann))
 
     members: list[Decl] = []
 
     class_ann: dict[str, t.Any] = cls.__dict__.get("__annotations__", {}) or {}
+    mod = sys.modules.get(cls.__module__)
+    glb = mod.__dict__ if mod else {}
     for fname, rann in class_ann.items():
         if is_td:
             continue
-        site = Site(role="var", name=fname, annotation=rann)
+        ann = _eval_annotation(rann, glb, dict(cls.__dict__))
+        site = Site(role="var", name=fname, annotation=ann)
         init_val = cls.__dict__.get(fname, Ellipsis)
         members.append(VarDecl(name=fname, site=site, obj=init_val))
 

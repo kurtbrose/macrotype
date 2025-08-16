@@ -21,13 +21,7 @@ from macrotype.modules.transformers import canonicalize_foreign_symbols, expand_
 
 @pytest.fixture(scope="module")
 def idx() -> dict[str, object]:
-    ann = importlib.import_module("tests.annotations")
-    ann_new = importlib.import_module("tests.annotations_new")
-    for name in dir(ann_new):
-        if name.startswith("__"):
-            continue
-        setattr(ann, name, getattr(ann_new, name))
-    ann.__annotations__ |= ann_new.__annotations__
+    ann = importlib.import_module("tests.annotations_new")
     mi = scan_module(ann)
     assert isinstance(mi, ModuleDecl)
     assert mi.obj is ann
@@ -130,7 +124,7 @@ def test_variadic_things_dont_crash(idx: dict[str, object]) -> None:
 
 
 def test_simple_alias_to_foreign() -> None:
-    ann = importlib.import_module("tests.annotations")
+    ann = importlib.import_module("tests.annotations_new")
     mi = scan_module(ann)
     canonicalize_foreign_symbols(mi)
     by_key = {s.name: s for s in mi.members}
@@ -170,9 +164,7 @@ def test_dataclass_transform() -> None:
 
 
 def test_expand_overloads_transform() -> None:
-    ann = importlib.import_module("tests.annotations")
-    ann_new = importlib.import_module("tests.annotations_new")
-    ann.special_neg = ann_new.special_neg
+    ann = importlib.import_module("tests.annotations_new")
     mi = scan_module(ann)
     expand_overloads(mi)
 
@@ -190,7 +182,7 @@ def test_expand_overloads_transform() -> None:
 
 
 def test_get_all_decls_includes_nested() -> None:
-    ann = importlib.import_module("tests.annotations")
+    ann = importlib.import_module("tests.annotations_new")
     mi = scan_module(ann)
     names = {s.name for s in mi.get_all_decls()}
     assert "Nested" in names

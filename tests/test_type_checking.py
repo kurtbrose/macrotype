@@ -5,7 +5,7 @@ from macrotype.stubgen import load_module_from_path, stub_lines
 
 def test_if_type_checking_overrides():
     mod = load_module_from_path(Path(__file__).with_name("typechecking.py"), type_checking=True)
-    lines = stub_lines(mod)
+    lines = stub_lines(mod, use_modules=True, strict=True)
     expected = Path(__file__).with_name("typechecking.pyi").read_text().splitlines()
     assert lines == expected
 
@@ -19,7 +19,7 @@ def test_circular_type_checking_imports():
         base.with_name("circ_a.py"), type_checking=True, module_name="tests.circ_a"
     )
 
-    lines = stub_lines(mod_a)
+    lines = stub_lines(mod_a, use_modules=True, strict=True)
     expected = base.with_name("circ_a.pyi").read_text().splitlines()
     assert lines == expected
 
@@ -37,6 +37,6 @@ def test_circular_complex_expr_imports():
         module_name="tests.circ_expr_a",
     )
 
-    lines = stub_lines(mod_a)
+    lines = stub_lines(mod_a, use_modules=True, strict=True)
     expected = base.with_name("circ_expr_a.pyi").read_text().splitlines()
     assert lines == expected
