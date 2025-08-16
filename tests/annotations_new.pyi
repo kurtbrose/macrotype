@@ -33,6 +33,21 @@ TDV = TypeVar("TDV")
 
 UserId = NewType("UserId", int)
 
+NESTED_ANNOTATED: Annotated[int, "a", "b"]
+
+TRIPLE_ANNOTATED: Annotated[int, "x", "y", "z"]
+
+ANNOTATED_OPTIONAL_META: Annotated[int | None, "meta"]
+
+ANNOTATED_FINAL_META: Final[Annotated[int, "meta"]]
+
+ANNOTATED_WRAP_GENERIC: Annotated[list[Annotated[int, "inner"]], "outer"]
+
+class MetaRepr:
+    def __repr__(self) -> str: ...  # pragma: no cover - simple repr
+
+ANNOTATED_OBJ_META: Annotated[int, MetaRepr()]
+
 def with_paramspec_args_kwargs[**P](
     fn: Callable[P, int], *args: P.args, **kwargs: P.kwargs
 ) -> int: ...
@@ -139,7 +154,7 @@ def commented_func(x: int) -> None: ...  # pragma: func
 def UNTYPED_LAMBDA(x, y): ...  # noqa: F821
 def TYPED_LAMBDA(a, b): ...
 
-ANNOTATED_EXTRA: str
+ANNOTATED_EXTRA: Annotated[str, "extra"]
 
 GLOBAL: int
 

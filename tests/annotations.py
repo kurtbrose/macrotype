@@ -65,28 +65,6 @@ ContravariantT = TypeVar("ContravariantT", contravariant=True)
 TDV = TypeVar("TDV")
 UserId = NewType("UserId", int)
 
-# Nested Annotated usage should merge metadata
-NESTED_ANNOTATED: Annotated[Annotated[int, "a"], "b"] = 3
-# Triple-nested Annotated should preserve structure
-TRIPLE_ANNOTATED: Annotated[Annotated[Annotated[int, "x"], "y"], "z"] = 4
-# Annotated union to ensure metadata is preserved with unions
-ANNOTATED_OPTIONAL_META: Annotated[int | None, "meta"] = 0
-# Annotated combined with Final wrapper to verify root handling
-ANNOTATED_FINAL_META: Annotated[Final[int], "meta"] = 2
-# Outer Annotated around a generic with inner Annotated element
-ANNOTATED_WRAP_GENERIC: Annotated[list[Annotated[int, "inner"]], "outer"] = []
-
-
-# Annotated metadata using arbitrary object to verify pass-through
-class MetaRepr:
-    def __repr__(self) -> str:  # pragma: no cover - simple repr
-        return "MetaRepr()"
-
-
-META_REPR = MetaRepr()
-ANNOTATED_OBJ_META: Annotated[int, META_REPR] = 0
-
-# Built-in generic without dedicated handler
 GENERIC_DEQUE: Deque[int]
 # Deque with nested list to exercise TypeNode inside GenericNode
 GENERIC_DEQUE_LIST: Deque[list[str]]

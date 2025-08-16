@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+import types
 import typing as t
 from dataclasses import replace
 from types import ModuleType
@@ -62,10 +63,39 @@ def scan_module(mod: ModuleType) -> ModuleDecl:
             continue
 
         ann = type(obj)
-        if obj is None:
-            ann = t.Any
-        site = Site(role="var", name=name, annotation=ann)
-        decls.append(VarDecl(name=name, site=site, obj=obj))
+        if obj is None or isinstance(obj, (bool, int, float, str, bytes)):
+            if obj is None:
+                ann = t.Any
+            site = Site(role="var", name=name, annotation=ann)
+            decls.append(VarDecl(name=name, site=site, obj=obj))
+            continue
+        if (
+            isinstance(obj, t.TypeVar)
+            or obj.__class__ is t.ParamSpec
+            or obj.__class__ is t.TypeVarTuple
+        ):
+            site = Site(role="alias_value", annotation=obj)
+            decls.append(TypeDefDecl(name=name, value=site, obj=obj, obj_type=obj))
+            continue
+        if hasattr(obj, "__supertype__"):
+            site = Site(role="alias_value", annotation=getattr(obj, "__supertype__"))
+            decls.append(TypeDefDecl(name=name, value=site, obj=obj, obj_type=t.NewType))
+            continue
+        if isinstance(obj, types.GenericAlias):
+            site = Site(role="alias_value", annotation=obj)
+            decls.append(TypeDefDecl(name=name, value=site, obj=obj, obj_type=types.GenericAlias))
+            continue
+        if hasattr(obj, "__module__") and obj.__module__ != modname:
+            if getattr(obj, "__name__", None) == name:
+                continue
+            site = Site(role="alias_value", annotation=obj)
+            decls.append(TypeDefDecl(name=name, value=site, obj=obj))
+            continue
+        if callable(obj):
+            site = Site(role="var", name=name, annotation=ann)
+            decls.append(VarDecl(name=name, site=site, obj=obj))
+            continue
+        continue
 
     for name, rann in mod_ann.items():
         if name in seen:

@@ -53,6 +53,7 @@ def norm(t: ResolvedTy | Ty, opts: NormOpts | None = None) -> NormalizedTy:
     return NormalizedTy(
         TyRoot(
             ty=inner,
+            annotations=top.annotations,
             is_final=top.is_final,
             is_required=top.is_required,
             is_classvar=top.is_classvar,

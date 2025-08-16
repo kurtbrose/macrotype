@@ -57,21 +57,6 @@ TDV = TypeVar("TDV")
 
 UserId = NewType("UserId", int)
 
-NESTED_ANNOTATED: Annotated[int, "a", "b"]
-
-TRIPLE_ANNOTATED: Annotated[int, "x", "y", "z"]
-
-ANNOTATED_OPTIONAL_META: Annotated[None | int, "meta"]
-
-ANNOTATED_FINAL_META: Final[Annotated[int, "meta"]]
-
-ANNOTATED_WRAP_GENERIC: Annotated[list[Annotated[int, "inner"]], "outer"]
-
-class MetaRepr:
-    def __repr__(self) -> str: ...
-
-ANNOTATED_OBJ_META: Annotated[int, MetaRepr()]
-
 class UserBox[T]: ...
 
 class Basic:
