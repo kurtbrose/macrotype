@@ -168,6 +168,9 @@ def stringify_annotation(ann: Any, name_map: dict[int, str]) -> str:
     if isinstance(ann, str):
         return repr(ann)
 
+    if ann is type(None):
+        return "None"
+
     if ann.__class__ is t.ParamSpecArgs:
         origin = getattr(ann, "__origin__", None)
         name = name_map.get(id(origin), _qualname(origin))
