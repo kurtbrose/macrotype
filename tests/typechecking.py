@@ -2,7 +2,7 @@ import typing
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from tests.annotations import Basic
+    from tests.annotations_new import Basic
 else:
     Basic = int
 

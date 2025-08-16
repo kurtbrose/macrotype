@@ -1,6 +1,6 @@
 from math import cos
 
-from tests.annotations import Basic
+from tests.annotations_new import Basic
 
 COS_ALIAS = cos
 

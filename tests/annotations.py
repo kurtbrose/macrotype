@@ -3,7 +3,6 @@
 import collections.abc as cabc
 import functools
 import math
-import re
 import sys
 import types
 import typing
@@ -19,14 +18,12 @@ from typing import (
     ClassVar,
     Final,
     Generic,
-    Literal,
     LiteralString,
     NamedTuple,
     Never,
     NewType,
     NoReturn,
     NotRequired,
-    Optional,
     ParamSpec,
     Protocol,
     Required,
@@ -35,10 +32,8 @@ from typing import (
     TypeGuard,
     TypeVar,
     TypeVarTuple,
-    Union,
     Unpack,
     final,
-    override,
     runtime_checkable,
 )
 
@@ -63,82 +58,6 @@ CovariantT = TypeVar("CovariantT", covariant=True)
 ContravariantT = TypeVar("ContravariantT", contravariant=True)
 TDV = TypeVar("TDV")
 UserId = NewType("UserId", int)
-
-
-class Basic:
-    simple: list[str]
-    mapping: dict[str, int]
-    optional: Optional[int]
-    union: Union[int, str]  # typing.Union should remain unaltered
-    pipe_union: int | str
-    func: Callable[[int, str], bool]
-    annotated: Annotated[int, "meta"]
-    pattern: re.Pattern[str]
-    uid: UserId
-    lit_attr: Literal["a", "b"]
-
-    def copy(self, param: T) -> T: ...
-
-    def curry(self, f: Callable[P, int]) -> Callable[P, int]: ...
-
-    def literal_method(self, flag: Literal["on", "off"]) -> Literal[1, 0]: ...
-
-    @classmethod
-    def cls_method(cls, value: int) -> "Basic": ...
-
-    @classmethod
-    def cls_override(cls) -> int: ...
-
-    @staticmethod
-    def static_method(value: int) -> int: ...
-
-    @staticmethod
-    def static_override() -> int: ...
-
-    @property
-    def prop(self) -> int: ...
-
-    @cached_property
-    def cached(self) -> int: ...
-
-    @property
-    def data(self) -> int: ...
-
-    @data.setter
-    def data(self, value: int) -> None: ...
-
-    @property
-    def temp(self) -> int: ...
-
-    @temp.deleter
-    def temp(self) -> None: ...
-
-    class Nested:
-        x: float
-        y: str
-
-
-class Child(Basic): ...
-
-
-# Edge case: ``@override`` decorator handling
-class OverrideChild(Basic):
-    @override
-    def copy(self, param: T) -> T:
-        return param
-
-
-# Edge case: @override applied after descriptor
-class OverrideLate(Basic):
-    @override
-    @classmethod
-    def cls_override(cls) -> int:
-        return 1
-
-    @override
-    @staticmethod
-    def static_override() -> int:
-        return 2
 
 
 # Property with both setter and deleter
