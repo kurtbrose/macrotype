@@ -20,9 +20,9 @@ def _generate_stubs(paths: list[str], out_dir: Path, command: str) -> list[Path]
         rel = default.relative_to(DEFAULT_OUT_DIR)
         dest = out_dir / rel
         if path.is_file():
-            outputs.append(stubgen.process_file(path, dest, command=command))
+            outputs.append(stubgen.process_file(path, dest, command=command, strict=True))
         else:
-            stubgen.process_directory(path, dest, command=command)
+            stubgen.process_directory(path, dest, command=command, strict=True)
             outputs.append(dest)
     return outputs
 
