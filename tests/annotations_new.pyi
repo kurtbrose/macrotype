@@ -54,6 +54,59 @@ TDV = TypeVar("TDV")
 
 UserId = NewType("UserId", int)
 
+def strip_null(ann: Any, null: Any) -> Any: ...
+
+class Cls:
+    a: int
+    b: None | float
+    c: None | str
+    d: bytes
+
+class OptionalCls:
+    a: None | int
+    b: None | float
+    c: None | str
+    d: None | bytes
+
+class RequiredCls:
+    a: int
+    b: float
+    c: str
+    d: bytes
+
+class PickedCls:
+    a: int
+    b: None | float
+
+class OmittedCls:
+    a: int
+    b: None | float
+
+class FinalCls:
+    a: Final[int]
+    b: Final[float | None]
+    c: Final[str | None]
+    d: Final[bytes]
+
+class ReplacedCls:
+    a: str
+    b: bool
+    c: None | str
+    d: bytes
+
+class BaseInherit:
+    base: int
+
+class SubInherit(BaseInherit):
+    sub: str
+
+class InheritedOmit:
+    base: int
+
+class InheritedFinal:
+    base: Final[int]
+    sub: Final[str]
+
 def pos_only_func(a: int, b: str) -> None: ...
 def kw_only_func(x: int, y: str) -> None: ...
 def pos_and_kw(a: int, b: int, c: int) -> None: ...
