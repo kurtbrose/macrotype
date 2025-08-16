@@ -1,5 +1,6 @@
 # Generated via: macrotype tests/annotations_new.py --modules -o tests/annotations_new.pyi
 # Do not edit by hand
+from collections import deque
 from typing import (
     Annotated,
     Any,
@@ -32,6 +33,8 @@ ContravariantT = TypeVar("ContravariantT", contravariant=True)
 TDV = TypeVar("TDV")
 
 UserId = NewType("UserId", int)
+
+class UserBox[T]: ...
 
 NESTED_ANNOTATED: Annotated[int, "a", "b"]
 
@@ -155,6 +158,12 @@ def UNTYPED_LAMBDA(x, y): ...  # noqa: F821
 def TYPED_LAMBDA(a, b): ...
 
 ANNOTATED_EXTRA: Annotated[str, "extra"]
+
+GENERIC_DEQUE: deque[int]
+
+GENERIC_DEQUE_LIST: deque[list[str]]
+
+GENERIC_USERBOX: UserBox[int]
 
 GLOBAL: int
 
