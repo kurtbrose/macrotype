@@ -1,4 +1,4 @@
-# Generated via: macrotype tests/annotations_new.py --modules -o tests/annotations_new.pyi
+# Generated via: macrotype tests/annotations_new.py --strict -o tests/annotations_new.pyi
 # Do not edit by hand
 from abc import ABC, abstractmethod
 from collections import deque
@@ -379,10 +379,10 @@ class NewGeneric[T]:
     value: T
     def get(self) -> T: ...
 
-class BoundClass[T]:
+class BoundClass[T: int]:
     value: T
 
-class ConstrainedClass[T]:
+class ConstrainedClass[T: (int, str)]:
     value: T
 
 class Color(Enum):
@@ -445,9 +445,9 @@ type AliasListT[T] = list[T]
 
 type AliasTupleTs[*Ts] = tuple[Unpack[Ts]]
 
-type AliasNumberLikeList[NumberLike] = list[NumberLike]
+type AliasNumberLikeList[NumberLike: (int, float)] = list[NumberLike]
 
-type AliasBoundU[U] = list[U]
+type AliasBoundU[U: str] = list[U]
 
 MyList = list[int]
 
