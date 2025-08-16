@@ -2,7 +2,6 @@
 # mypy: allow-any-expr
 import collections.abc as cabc
 import functools
-import math
 import sys
 import types
 import typing
@@ -18,11 +17,9 @@ from typing import (
     LiteralString,
     NewType,
     ParamSpec,
-    TypeGuard,
     TypeVar,
     TypeVarTuple,
     Unpack,
-    final,
 )
 
 import macrotype.meta_types as mt
@@ -48,87 +45,11 @@ TDV = TypeVar("TDV")
 UserId = NewType("UserId", int)
 
 
-# Edge case: ``Concatenate`` parameter handling
 # Edge case: ``Concatenate`` parameter handling (requires PEP 695 generics)
-
-
-# Edge case: direct use of ``P.args`` and ``P.kwargs``
-# Edge case: ``TypeGuard`` return type
-def is_str_list(val: list[object]) -> TypeGuard[list[str]]:
-    return all(isinstance(v, str) for v in val)
-
-
-# Additional TypeGuard example
-def is_int(val: object) -> TypeGuard[int]:
-    return isinstance(val, int)
 
 
 # Edge case: LiteralString handling
 LITERAL_STR_VAR: LiteralString
-
-# Edge case: ``Final`` annotated variable with a value
-PLAIN_FINAL_VAR: Final[int] = 1
-
-# Edge case: alias to a foreign function should be preserved
-SIN_ALIAS = math.sin
-
-# Foreign function with annotation should stay a variable
-COS_VAR: Callable[[float], float] = math.cos
-
-# Edge case: alias to a foreign constant should retain its type
-PI_ALIAS = math.pi
-
-# Variable with pragma comment should retain comment in stub
-PRAGMA_VAR = 1  # type: ignore
-
-
-def local_alias_target(x: int) -> int:
-    return x
-
-
-# Edge case: alias to a local function should be preserved
-LOCAL_ALIAS = local_alias_target
-
-
-def echo_literal(value: LiteralString) -> LiteralString:
-    return value
-
-
-# Edge case: variable annotated as ``None``
-NONE_VAR: None = None
-
-
-# Edge case: async function
-async def async_add_one(x: int) -> int:
-    return x + 1
-
-
-# Edge case: async generator function
-async def gen_range(n: int) -> cabc.AsyncIterator[int]:
-    for i in range(n):
-        yield i
-
-
-# Edge case: ``final`` decorator handling
-@final
-class FinalClass: ...
-
-
-class HasFinalMethod:
-    @final
-    def do_final(self) -> None:
-        pass
-
-
-@final
-def final_func(x: int) -> int:
-    return x
-
-
-# Function with pragma comment should retain comment in stub
-def pragma_func(x: int) -> int:  # pyright: ignore
-    return x
-
 
 # Dict without explicit value type should remain as written
 DICT_WITH_IMPLICIT_ANY: dict[int]  # type: ignore[type-arg]  # pyright: ignore[reportInvalidTypeArguments]

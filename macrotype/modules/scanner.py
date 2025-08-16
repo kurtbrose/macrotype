@@ -127,12 +127,15 @@ def _scan_function(fn: t.Callable) -> FuncDecl:
     if getattr(fn, "__isabstractmethod__", False):
         decos.append("abstractmethod")
 
+    is_async = inspect.iscoroutinefunction(fn) or inspect.isasyncgenfunction(fn)
+
     return FuncDecl(
         name=name.split(".")[-1],
         params=tuple(params),
         ret=ret,
         obj=fn,
         decorators=tuple(decos),
+        is_async=is_async,
     )
 
 

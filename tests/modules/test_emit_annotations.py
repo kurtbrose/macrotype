@@ -48,7 +48,7 @@ def test_emit_annotations_headers_and_imports() -> None:
     assert lines[1] == "# mypy: allow-any-expr"
     expected_imports = [
         "from abc import ABC, abstractmethod",
-        "from collections.abc import AsyncIterator, Iterator, Sequence",
+        "from collections.abc import Iterator, Sequence",
         "from functools import cached_property",
     ]
     assert lines[2:5] == expected_imports

@@ -197,8 +197,8 @@ def test_get_all_decls_includes_nested() -> None:
 
 
 def test_flag_transform() -> None:
-    ann = importlib.import_module("tests.annotations")
-    mi = from_module(ann)
+    ann_new = importlib.import_module("tests.annotations_new")
+    mi = from_module(ann_new)
 
     fc = next(s for s in mi.members if s.name == "FinalClass")
     assert isinstance(fc, ClassDecl)
@@ -215,9 +215,7 @@ def test_flag_transform() -> None:
     assert ff.flags.get("final") is True
     assert "final" not in ff.decorators
 
-    ann_new = importlib.import_module("tests.annotations_new")
-    mi_new = from_module(ann_new)
-    ol = next(s for s in mi_new.members if s.name == "OverrideLate")
+    ol = next(s for s in mi.members if s.name == "OverrideLate")
     assert isinstance(ol, ClassDecl)
     cls_override = next(
         m for m in ol.members if isinstance(m, FuncDecl) and m.name == "cls_override"
@@ -225,7 +223,9 @@ def test_flag_transform() -> None:
     assert cls_override.flags.get("override") is True
     assert "override" in cls_override.decorators
 
-    ab = next(s for s in mi.members if s.name == "AbstractBase")
+    ann_old = importlib.import_module("tests.annotations")
+    mi_old = from_module(ann_old)
+    ab = next(s for s in mi_old.members if s.name == "AbstractBase")
     assert isinstance(ab, ClassDecl)
     assert ab.flags.get("abstract") is True
     m = next(m for m in ab.members if isinstance(m, FuncDecl) and m.name == "do_something")
