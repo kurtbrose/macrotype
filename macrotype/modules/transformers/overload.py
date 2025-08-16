@@ -9,7 +9,7 @@ from macrotype.meta_types import get_overloads as _get_overloads
 from macrotype.modules.ir import ClassDecl, Decl, FuncDecl, ModuleDecl
 from macrotype.modules.scanner import _scan_function
 
-# Helper copied from ``pyi_extract`` to synthesize literal overloads
+# Helper to synthesize literal overloads
 
 
 def _annotation_for_value(value: Any) -> Any:
