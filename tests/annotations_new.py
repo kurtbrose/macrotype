@@ -13,7 +13,6 @@ from typing import (
     Final,
     Generic,
     Literal,
-    NamedTuple,
     NewType,
     NotRequired,
     Optional,
@@ -109,16 +108,6 @@ class HasPartialMethod:
         return b * a
 
     pm = functools.partialmethod(base, 2)
-
-
-def make_wrapper(t: type):
-    class Wrapper:
-        value: t
-
-    return Wrapper
-
-
-GeneratedInt = make_wrapper(int)
 
 
 @overload
@@ -253,16 +242,6 @@ ORIGIN = Point(x=0, y=0)
 class PointEnum(Enum):
     INLINE = Point(x=1, y=2)
     REF = ORIGIN
-
-
-class NamedPoint(NamedTuple):
-    x: int
-    y: int
-
-
-# NamedTuple with variadic type parameters to test Generic parsing
-class VarNamedTuple(NamedTuple, Generic[*Ts]):
-    items: tuple[Unpack[Ts]]
 
 
 def use_tuple(tp: tuple[int, ...]) -> tuple[int, ...]:

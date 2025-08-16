@@ -78,9 +78,9 @@ def from_module(mod: ModuleType, *, strict: bool = False) -> ModuleDecl:
     _t.synthesize_aliases(mi)
     _t.transform_newtypes(mi)
     _t.transform_enums(mi)
-    _t.transform_namedtuples(mi)
     _t.transform_generics(mi)
     _t.transform_dataclasses(mi)
+    _t.transform_namedtuples(mi)
     _t.infer_constant_types(mi)
     _t.prune_inherited_typeddict_fields(mi)
     _t.normalize_descriptors(mi)
@@ -96,6 +96,7 @@ def from_module(mod: ModuleType, *, strict: bool = False) -> ModuleDecl:
 
         for decl in mi.iter_all_decls():
             for site in decl.get_annotation_sites():
-                site.annotation = normalize_annotation(site.annotation)
+                if site.role != "alias_value":
+                    site.annotation = normalize_annotation(site.annotation)
 
     return mi

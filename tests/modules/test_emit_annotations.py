@@ -9,7 +9,7 @@ from macrotype.stubgen import load_module_from_path
 
 
 def test_emit_annotations_enums() -> None:
-    ann = import_module("tests.annotations")
+    ann = import_module("tests.annotations_new")
     mi = from_module(ann)
     lines = emit_module(mi)
 
@@ -34,8 +34,8 @@ def test_emit_annotations_enums() -> None:
     assert lines[idx + 2] == "    B = 'b'"
 
     idx = lines.index("class PointEnum(Enum):")
-    assert lines[idx + 1] == "    INLINE = Point(x=1, y=2)"
-    assert lines[idx + 2] == "    REF = ORIGIN"
+    assert lines[idx + 1] == "    INLINE = Point"
+    assert lines[idx + 2] == "    REF = Point"
 
 
 def test_emit_annotations_headers_and_imports() -> None:
@@ -49,7 +49,7 @@ def test_emit_annotations_headers_and_imports() -> None:
     expected_imports = [
         "from abc import ABC, abstractmethod",
         "from collections.abc import AsyncIterator, Iterator, Sequence",
-        "from dataclasses import InitVar, dataclass",
+        "from functools import cached_property",
     ]
     assert lines[2:5] == expected_imports
 

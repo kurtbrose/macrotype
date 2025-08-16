@@ -45,7 +45,7 @@ def _transform_class(sym: ClassDecl, cls: type) -> None:
         sym.bases = tuple(new_bases)
 
 
-def _transform_function(sym: FuncDecl, fn: Callable) -> None:
+def _transform_function(sym: FuncDecl, fn: Callable, enclosing: tuple[str, ...] = ()) -> None:
     tp_objs = getattr(fn, "__type_params__", None)
     if tp_objs:
         sym.type_params = tuple(_format_type_param(tp) for tp in tp_objs)
@@ -57,19 +57,24 @@ def _transform_function(sym: FuncDecl, fn: Callable) -> None:
     annots = list(hints.values())
     if annots:
         params = sorted(set().union(*(find_typevars(a) for a in annots)))
-        sym.type_params = tuple(params)
+        sym.type_params = tuple(p for p in params if p not in enclosing)
 
 
 def transform_generics(mi: ModuleDecl) -> None:
     """Attach type parameters to classes and functions within ``mi``."""
 
-    for sym in mi.get_all_decls():
+    def walk(sym, enclosing: tuple[str, ...] = ()) -> None:
         match sym:
             case ClassDecl():
                 cls = sym.obj
                 if isinstance(cls, type):
                     _transform_class(sym, cls)
+                for mem in sym.members:
+                    walk(mem, enclosing + sym.type_params)
             case FuncDecl():
                 fn = sym.obj
                 if callable(fn):
-                    _transform_function(sym, fn)
+                    _transform_function(sym, fn, enclosing)
+
+    for sym in mi.members:
+        walk(sym)

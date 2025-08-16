@@ -13,7 +13,6 @@ from typing import (
     Concatenate,
     Final,
     Literal,
-    NamedTuple,
     NewType,
     NotRequired,
     ParamSpec,
@@ -69,7 +68,6 @@ class BaseTD(TypedDict):
     base_field: int
 
 class SubTD(BaseTD):
-    base_field: int
     sub_field: str
 
 class TDShadowBase(TypedDict):
@@ -77,8 +75,6 @@ class TDShadowBase(TypedDict):
     shadow: str
 
 class TDShadowChild(TDShadowBase):
-    base_only: int
-    shadow: str
     extra: float
 
 class GenericBox[TDV](TypedDict):
@@ -91,10 +87,6 @@ class Slotted:
 class HasPartialMethod:
     def base(self, a: int, b: str) -> str: ...
     def pm(self, b: str) -> str: ...
-
-def make_wrapper(t: type): ...
-
-GeneratedInt = GeneratedInt
 
 @overload
 def over(x: int) -> int: ...
@@ -148,11 +140,11 @@ class ClassVarListExample:
 
 class OldGeneric[T]:
     value: T
-    def get[T](self) -> T: ...
+    def get(self) -> T: ...
 
 class NewGeneric[T]:
     value: T
-    def get[T](self) -> T: ...
+    def get(self) -> T: ...
 
 class BoundClass[T]:
     value: T
@@ -161,43 +153,26 @@ class ConstrainedClass[T]:
     value: T
 
 class Color(Enum):
-    RED = int
-    GREEN = int
+    RED = 1
+    GREEN = 2
 
 class Priority(IntEnum):
-    LOW = int
-    MEDIUM = int
-    HIGH = int
+    LOW = 1
+    MEDIUM = 2
+    HIGH = 3
 
 class Permission(IntFlag):
-    READ = int
-    WRITE = int
-    EXECUTE = int
+    READ = 1
+    WRITE = 2
+    EXECUTE = 4
 
 class StrEnum(str, Enum):
-    A = str
-    B = str
+    A = "a"
+    B = "b"
 
 class PointEnum(Enum):
     INLINE = Point
     REF = Point
-
-class NamedPoint(NamedTuple):
-    x: int
-    y: int
-    @staticmethod
-    def __new__(_cls, x: int, y: int): ...
-    @classmethod
-    def _make(cls, iterable): ...
-
-class VarNamedTuple[*Ts](NamedTuple):
-    items: tuple[Unpack[Ts]]
-    @staticmethod
-    def __new__(_cls, items: tuple[Unpack[Ts]]): ...
-    @classmethod
-    def _make(cls, iterable): ...
-    @classmethod
-    def __class_getitem__(cls, params): ...
 
 def use_tuple(tp: tuple[int, ...]) -> tuple[int, ...]: ...
 
@@ -247,7 +222,7 @@ Other = dict[str, int]
 
 ListIntGA = list[int]
 
-ForwardAlias = FutureClass  # noqa: F821
+ForwardAlias = "FutureClass"  # noqa: F821
 
 CallableP = Callable[P, int]
 

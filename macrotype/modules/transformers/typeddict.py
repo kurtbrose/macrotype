@@ -8,7 +8,7 @@ from macrotype.modules.ir import ClassDecl, ModuleDecl
 def _transform_class(sym: ClassDecl, cls: type, td_meta: type) -> None:
     if isinstance(cls, td_meta):
         base_fields: set[str] = set()
-        for base in cls.__mro__[1:]:
+        for base in getattr(cls, "__orig_bases__", ()):
             if isinstance(base, td_meta):
                 base_fields.update(getattr(base, "__annotations__", {}).keys())
         if base_fields:
