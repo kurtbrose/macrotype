@@ -3,9 +3,8 @@
 # pyright: basic
 # mypy: allow-any-expr
 from abc import ABC, abstractmethod
-from collections.abc import AsyncIterator, Iterator, Sequence
+from collections.abc import Iterator, Sequence
 from functools import cached_property
-from math import sin
 from pathlib import Path
 from typing import (
     Annotated,
@@ -16,11 +15,9 @@ from typing import (
     LiteralString,
     NewType,
     ParamSpec,
-    TypeGuard,
     TypeVar,
     TypeVarTuple,
     Unpack,
-    final,
     overload,
 )
 
@@ -42,38 +39,6 @@ TDV = TypeVar("TDV")
 
 UserId = NewType("UserId", int)
 
-def is_str_list(val: list[object]) -> TypeGuard[list[str]]: ...
-def is_int(val: object) -> TypeGuard[int]: ...
-
-PLAIN_FINAL_VAR: Final[int]
-
-SIN_ALIAS = sin
-
-COS_VAR: Callable[[float], float]
-
-PI_ALIAS: float
-
-PRAGMA_VAR: int  # type: ignore
-
-def local_alias_target(x: int) -> int: ...
-
-LOCAL_ALIAS = local_alias_target
-
-def echo_literal(value: LiteralString) -> LiteralString: ...
-
-NONE_VAR: None
-
-async def async_add_one(x: int) -> int: ...
-async def gen_range(n: int) -> AsyncIterator[int]: ...
-@final
-class FinalClass: ...
-
-class HasFinalMethod:
-    @final
-    def do_final(self) -> None: ...
-
-def final_func(x: int) -> int: ...
-def pragma_func(x: int) -> int: ...  # pyright: ignore
 def pos_only_func(a: int, b: str, /) -> None: ...
 def kw_only_func(*, x: int, y: str) -> None: ...
 def pos_and_kw(a: int, /, b: int, *, c: int) -> None: ...

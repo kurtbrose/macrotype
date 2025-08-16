@@ -1,9 +1,11 @@
 # Generated via: macrotype tests/annotations_new.py --modules -o tests/annotations_new.pyi
 # Do not edit by hand
 from collections import deque
+from collections.abc import AsyncIterator
 from dataclasses import InitVar, dataclass
 from enum import Enum, IntEnum, IntFlag
 from functools import cached_property
+from math import sin
 from re import Pattern
 from typing import (
     Annotated,
@@ -13,6 +15,7 @@ from typing import (
     Concatenate,
     Final,
     Literal,
+    LiteralString,
     Never,
     NewType,
     NoReturn,
@@ -22,9 +25,11 @@ from typing import (
     Required,
     Self,
     TypedDict,
+    TypeGuard,
     TypeVar,
     TypeVarTuple,
     Unpack,
+    final,
     overload,
     override,
     runtime_checkable,
@@ -51,6 +56,38 @@ UserId = NewType("UserId", int)
 def sum_of(*args: tuple[int]) -> int: ...
 def dict_echo(**kwargs: dict[str, Any]) -> dict[str, Any]: ...
 def use_params[**P](func: Callable[P, int], *args: P.args, **kwargs: P.kwargs) -> int: ...
+def is_str_list(val: list[object]) -> TypeGuard[list[str]]: ...
+def is_int(val: object) -> TypeGuard[int]: ...
+
+PLAIN_FINAL_VAR: Final[int]
+
+SIN_ALIAS = sin
+
+COS_VAR: Callable[[float], float]
+
+PI_ALIAS: float
+
+PRAGMA_VAR: int  # type: ignore
+
+def local_alias_target(x: int) -> int: ...
+
+LOCAL_ALIAS = local_alias_target
+
+def echo_literal(value: LiteralString) -> LiteralString: ...
+
+NONE_VAR: None
+
+async def async_add_one(x: int) -> int: ...
+async def gen_range(n: int) -> AsyncIterator[int]: ...
+@final
+class FinalClass: ...
+
+class HasFinalMethod:
+    @final
+    def do_final(self) -> None: ...
+
+def final_func(x: int) -> int: ...
+def pragma_func(x: int) -> int: ...  # pyright: ignore
 def do_nothing() -> None: ...
 def always_raises() -> Never: ...
 def never_returns() -> Never: ...

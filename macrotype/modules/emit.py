@@ -294,7 +294,7 @@ def _emit_decl(sym: Decl, name_map: dict[int, str], *, indent: int) -> list[str]
             line = _add_comment(line, sym.comment or site.comment)
             return [line]
 
-        case FuncDecl(params=params, ret=ret, decorators=decos, type_params=tp):
+        case FuncDecl(params=params, ret=ret, decorators=decos, type_params=tp, is_async=is_async):
             pieces: list[str] = []
             for d in decos:
                 pieces.append(f"{pad}@{d}")
@@ -310,7 +310,8 @@ def _emit_decl(sym: Decl, name_map: dict[int, str], *, indent: int) -> list[str]
                     param_strs.append(f"{name}: {stringify_annotation(p.annotation, name_map)}")
             ret_str = f" -> {stringify_annotation(ret.annotation, name_map)}" if ret else ""
             tp_str = f"[{', '.join(tp)}]" if tp else ""
-            line = f"{pad}def {sym.name}{tp_str}({', '.join(param_strs)}){ret_str}: ..."
+            prefix = "async " if is_async else ""
+            line = f"{pad}{prefix}def {sym.name}{tp_str}({', '.join(param_strs)}){ret_str}: ..."
             line = _add_comment(line, sym.comment)
             pieces.append(line)
             return pieces

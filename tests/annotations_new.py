@@ -1,4 +1,6 @@
+import collections.abc as cabc
 import functools
+import math
 import re
 from dataclasses import InitVar, dataclass
 from enum import Enum, IntEnum, IntFlag
@@ -13,6 +15,7 @@ from typing import (
     Final,
     Generic,
     Literal,
+    LiteralString,
     Never,
     NewType,
     NoReturn,
@@ -25,10 +28,12 @@ from typing import (
     TypeAlias,
     TypeAliasType,
     TypedDict,
+    TypeGuard,
     TypeVar,
     TypeVarTuple,
     Union,
     Unpack,
+    final,
     overload,
     override,
     runtime_checkable,
@@ -60,6 +65,84 @@ def dict_echo(**kwargs: dict[str, Any]) -> dict[str, Any]:
 # Edge case: direct use of ``P.args`` and ``P.kwargs``
 def use_params(func: Callable[P, int], *args: P.args, **kwargs: P.kwargs) -> int:
     return func(*args, **kwargs)
+
+
+# Edge case: ``TypeGuard`` return type
+def is_str_list(val: list[object]) -> TypeGuard[list[str]]:
+    return all(isinstance(v, str) for v in val)
+
+
+# Additional TypeGuard example
+def is_int(val: object) -> TypeGuard[int]:
+    return isinstance(val, int)
+
+
+# Edge case: ``Final`` annotated variable with a value
+PLAIN_FINAL_VAR: Final[int] = 1
+
+
+# Edge case: alias to a foreign function should be preserved
+SIN_ALIAS = math.sin
+
+
+# Foreign function with annotation should stay a variable
+COS_VAR: Callable[[float], float] = math.cos
+
+
+# Edge case: alias to a foreign constant should retain its type
+PI_ALIAS = math.pi
+
+
+# Variable with pragma comment should retain comment in stub
+PRAGMA_VAR = 1  # type: ignore
+
+
+def local_alias_target(x: int) -> int:
+    return x
+
+
+# Edge case: alias to a local function should be preserved
+LOCAL_ALIAS = local_alias_target
+
+
+def echo_literal(value: LiteralString) -> LiteralString:
+    return value
+
+
+# Edge case: variable annotated as ``None``
+NONE_VAR: None = None
+
+
+# Edge case: async function
+async def async_add_one(x: int) -> int:
+    return x + 1
+
+
+# Edge case: async generator function
+async def gen_range(n: int) -> cabc.AsyncIterator[int]:
+    for i in range(n):
+        yield i
+
+
+# Edge case: ``final`` decorator handling
+@final
+class FinalClass: ...
+
+
+class HasFinalMethod:
+    @final
+    def do_final(self) -> None:
+        pass
+
+
+@final
+def final_func(x: int) -> int:
+    return x
+
+
+# Function with pragma comment should retain comment in stub
+def pragma_func(x: int) -> int:  # pyright: ignore
+    return x
 
 
 # Edge case: function explicitly returning ``None``

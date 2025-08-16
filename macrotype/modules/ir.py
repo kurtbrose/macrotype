@@ -53,6 +53,7 @@ class FuncDecl(Decl):
     decorators: tuple[str, ...] = ()
     type_params: tuple[str, ...] = ()
     flags: dict[str, bool] = field(default_factory=dict)  # e.g., staticmethod, classmethod
+    is_async: bool = False
 
     def get_annotation_sites(self) -> tuple[Site, ...]:
         sites = list(self.params)
