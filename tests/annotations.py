@@ -28,20 +28,3 @@ def strip_null(ann: Any, null: Any) -> Any:
             result |= a
         return result
     return ann
-
-
-# Callable wrapped by non-function object with __wrapped__
-def _wrap(fn):
-    class Wrapper:
-        def __init__(self, f):
-            self._f = f
-            self.__wrapped__ = f
-
-        def __call__(self, *a, **kw):
-            return self._f(*a, **kw)
-
-    return Wrapper(fn)
-
-
-@_wrap
-def wrapped_callable(x: int, y: str) -> str: ...

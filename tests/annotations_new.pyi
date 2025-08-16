@@ -587,6 +587,8 @@ class OverrideLate(Basic):
     @override
     def static_override() -> int: ...
 
+def wrapped_callable(x: int, y: str) -> str: ...
+
 LITERAL_STR_VAR: LiteralString
 
 DICT_WITH_IMPLICIT_ANY: dict[int]  # type: ignore[type-arg]  # pyright: ignore[reportInvalidTypeArguments]
