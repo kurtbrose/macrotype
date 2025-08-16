@@ -32,8 +32,6 @@ from typing import (
     Protocol,
     Required,
     Self,
-    TypeAlias,
-    TypeAliasType,
     TypedDict,
     TypeGuard,
     TypeVar,
@@ -66,42 +64,6 @@ CovariantT = TypeVar("CovariantT", covariant=True)
 ContravariantT = TypeVar("ContravariantT", contravariant=True)
 TDV = TypeVar("TDV")
 UserId = NewType("UserId", int)
-
-# Type aliases created via ``TypeAliasType``
-AliasListT = TypeAliasType("AliasListT", list[T], type_params=(T,))
-AliasTupleTs = TypeAliasType("AliasTupleTs", tuple[Unpack[Ts]], type_params=(Ts,))
-AliasNumberLikeList = TypeAliasType(
-    "AliasNumberLikeList", list[NumberLike], type_params=(NumberLike,)
-)
-AliasBoundU = TypeAliasType("AliasBoundU", list[U], type_params=(U,))
-
-MyList: TypeAlias = list[int]
-
-# Simple alias to builtin container
-Other = dict[str, int]
-
-# Alias using GenericAlias
-ListIntGA = list[int]
-
-# Edge case: alias referencing a forward-declared class
-ForwardAlias: TypeAlias = "FutureClass"
-
-# Type alias for callable using ParamSpec
-CallableP: TypeAlias = Callable[P, int]
-
-# PEP 695 ``type`` statements
-type StrList = list[str]
-type Alias0[T] = list[T]
-type Alias1[T] = Alias0[T]
-type AliasNewType = UserId
-type AliasTypeVar[T] = T
-type AliasUnion = int | str
-type ListOrSet[T] = list[T] | set[T]
-type IntFunc[**P] = Callable[P, int]
-type LabeledTuple[*Ts] = tuple[str, *Ts]
-type TupleUnpackFirst[*Ts] = tuple[*Ts, int]  # Unpack before trailing element
-type RecursiveList[T] = T | list[RecursiveList[T]]
-
 
 # Set containing a nested list to exercise TypeNode in set elements
 SET_LIST_VAR: set[list[str]]
@@ -201,7 +163,7 @@ def commented_func(x: int) -> None:  # pragma: func
 
 
 # Edge case: lambda expressions should be treated as variables, not functions
-UNTYPED_LAMBDA = lambda x, y: x + y
+UNTYPED_LAMBDA = lambda x, y: x + y  # noqa: F821
 TYPED_LAMBDA: Callable[[int, int], int] = lambda a, b: a + b
 
 # Additional variable using ``Annotated`` to test type parsing

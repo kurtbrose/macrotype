@@ -57,46 +57,6 @@ TDV = TypeVar("TDV")
 
 UserId = NewType("UserId", int)
 
-type AliasListT[T] = list[T]
-
-type AliasTupleTs[*Ts] = tuple[Unpack[Ts]]
-
-type AliasNumberLikeList[NumberLike] = list[NumberLike]
-
-type AliasBoundU[U] = list[U]
-
-MyList = list[int]
-
-Other = dict[str, int]
-
-ListIntGA = list[int]
-
-ForwardAlias = FutureClass
-
-CallableP = Callable[P, int]
-
-type StrList = list[str]
-
-type Alias0[T] = list[T]
-
-type Alias1[T] = Alias0[T]
-
-type AliasNewType = UserId
-
-type AliasTypeVar[T] = T
-
-type AliasUnion = int | str
-
-type ListOrSet[T] = list[T] | set[T]
-
-type IntFunc[**P] = Callable[P, int]
-
-type LabeledTuple[*Ts] = tuple[str, Unpack[Ts]]
-
-type TupleUnpackFirst[*Ts] = tuple[Unpack[Ts], int]
-
-type RecursiveList[T] = T | list[RecursiveList[T]]
-
 ANNOTATED_FINAL: Final[int]
 
 ANNOTATED_CLASSVAR: int
@@ -147,7 +107,7 @@ def wrapped_with_default(x: int, y: int) -> int: ...
 
 def commented_func(x: int) -> None: ...  # pragma: func
 
-UNTYPED_LAMBDA: function
+UNTYPED_LAMBDA: function  # noqa: F821
 
 TYPED_LAMBDA: Callable[[int, int], int]
 

@@ -130,7 +130,7 @@ case4 = (
         ],
     ),
     [
-        "from typing import Callable, Union",
+        "from typing import Callable",
         "",
         "cb1: Callable[[int, str], bool]",
         "",
@@ -138,7 +138,7 @@ case4 = (
         "",
         "nested: list[Callable[[int], str]]",
         "",
-        "combo: Union[Callable[[int], str], Callable[..., bool]]",
+        "combo: Callable[[int], str] | Callable[..., bool]",
     ],
 )
 
@@ -190,9 +190,7 @@ case7 = (
         ],
     ),
     [
-        "from typing import Union",
-        "",
-        "u: Union[int, str]",
+        "u: int | str",
         "",
         "s: 'A'",
     ],
