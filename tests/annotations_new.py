@@ -1,9 +1,29 @@
-from typing import Any, Callable, Concatenate, Final, ParamSpec
+from typing import (
+    Any,
+    Callable,
+    Concatenate,
+    Final,
+    NewType,
+    ParamSpec,
+    TypeAlias,
+    TypeAliasType,
+    TypeVar,
+    TypeVarTuple,
+    Unpack,
+)
 
 from macrotype.meta_types import overload_for
 
-# Function using ParamSpecArgs and ParamSpecKwargs
 P = ParamSpec("P")
+
+T = TypeVar("T")
+Ts = TypeVarTuple("Ts")
+U = TypeVar("U", bound=str)
+NumberLike = TypeVar("NumberLike", int, float)
+CovariantT = TypeVar("CovariantT", covariant=True)
+ContravariantT = TypeVar("ContravariantT", contravariant=True)
+TDV = TypeVar("TDV")
+UserId = NewType("UserId", int)
 
 
 def with_paramspec_args_kwargs(fn: Callable[P, int], *args: P.args, **kwargs: P.kwargs) -> int: ...
@@ -36,6 +56,42 @@ def parse_int_or_none(val: str | None) -> int | None:
     return int(val)
 
 
+# Type aliases created via ``TypeAliasType``
+AliasListT = TypeAliasType("AliasListT", list[T], type_params=(T,))
+AliasTupleTs = TypeAliasType("AliasTupleTs", tuple[Unpack[Ts]], type_params=(Ts,))
+AliasNumberLikeList = TypeAliasType(
+    "AliasNumberLikeList", list[NumberLike], type_params=(NumberLike,)
+)
+AliasBoundU = TypeAliasType("AliasBoundU", list[U], type_params=(U,))
+
+MyList: TypeAlias = list[int]
+
+# Simple alias to builtin container
+Other = dict[str, int]
+
+# Alias using GenericAlias
+ListIntGA = list[int]
+
+# Edge case: alias referencing a forward-declared class
+ForwardAlias: TypeAlias = "FutureClass"  # noqa: F821
+
+# Type alias for callable using ParamSpec
+CallableP: TypeAlias = Callable[P, int]
+
+# PEP 695 ``type`` statements
+type StrList = list[str]
+type Alias0[T] = list[T]
+type Alias1[T] = Alias0[T]
+type AliasNewType = UserId
+type AliasTypeVar[T] = T
+type AliasUnion = int | str
+type ListOrSet[T] = list[T] | set[T]
+type IntFunc[**P] = Callable[P, int]
+type LabeledTuple[*Ts] = tuple[str, *Ts]
+type TupleUnpackFirst[*Ts] = tuple[*Ts, int]  # Unpack before trailing element
+type RecursiveList[T] = T | list[RecursiveList[T]]
+
+
 # Basic variable annotations
 GLOBAL: int
 CONST: Final[str]
@@ -54,3 +110,6 @@ TUPLE_VAR: tuple[int, ...]
 # Variable using set and frozenset types to test container formatting
 SET_VAR: set[int]
 FROZENSET_VAR: frozenset[str]
+
+
+class FutureClass: ...

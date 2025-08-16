@@ -66,7 +66,7 @@ def test_typeddict_fields(idx: dict[str, object]) -> None:
 
 
 def test_aliases() -> None:
-    ann = importlib.import_module("tests.annotations")
+    ann = importlib.import_module("tests.annotations_new")
     mi = scan_module(ann)
     canonicalize_foreign_symbols(mi)
     by_key = {s.name: s for s in mi.members}

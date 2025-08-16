@@ -48,13 +48,10 @@ def synthesize_aliases(mi: ModuleDecl) -> None:
             sym.obj_type = obj
             params: list[str] = []
             for tp in getattr(obj, "__type_params__", ()):  # pragma: no cover - py312+
-                if glb.get(tp.__name__) is tp:
-                    if isinstance(tp, t.ParamSpec):
-                        params.append(f"**{tp.__name__}")
-                    elif isinstance(tp, t.TypeVarTuple):
-                        params.append(f"*{tp.__name__}")
-                    else:
-                        params.append(tp.__name__)
+                if isinstance(tp, t.ParamSpec):
+                    params.append(f"**{tp.__name__}")
+                elif isinstance(tp, t.TypeVarTuple):
+                    params.append(f"*{tp.__name__}")
                 else:
                     params.append(tp.__name__)
             sym.type_params = tuple(params)

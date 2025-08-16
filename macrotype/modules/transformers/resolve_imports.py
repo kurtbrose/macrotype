@@ -40,6 +40,7 @@ def resolve_imports(mi: ModuleDecl) -> None:
             (
                 getattr(a, "__module__", None) == "typing"
                 and not isinstance(a, (t.TypeVar, t.ParamSpec, t.TypeVarTuple))
+                and a is not t.Union
             )
             or a is Callable
             or a is ABC_Callable
