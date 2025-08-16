@@ -81,6 +81,7 @@ BAD = [
     TyApp(base=b("tuple"), args=(b("Ellipsis"), b("int"))),  # tuple[..., int] invalid
     TyApp(base=b("tuple"), args=(b("int"), b("Ellipsis"), b("str"))),  # Ellipsis not last
     TyApp(base=b("tuple"), args=(b("int"), b("Ellipsis"), b("Ellipsis"))),  # multiple Ellipsis
+    TyApp(base=b("tuple"), args=(TyTypeVarTuple(name="Ts"),)),  # tuple[Ts] missing Unpack
     TyUnion(options=()),  # empty Union slipped through
     TyUnpack(inner=TyTypeVarTuple(name="Ts")),  # Unpack outside tuple/Concatenate
 ]
