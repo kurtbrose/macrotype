@@ -1,11 +1,9 @@
 from importlib import import_module
-from pathlib import Path
 from types import ModuleType
 from typing import Annotated
 
 from macrotype.meta_types import emit_as, set_module
 from macrotype.modules import emit_module, from_module
-from macrotype.stubgen import load_module_from_path
 
 
 def test_emit_annotations_enums() -> None:
@@ -45,20 +43,6 @@ def test_emit_annotations_typevars() -> None:
 
     assert 'U = TypeVar("U", bound=str)' in lines
     assert 'NumberLike = TypeVar("NumberLike", int, float)' in lines
-
-
-def test_emit_annotations_headers_and_imports() -> None:
-    path = Path(__file__).resolve().parent.parent / "annotations.py"
-    ann = load_module_from_path(path)
-    mi = from_module(ann)
-    lines = emit_module(mi)
-
-    assert lines[0] == "# pyright: basic"
-    assert lines[1] == "# mypy: allow-any-expr"
-    # All type variable declarations were migrated to ``annotations_new.py``.
-    # ``annotations.py`` now contains only header directives, so no imports are
-    # expected in the emitted stub.
-    assert lines[2:] == []
 
 
 def test_emit_annotations_inline_meta() -> None:

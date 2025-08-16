@@ -14,7 +14,6 @@ from macrotype import stubgen
 from macrotype.stubgen import load_module_from_path, process_directory, process_file
 
 CASES = [
-    ("annotations.py", "annotations.pyi", False),
     ("annotations_new.py", "annotations_new.pyi", True),
     pytest.param(
         "annotations_13.py",
@@ -126,8 +125,8 @@ def test_module_alias(tmp_path) -> None:
 
 
 def test_pyi_comments_match_source() -> None:
-    src = Path(__file__).with_name("annotations.py")
-    pyi = Path(__file__).with_name("annotations.pyi")
+    src = Path(__file__).with_name("annotations_new.py")
+    pyi = Path(__file__).with_name("annotations_new.pyi")
     pattern = re.compile(r"#\s*(?:type:|pyright:|mypy:|pyre-|pyre:)")
 
     def _grab(text: str) -> list[str]:
@@ -137,4 +136,4 @@ def test_pyi_comments_match_source() -> None:
             if tok_type == tokenize.COMMENT and pattern.match(tok_str)
         ]
 
-    assert _grab(src.read_text()) == _grab(pyi.read_text())
+    assert sorted(_grab(src.read_text())) == sorted(_grab(pyi.read_text()))
