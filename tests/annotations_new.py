@@ -17,7 +17,9 @@ from typing import (
     NotRequired,
     Optional,
     ParamSpec,
+    Protocol,
     Required,
+    Self,
     TypeAlias,
     TypeAliasType,
     TypedDict,
@@ -27,6 +29,7 @@ from typing import (
     Unpack,
     overload,
     override,
+    runtime_checkable,
 )
 
 from macrotype.meta_types import overload_for
@@ -41,6 +44,48 @@ CovariantT = TypeVar("CovariantT", covariant=True)
 ContravariantT = TypeVar("ContravariantT", contravariant=True)
 TDV = TypeVar("TDV")
 UserId = NewType("UserId", int)
+
+
+# Self and runtime checkable protocol examples
+class SelfExample:
+    def clone(self: Self) -> Self:
+        return self
+
+
+class SelfFactory:
+    def __init__(self, value: int) -> None:
+        self.value = value
+
+    @classmethod
+    def create(cls: type[Self], value: int) -> Self:
+        return cls(value)
+
+
+@runtime_checkable
+class Runnable(Protocol):
+    def run(self) -> int: ...
+
+
+# runtime_checkable applied after class definition should be preserved
+class LaterRunnable(Protocol):
+    def run(self) -> int: ...
+
+
+LaterRunnable = runtime_checkable(LaterRunnable)
+
+
+# Protocol auto methods should be pruned
+class NoProtoMethods(Protocol):
+    pass
+
+
+class Info(TypedDict):
+    name: str
+    age: int
+
+
+def with_kwargs(**kwargs: Unpack[Info]) -> Info:
+    return kwargs
 
 
 # Property with both setter and deleter

@@ -20,15 +20,11 @@ from typing import (
     NewType,
     NoReturn,
     ParamSpec,
-    Protocol,
-    Self,
-    TypedDict,
     TypeGuard,
     TypeVar,
     TypeVarTuple,
     Unpack,
     final,
-    runtime_checkable,
 )
 
 import macrotype.meta_types as mt
@@ -52,47 +48,6 @@ CovariantT = TypeVar("CovariantT", covariant=True)
 ContravariantT = TypeVar("ContravariantT", contravariant=True)
 TDV = TypeVar("TDV")
 UserId = NewType("UserId", int)
-
-
-class SelfExample:
-    def clone(self: Self) -> Self:
-        return self
-
-
-class SelfFactory:
-    def __init__(self, value: int) -> None:
-        self.value = value
-
-    @classmethod
-    def create(cls: type[Self], value: int) -> Self:
-        return cls(value)
-
-
-@runtime_checkable
-class Runnable(Protocol):
-    def run(self) -> int: ...
-
-
-# runtime_checkable applied after class definition should be preserved
-class LaterRunnable(Protocol):
-    def run(self) -> int: ...
-
-
-LaterRunnable = runtime_checkable(LaterRunnable)
-
-
-# Protocol auto methods should be pruned
-class NoProtoMethods(Protocol):
-    pass
-
-
-class Info(TypedDict):
-    name: str
-    age: int
-
-
-def with_kwargs(**kwargs: Unpack[Info]) -> Info:
-    return kwargs
 
 
 def sum_of(*args: tuple[int]) -> int:
