@@ -16,7 +16,6 @@ from typing import (
     Any,
     Callable,
     ClassVar,
-    Concatenate,
     Final,
     Literal,
     LiteralString,
@@ -507,8 +506,6 @@ def as_tuple[*Ts](*args: Unpack[Ts]) -> tuple[Unpack[Ts]]: ...
 class Variadic[*Ts]:
     def __init__(self, *args: Unpack[Ts]) -> None: ...
     def to_tuple(self) -> tuple[Unpack[Ts]]: ...
-
-def prepend_one[**P](fn: Callable[Concatenate[int, P], int]) -> Callable[P, int]: ...
 
 @overload
 def special_neg(val: Literal[0]) -> Literal[0]: ...
