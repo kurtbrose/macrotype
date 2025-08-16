@@ -4,8 +4,6 @@
 # mypy: allow-any-expr
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Iterator, Sequence
-from dataclasses import InitVar, dataclass
-from enum import Enum, IntEnum, IntFlag
 from functools import cached_property
 from math import sin
 from pathlib import Path
@@ -13,18 +11,14 @@ from typing import (
     Annotated,
     Any,
     Callable,
-    ClassVar,
     Final,
     Literal,
     LiteralString,
-    NamedTuple,
     Never,
     NewType,
     NoReturn,
-    NotRequired,
     ParamSpec,
     Protocol,
-    Required,
     Self,
     TypedDict,
     TypeGuard,
@@ -53,151 +47,6 @@ ContravariantT = TypeVar("ContravariantT", contravariant=True)
 TDV = TypeVar("TDV")
 
 UserId = NewType("UserId", int)
-
-class ManualProperty:
-    @property
-    def both(self) -> int: ...
-    @both.setter
-    def both(self, value: int) -> None: ...
-    @both.deleter
-    def both(self) -> None: ...
-
-class SampleDict(TypedDict):
-    name: str
-    age: int
-
-class PartialDict(TypedDict, total=False):
-    id: int
-    hint: str
-
-class MixedDict(TypedDict):
-    required_field: int
-    optional_field: NotRequired[str]
-    required_override: Required[int]
-
-class BaseTD(TypedDict):
-    base_field: int
-
-class SubTD(BaseTD):
-    sub_field: str
-
-class TDShadowBase(TypedDict):
-    base_only: int
-    shadow: str
-
-class TDShadowChild(TDShadowBase):
-    extra: float
-
-class GenericBox[TDV](TypedDict):
-    item: TDV
-
-class Slotted:
-    x: int
-    y: str
-
-class HasPartialMethod:
-    def base(self, a: int, b: str) -> str: ...
-    def pm(self, b: str) -> str: ...
-
-def make_wrapper(t: type): ...
-
-class GeneratedInt:
-    value: int
-
-@overload
-def over(x: int) -> int: ...
-@overload
-def over(x: str) -> str: ...
-@dataclass
-class Point:
-    x: int
-    y: int
-
-@dataclass(frozen=True, slots=True)
-class Frozen:
-    a: int
-    b: int
-
-@dataclass(kw_only=True)
-class KwOnlyPoint:
-    x: int
-    y: int
-
-@dataclass(eq=False)
-class NoAutoEq:
-    x: int
-    def __eq__(self, other: object) -> bool: ...
-
-@dataclass(order=True, match_args=False, slots=True, weakref_slot=True)
-class OptionDataclass:
-    value: int
-
-@dataclass
-class InitVarExample:
-    x: int
-    init_only: InitVar[int]
-    init_list: InitVar[list[int]]
-    def __post_init__(self, init_only: int, init_list: list[int]) -> None: ...
-
-@dataclass
-class Outer:
-    x: int
-    @dataclass
-    class Inner:
-        y: int
-
-@dataclass
-class ClassVarExample:
-    x: int
-    y: ClassVar[int]
-
-class ClassVarListExample:
-    items: ClassVar[list[int]]
-
-class OldGeneric[T]:
-    value: T
-    def get(self) -> T: ...
-
-class NewGeneric[T]:
-    value: T
-    def get(self) -> T: ...
-
-class BoundClass[T: int]:
-    value: T
-
-class ConstrainedClass[T: (int, str)]:
-    value: T
-
-class Color(Enum):
-    RED = 1
-    GREEN = 2
-
-class Priority(IntEnum):
-    LOW = 1
-    MEDIUM = 2
-    HIGH = 3
-
-class Permission(IntFlag):
-    READ = 1
-    WRITE = 2
-    EXECUTE = 4
-
-class StrEnum(str, Enum):
-    A = "a"
-    B = "b"
-
-class PointEnum(Enum):
-    INLINE = Point(x=1, y=2)
-    REF = Point(x=0, y=0)
-
-class NamedPoint(NamedTuple):
-    x: int
-    y: int
-
-class VarNamedTuple[*Ts](NamedTuple):
-    items: tuple[Unpack[Ts]]
-
-def use_tuple(tp: tuple[int, ...]) -> tuple[int, ...]: ...
 
 class SelfExample:
     def clone(self: Self) -> Self: ...

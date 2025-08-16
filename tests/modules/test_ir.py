@@ -125,8 +125,8 @@ def test_properties_detected_as_functions_or_vars(idx: dict[str, object]) -> Non
 
 
 def test_variadic_things_dont_crash(idx: dict[str, object]) -> None:
-    vnt = get(idx, "VarNamedTuple")
-    assert isinstance(vnt, ClassDecl)
+    alias = get(idx, "AliasTupleTs")
+    assert isinstance(alias, TypeDefDecl)
 
 
 def test_simple_alias_to_foreign() -> None:
@@ -156,7 +156,7 @@ def test_td_inheritance(idx: dict[str, object]) -> None:
 
 
 def test_dataclass_transform() -> None:
-    ann = importlib.import_module("tests.annotations")
+    ann = importlib.import_module("tests.annotations_new")
     mi = from_module(ann)
     frozen = next(s for s in mi.members if s.name == "Frozen")
     assert isinstance(frozen, ClassDecl)

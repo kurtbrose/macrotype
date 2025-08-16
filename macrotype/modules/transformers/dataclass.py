@@ -37,7 +37,10 @@ _AUTO_DATACLASS_METHODS = {
     "_dataclass_getstate",
     "_dataclass_setstate",
     "__getattribute__",
+    # ``dataclasses`` generates a private ``_replace`` helper used by
+    # ``dataclasses.replace``. This method should not appear in stubs.
     "__replace__",
+    "_replace",
 }
 
 
@@ -57,7 +60,9 @@ def _dataclass_auto_methods(
         "_dataclass_getstate",
         "_dataclass_setstate",
         "__getattribute__",
+        # See comment above – ``_replace`` is an auto-generated helper.
         "__replace__",
+        "_replace",
     }
     if params.eq:
         auto_methods.add("__eq__")

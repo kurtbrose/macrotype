@@ -37,6 +37,7 @@ exclude = [
     "tests/annotations_13.py",
     "tests/annotations_13.pyi",
     "tests/annotations.pyi",
+    "tests/annotations_new.pyi",
     "tests/typechecking.pyi",
     ".git",
     "macrotype/*.pyi",
