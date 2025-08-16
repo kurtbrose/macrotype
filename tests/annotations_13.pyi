@@ -1,5 +1,6 @@
-# Generated via: macrotype tests/annotations_13.py -o -
+# Generated via: macrotype tests/annotations_13.py --strict -o tests/annotations_13.pyi
 # Do not edit by hand
+# from https://docs.python.org/3.13/reference/compound_stmts.html#type-params
 from typing import Callable
 
 def overly_generic[

@@ -24,7 +24,6 @@ def test_cli_stub_overlay_dir(tmp_path, overlay_subdir):
         "-m",
         "macrotype",
         str(src),
-        "--modules",
         "-o",
         str(dest),
     ]

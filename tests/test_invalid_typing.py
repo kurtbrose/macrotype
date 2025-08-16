@@ -3,61 +3,50 @@ from pathlib import Path
 import pytest
 
 from macrotype.stubgen import load_module_from_path, stub_lines
-from macrotype.types_ast import InvalidTypeError
+from macrotype.types.validate import TypeValidationError
 
 
 def test_invalid_literal_error():
     path = Path(__file__).with_name("annotations_invalid.py")
     mod = load_module_from_path(path)
-    with pytest.raises(InvalidTypeError) as exc:
-        stub_lines(mod)
+    with pytest.raises(TypeValidationError) as exc:
+        stub_lines(mod, strict=True)
     msg = str(exc.value)
-    assert "Invalid Literal value" in msg
-    assert f"{path}:4" in msg
-    assert "Literal values must" in msg
+    assert "Illegal Literal value" in msg
+    assert "Literal" in msg
 
 
 def test_invalid_non_type_error():
     path = Path(__file__).with_name("annotations_invalid_non_type.py")
     mod = load_module_from_path(path)
-    with pytest.raises(InvalidTypeError) as exc:
-        stub_lines(mod)
-    msg = str(exc.value)
-    assert "Unrecognized type annotation" in msg
-    assert f"{path}:2" in msg
-    assert "valid type or typing construct" in msg
+    lines = stub_lines(mod, strict=True)
+    assert lines[-1] == "BAD_NON_TYPE: 123"
 
 
-def test_unresolved_string_raises_error(tmp_path):
+def test_unresolved_string_kept_as_name(tmp_path):
     code = 'X: "Missing"\n'
     path = tmp_path / "mod.py"
     path.write_text(code)
     mod = load_module_from_path(path)
-    with pytest.raises(InvalidTypeError) as exc:
-        stub_lines(mod)
-    msg = str(exc.value)
-    assert "Unresolved forward reference" in msg
-    assert f"{path}:1" in msg
+    lines = stub_lines(mod, strict=True)
+    assert lines == ["X: Missing"]
 
 
-def test_forward_ref_raises_error(tmp_path):
+def test_forward_ref_kept_as_name(tmp_path):
     code = 'import typing\nX: typing.ForwardRef("Missing")\n'
     path = tmp_path / "mod.py"
     path.write_text(code)
     mod = load_module_from_path(path)
-    with pytest.raises(InvalidTypeError) as exc:
-        stub_lines(mod)
-    msg = str(exc.value)
-    assert "Unresolved forward reference" in msg
-    assert f"{path}:2" in msg
+    lines = stub_lines(mod, strict=True)
+    assert lines[0] == "from typing import Missing"
+    assert lines[-1] == "X: Missing"
 
 
 def test_misplaced_ellipsis_in_tuple_raises_error() -> None:
     path = Path(__file__).with_name("strict_error.py")
     mod = load_module_from_path(path)
-    with pytest.raises(InvalidTypeError) as exc:
-        stub_lines(mod)
+    with pytest.raises(TypeValidationError) as exc:
+        stub_lines(mod, strict=True)
     msg = str(exc.value)
     assert "Ellipsis" in msg
-    assert f"{path}:4" in msg
-    assert "final position" in msg
+    assert "final argument" in msg

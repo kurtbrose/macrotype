@@ -89,9 +89,6 @@ class _TypeCheckingTransformer(ast.NodeTransformer):
         return node
 
 
-from .pyi_extract import PyiModule
-
-
 def _exec_with_type_checking(code: str, module: ModuleType) -> None:
     """Execute *code* in *module* with ``TYPE_CHECKING`` blocks enabled."""
     tree = ast.parse(code)
@@ -198,19 +195,11 @@ def load_module_from_code(
     return module
 
 
-def stub_lines(
-    module: ModuleType,
-    *,
-    use_modules: bool = False,
-    strict: bool = False,
-) -> list[str]:
-    if use_modules:
-        from . import modules
+def stub_lines(module: ModuleType, *, strict: bool = False) -> list[str]:
+    from . import modules
 
-        mi = modules.from_module(module, strict=strict)
-        lines = modules.emit_module(mi)
-    else:
-        lines = PyiModule.from_module(module).render()
+    mi = modules.from_module(module, strict=strict)
+    lines = modules.emit_module(mi)
     return _format_with_ruff(lines)
 
 
@@ -257,11 +246,10 @@ def process_file(
     *,
     command: str | None = None,
     stub_overlay_dir: Path | None = None,
-    use_modules: bool = False,
     strict: bool = False,
 ) -> Path:
     module = load_module_from_path(src)
-    lines = stub_lines(module, use_modules=use_modules, strict=strict)
+    lines = stub_lines(module, strict=strict)
     dest = dest or src.with_suffix(".pyi")
     write_stub(dest, lines, command)
     if stub_overlay_dir is not None:
@@ -275,7 +263,6 @@ def process_directory(
     *,
     command: str | None = None,
     stub_overlay_dir: Path | None = None,
-    use_modules: bool = False,
     strict: bool = False,
 ) -> list[Path]:
     outputs = []
@@ -288,7 +275,6 @@ def process_directory(
                     dest,
                     command=command,
                     stub_overlay_dir=stub_overlay_dir,
-                    use_modules=use_modules,
                     strict=strict,
                 )
             )

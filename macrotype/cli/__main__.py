@@ -37,9 +37,9 @@ def _stub_main(argv: list[str]) -> int:
         help="Symlink generated stubs into this directory for type checkers",
     )
     parser.add_argument(
-        "--modules",
+        "--strict",
         action="store_true",
-        help="Use new modules pipeline for stub generation",
+        help="Normalize and validate annotations",
     )
     args = parser.parse_args(argv)
     command = "macrotype " + " ".join(argv)
@@ -61,7 +61,7 @@ def _stub_main(argv: list[str]) -> int:
             parser.error("--stub-overlay-dir cannot be used with stdin")
         code = sys.stdin.read()
         module = stubgen.load_module_from_code(code, "<stdin>")
-        lines = stubgen.stub_lines(module, use_modules=args.modules, strict=args.modules)
+        lines = stubgen.stub_lines(module, strict=args.strict)
         if args.output and args.output != "-":
             stubgen.write_stub(Path(args.output), lines, command)
         else:
@@ -80,8 +80,7 @@ def _stub_main(argv: list[str]) -> int:
                     parser.error("--stub-overlay-dir requires a file output")
                 lines = stubgen.stub_lines(
                     stubgen.load_module_from_path(path),
-                    use_modules=args.modules,
-                    strict=args.modules,
+                    strict=args.strict,
                 )
                 _stdout_write(lines, command)
             else:
@@ -96,8 +95,7 @@ def _stub_main(argv: list[str]) -> int:
                     dest,
                     command=command,
                     stub_overlay_dir=overlay,
-                    use_modules=args.modules,
-                    strict=args.modules,
+                    strict=args.strict,
                 )
         else:
             if args.output == "-":
@@ -117,8 +115,7 @@ def _stub_main(argv: list[str]) -> int:
                 out_dir,
                 command=command,
                 stub_overlay_dir=overlay,
-                use_modules=args.modules,
-                strict=args.modules,
+                strict=args.strict,
             )
     return 0
 
