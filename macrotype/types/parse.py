@@ -58,10 +58,10 @@ def _tytype_of(obj: object) -> Ty:
         q = getattr(obj, "__forward_arg__", None) or getattr(obj, "arg", None) or str(obj)
         return TyForward(qualname=q)
 
-    # Any / Never / NoReturn / bare Final
+    # Any / Never / bare Final
     if obj is t.Any:
         return TyAny()
-    if obj in (t.Never, t.NoReturn):
+    if obj is t.Never:
         return TyNever()
 
     # None value / NoneType
