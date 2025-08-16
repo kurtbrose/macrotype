@@ -2,24 +2,29 @@ from __future__ import annotations
 
 """Extract type parameters for classes and functions."""
 
+import sys
 import typing as t
 from typing import Callable, get_args, get_origin
 
 from macrotype.modules.ir import ClassDecl, FuncDecl, ModuleDecl, Site
-from macrotype.types_ast import find_typevars
+from macrotype.types_ast import find_typevars, format_type_param
 
 
 def _format_type_param(param: t.Any) -> str:
+    """Return a string representation for ``param``.
+
+    On Python 3.13+, full PEP 695 features (bounds, constraints, defaults)
+    are preserved.  Older versions fall back to name-based rendering to keep
+    generated stubs stable.
+    """
+
     origin = get_origin(param)
     if origin is t.Unpack:
         (inner,) = get_args(param)
-        if isinstance(inner, t.TypeVarTuple):
-            return f"*{inner.__name__}"
-        if isinstance(inner, t.ParamSpec):
-            return f"**{inner.__name__}"
-        if isinstance(inner, t.TypeVar):
-            return f"*{inner.__name__}"
-        return f"*{getattr(inner, '__name__', repr(inner))}"
+        text = _format_type_param(inner)
+        return text if text.startswith("*") else f"*{text}"
+    if isinstance(param, (t.TypeVar, t.ParamSpec, t.TypeVarTuple)) and sys.version_info >= (3, 13):
+        return format_type_param(param).text
     if isinstance(param, t.TypeVarTuple):
         return f"*{param.__name__}"
     if isinstance(param, t.ParamSpec):
@@ -30,6 +35,14 @@ def _format_type_param(param: t.Any) -> str:
 
 
 def _transform_class(sym: ClassDecl, cls: type) -> None:
+    tp_objs = getattr(cls, "__type_params__", None)
+    if tp_objs:
+        sym.type_params = tuple(_format_type_param(tp) for tp in tp_objs)
+        sym.bases = tuple(
+            b for b in sym.bases if get_origin(b.annotation) is not t.Generic
+        )
+        return
+
     type_params: list[str] = []
     new_bases: list[Site] = []
     for b in sym.bases:
