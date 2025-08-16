@@ -13,7 +13,9 @@ from typing import (
     Final,
     Generic,
     Literal,
+    Never,
     NewType,
+    NoReturn,
     NotRequired,
     Optional,
     ParamSpec,
@@ -44,6 +46,34 @@ CovariantT = TypeVar("CovariantT", covariant=True)
 ContravariantT = TypeVar("ContravariantT", contravariant=True)
 TDV = TypeVar("TDV")
 UserId = NewType("UserId", int)
+
+
+# Basic callable examples
+def sum_of(*args: tuple[int]) -> int:
+    return sum(args)
+
+
+def dict_echo(**kwargs: dict[str, Any]) -> dict[str, Any]:
+    return kwargs
+
+
+# Edge case: direct use of ``P.args`` and ``P.kwargs``
+def use_params(func: Callable[P, int], *args: P.args, **kwargs: P.kwargs) -> int:
+    return func(*args, **kwargs)
+
+
+# Edge case: function explicitly returning ``None``
+def do_nothing() -> None:
+    return None
+
+
+# Functions with special control flow
+def always_raises() -> NoReturn:
+    raise RuntimeError()
+
+
+def never_returns() -> Never:
+    raise RuntimeError()
 
 
 # Self and runtime checkable protocol examples

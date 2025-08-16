@@ -2,6 +2,8 @@ from __future__ import annotations
 
 """Type analysis pipeline with parsing and unparsing."""
 
+import typing
+
 from .ir import Ty
 from .normalize import norm
 from .parse import parse
@@ -25,6 +27,9 @@ def normalize_annotation(obj: object) -> object:
     converted back into a Python typing object.
     """
 
+    if obj is typing.NoReturn:
+        # ``NoReturn`` should be preserved rather than normalized to ``Never``
+        return typing.NoReturn
     return unparse_top(from_type(obj))
 
 
