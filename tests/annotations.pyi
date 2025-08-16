@@ -1,6 +1,7 @@
 # Generated via: macrotype tests/annotations.py -o tests/annotations.pyi
 # Do not edit by hand
 # pyright: basic
+# mypy: allow-any-expr
 from abc import ABC, abstractmethod
 from collections import deque
 from collections.abc import AsyncIterator, Iterator, Sequence

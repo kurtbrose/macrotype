@@ -1,4 +1,5 @@
 # pyright: basic
+# mypy: allow-any-expr
 import collections.abc as cabc
 import functools
 import math

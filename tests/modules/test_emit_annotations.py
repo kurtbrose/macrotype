@@ -1,9 +1,11 @@
 from importlib import import_module
+from pathlib import Path
 from types import ModuleType
 from typing import Annotated
 
 from macrotype.meta_types import emit_as, set_module
 from macrotype.modules import emit_module, from_module
+from macrotype.stubgen import load_module_from_path
 
 
 def test_emit_annotations_enums() -> None:
@@ -34,6 +36,22 @@ def test_emit_annotations_enums() -> None:
     idx = lines.index("class PointEnum(Enum):")
     assert lines[idx + 1] == "    INLINE = Point(x=1, y=2)"
     assert lines[idx + 2] == "    REF = ORIGIN"
+
+
+def test_emit_annotations_headers_and_imports() -> None:
+    path = Path(__file__).resolve().parent.parent / "annotations.py"
+    ann = load_module_from_path(path)
+    mi = from_module(ann)
+    lines = emit_module(mi)
+
+    assert lines[0] == "# pyright: basic"
+    assert lines[1] == "# mypy: allow-any-expr"
+    expected_imports = [
+        "from abc import ABC, abstractmethod",
+        "from collections import deque",
+        "from collections.abc import AsyncIterator, Iterator, Sequence",
+    ]
+    assert lines[2:5] == expected_imports
 
 
 def test_emit_annotations_inline_meta() -> None:
