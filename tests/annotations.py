@@ -2,14 +2,7 @@
 # mypy: allow-any-expr
 import types
 import typing
-from typing import (
-    Any,
-    Final,
-    NewType,
-    ParamSpec,
-    TypeVar,
-    TypeVarTuple,
-)
+from typing import Any, NewType, ParamSpec, TypeVar, TypeVarTuple
 
 import macrotype.meta_types as mt
 
@@ -26,9 +19,6 @@ TDV = TypeVar("TDV")
 UserId = NewType("UserId", int)
 
 
-# TypeScript-inspired metaclass utilities
-
-
 def strip_null(ann: Any, null: Any) -> Any:
     origin = typing.get_origin(ann)
     if origin in {typing.Union, types.UnionType}:
@@ -40,57 +30,6 @@ def strip_null(ann: Any, null: Any) -> Any:
             result |= a
         return result
     return ann
-
-
-class Cls:
-    a: int
-    b: float | None
-    c: str | None
-    d: bytes
-
-
-class OptionalCls:
-    __annotations__ = {k: v | None for k, v in mt.all_annotations(Cls).items()}
-
-
-class RequiredCls:
-    __annotations__ = {k: strip_null(v, type(None)) for k, v in mt.all_annotations(Cls).items()}
-
-
-class PickedCls:
-    __annotations__ = {k: v for k, v in mt.all_annotations(Cls).items() if k in {"a", "b"}}
-
-
-class OmittedCls:
-    __annotations__ = {k: v for k, v in mt.all_annotations(Cls).items() if k not in {"c", "d"}}
-
-
-class FinalCls:
-    __annotations__ = {k: Final[v] for k, v in mt.all_annotations(Cls).items()}
-
-
-ReplacedCls = type(
-    "ReplacedCls",
-    (),
-    {"__annotations__": {**mt.all_annotations(Cls), "a": str, "b": bool}},
-)
-
-
-# meta_types with inherited annotations
-class BaseInherit:
-    base: int
-
-
-class SubInherit(BaseInherit):
-    sub: str
-
-
-class InheritedOmit:
-    __annotations__ = {k: v for k, v in mt.all_annotations(SubInherit).items() if k != "sub"}
-
-
-class InheritedFinal:
-    __annotations__ = {k: Final[v] for k, v in mt.all_annotations(SubInherit).items()}
 
 
 # optional() and required() with a custom null sentinel

@@ -3,6 +3,8 @@ import functools
 import math
 import re
 import sys
+import types
+import typing
 from abc import ABC, abstractmethod
 from dataclasses import InitVar, dataclass
 from enum import Enum, IntEnum, IntFlag
@@ -40,6 +42,7 @@ from typing import (
     runtime_checkable,
 )
 
+import macrotype.meta_types as mt
 from macrotype.meta_types import (
     emit_as,
     get_caller_module,
@@ -59,6 +62,72 @@ CovariantT = TypeVar("CovariantT", covariant=True)
 ContravariantT = TypeVar("ContravariantT", contravariant=True)
 TDV = TypeVar("TDV")
 UserId = NewType("UserId", int)
+
+# TypeScript-inspired metaclass utilities
+
+
+def strip_null(ann: Any, null: Any) -> Any:
+    origin = typing.get_origin(ann)
+    if origin in {typing.Union, types.UnionType}:
+        args = [a for a in typing.get_args(ann) if a is not null]
+        if not args:
+            return null
+        result = args[0]
+        for a in args[1:]:
+            result |= a
+        return result
+    return ann
+
+
+class Cls:
+    a: int
+    b: float | None
+    c: str | None
+    d: bytes
+
+
+class OptionalCls:
+    __annotations__ = {k: v | None for k, v in mt.all_annotations(Cls).items()}
+
+
+class RequiredCls:
+    __annotations__ = {k: strip_null(v, type(None)) for k, v in mt.all_annotations(Cls).items()}
+
+
+class PickedCls:
+    __annotations__ = {k: v for k, v in mt.all_annotations(Cls).items() if k in {"a", "b"}}
+
+
+class OmittedCls:
+    __annotations__ = {k: v for k, v in mt.all_annotations(Cls).items() if k not in {"c", "d"}}
+
+
+class FinalCls:
+    __annotations__ = {k: Final[v] for k, v in mt.all_annotations(Cls).items()}
+
+
+ReplacedCls = type(
+    "ReplacedCls",
+    (),
+    {"__annotations__": {**mt.all_annotations(Cls), "a": str, "b": bool}},
+)
+
+
+class BaseInherit:
+    base: int
+
+
+class SubInherit(BaseInherit):
+    sub: str
+
+
+class InheritedOmit:
+    __annotations__ = {k: v for k, v in mt.all_annotations(SubInherit).items() if k != "sub"}
+
+
+class InheritedFinal:
+    __annotations__ = {k: Final[v] for k, v in mt.all_annotations(SubInherit).items()}
+
 
 # Edge case: LiteralString handling
 LITERAL_STR_VAR: LiteralString
