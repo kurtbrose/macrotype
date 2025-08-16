@@ -1,4 +1,4 @@
-from typing import Callable, Concatenate, ParamSpec
+from typing import Any, Callable, Concatenate, Final, ParamSpec
 
 from macrotype.meta_types import overload_for
 
@@ -34,3 +34,23 @@ def parse_int_or_none(val: str | None) -> int | None:
     if val is None:
         return None
     return int(val)
+
+
+# Basic variable annotations
+GLOBAL: int
+CONST: Final[str]
+# Variable typed ``Any`` to ensure explicit Any is preserved
+ANY_VAR: Any
+# Variable using ``Callable`` with ellipsis argument list
+FUNC_ELLIPSIS: Callable[..., int]
+# Unannotated tuple type
+TUPLE_UNANN: tuple
+# Empty tuple type
+TUPLE_EMPTY: tuple[()]
+# Single-element tuple type
+TUPLE_ONE: tuple[int]
+# Variable using tuple ellipsis syntax
+TUPLE_VAR: tuple[int, ...]
+# Variable using set and frozenset types to test container formatting
+SET_VAR: set[int]
+FROZENSET_VAR: frozenset[str]

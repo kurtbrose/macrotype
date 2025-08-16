@@ -103,23 +103,6 @@ type TupleUnpackFirst[*Ts] = tuple[*Ts, int]  # Unpack before trailing element
 type RecursiveList[T] = T | list[RecursiveList[T]]
 
 
-GLOBAL: int
-CONST: Final[str]
-# Variable typed ``Any`` to ensure explicit Any is preserved
-ANY_VAR: Any
-# Variable using ``Callable`` with ellipsis argument list
-FUNC_ELLIPSIS: Callable[..., int]
-# Unannotated tuple type
-TUPLE_UNANN: tuple
-# Empty tuple type
-TUPLE_EMPTY: tuple[()]
-# Single-element tuple type
-TUPLE_ONE: tuple[int]
-# Variable using tuple ellipsis syntax
-TUPLE_VAR: tuple[int, ...]
-# Variable using set and frozenset types to test container formatting
-SET_VAR: set[int]
-FROZENSET_VAR: frozenset[str]
 # Set containing a nested list to exercise TypeNode in set elements
 SET_LIST_VAR: set[list[str]]
 # Tuple containing a nested list to exercise TypeNode in tuple items
