@@ -352,18 +352,18 @@ def _emit_decl(sym: Decl, name_map: dict[int, str], *, indent: int) -> list[str]
 
 def _stringify_typevar(tv: t.TypeVar, name_map: dict[int, str]) -> str:
     args = [f'"{tv.__name__}"']
+    bound = getattr(tv, "__bound__", None)
+    constraints = getattr(tv, "__constraints__", ())
+    if bound is not None:
+        args.append(f"bound={stringify_annotation(bound, name_map)}")
+    elif constraints:
+        args.extend(stringify_annotation(c, name_map) for c in constraints)
     if getattr(tv, "__covariant__", False):
         args.append("covariant=True")
     if getattr(tv, "__contravariant__", False):
         args.append("contravariant=True")
     if getattr(tv, "__infer_variance__", False):
         args.append("infer_variance=True")
-    bound = getattr(tv, "__bound__", None)
-    if bound is not None:
-        args.append(f"bound={stringify_annotation(bound, name_map)}")
-    constraints = getattr(tv, "__constraints__", ())
-    if constraints:
-        args.extend(stringify_annotation(c, name_map) for c in constraints)
     return f"TypeVar({', '.join(args)})"
 
 
