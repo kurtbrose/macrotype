@@ -18,16 +18,12 @@ from typing import (
     NewType,
     NoReturn,
     ParamSpec,
-    Protocol,
-    Self,
-    TypedDict,
     TypeGuard,
     TypeVar,
     TypeVarTuple,
     Unpack,
     final,
     overload,
-    runtime_checkable,
 )
 
 T = TypeVar("T")
@@ -48,29 +44,6 @@ TDV = TypeVar("TDV")
 
 UserId = NewType("UserId", int)
 
-class SelfExample:
-    def clone(self: Self) -> Self: ...
-
-class SelfFactory:
-    def __init__(self, value: int) -> None: ...
-    @classmethod
-    def create(cls: type[Self], value: int) -> Self: ...
-
-@runtime_checkable
-class Runnable(Protocol):
-    def run(self) -> int: ...
-
-@runtime_checkable
-class LaterRunnable(Protocol):
-    def run(self) -> int: ...
-
-class NoProtoMethods(Protocol): ...
-
-class Info(TypedDict):
-    name: str
-    age: int
-
-def with_kwargs(**kwargs: Unpack[Info]) -> Info: ...
 def sum_of(*args: tuple[int]) -> int: ...
 def dict_echo(**kwargs: dict[str, Any]) -> dict[str, Any]: ...
 def use_params[**P](func: Callable[P, int], *args: P.args, **kwargs: P.kwargs) -> int: ...

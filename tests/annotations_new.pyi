@@ -16,13 +16,16 @@ from typing import (
     NewType,
     NotRequired,
     ParamSpec,
+    Protocol,
     Required,
+    Self,
     TypedDict,
     TypeVar,
     TypeVarTuple,
     Unpack,
     overload,
     override,
+    runtime_checkable,
 )
 
 P = ParamSpec("P")
@@ -42,6 +45,30 @@ ContravariantT = TypeVar("ContravariantT", contravariant=True)
 TDV = TypeVar("TDV")
 
 UserId = NewType("UserId", int)
+
+class SelfExample:
+    def clone(self: Self) -> Self: ...
+
+class SelfFactory:
+    def __init__(self, value: int) -> None: ...
+    @classmethod
+    def create(cls: type[Self], value: int) -> Self: ...
+
+@runtime_checkable
+class Runnable(Protocol):
+    def run(self) -> int: ...
+
+@runtime_checkable
+class LaterRunnable(Protocol):
+    def run(self) -> int: ...
+
+class NoProtoMethods(Protocol): ...
+
+class Info(TypedDict):
+    name: str
+    age: int
+
+def with_kwargs(**kwargs: Unpack[Info]) -> Info: ...
 
 class ManualProperty:
     @property

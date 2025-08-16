@@ -131,14 +131,21 @@ def _v(node: Ty, *, ctx: Context) -> None:
 
         # Unpack can only appear in tuple items or Concatenate args
         case TyUnpack(inner=i):
-            if ctx not in ("tuple_items", "concat_args"):
-                raise TypeValidationError(
-                    "Unpack[...] is only valid inside tuple[...] or Concatenate[...]"
-                )
-            # Today we only allow TypeVarTuple inside Unpack at the type level
-            if not isinstance(i, TyTypeVarTuple):
-                raise TypeValidationError("Unpack must wrap a TypeVarTuple at the type level")
-            return
+            if ctx in ("tuple_items", "concat_args"):
+                # At the type level we only allow TypeVarTuple inside Unpack
+                if not isinstance(i, TyTypeVarTuple):
+                    raise TypeValidationError(
+                        "Unpack must wrap a TypeVarTuple at the type level",
+                    )
+                return
+            if ctx in {"call_params", "top"}:
+                if ctx == "top" and isinstance(i, TyTypeVarTuple):
+                    raise TypeValidationError("Unpack[TypeVarTuple] is not valid at the top level")
+                _v(i, ctx="other")
+                return
+            raise TypeValidationError(
+                "Unpack[...] is only valid inside tuple[...] or Concatenate[...] or as a parameter annotation"
+            )
 
         # Fallback: accept but walk children if any were added later
         case _:
