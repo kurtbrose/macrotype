@@ -10,26 +10,35 @@ import pytest
 # Ensure the package root is on sys.path when running tests directly.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from macrotype.pyi_extract import PyiModule
+from macrotype import stubgen
 from macrotype.stubgen import load_module_from_path, process_directory, process_file
 
 CASES = [
-    ("annotations.py", "annotations.pyi"),
+    ("annotations.py", "annotations.pyi", False),
+    ("annotations_new.py", "annotations_new.pyi", True),
     pytest.param(
         "annotations_13.py",
         "annotations_13.pyi",
+        False,
         marks=pytest.mark.skipif(sys.version_info < (3, 13), reason="requires Python 3.13+"),
     ),
 ]
 
 
-@pytest.mark.parametrize("src, expected", CASES)
-def test_cli_stdout(tmp_path, src: str, expected: str) -> None:
+@pytest.mark.parametrize("src, expected, use_modules", CASES)
+def test_cli_stdout(tmp_path, src: str, expected: str, use_modules: bool) -> None:
     expected_path = Path(__file__).with_name(expected)
     expected_lines = expected_path.read_text().splitlines()
-    expected_lines[0] = f"# Generated via: macrotype {expected_path.with_name(src)} -o -"
+    flag = " --modules" if use_modules else ""
+    expected_lines[0] = f"# Generated via: macrotype {expected_path.with_name(src)}{flag} -o -"
+    if use_modules:
+        expected_lines = [line for line in expected_lines if line != "# fmt: off"]
+    cmd = [sys.executable, "-m", "macrotype", str(Path(__file__).with_name(src))]
+    if use_modules:
+        cmd.append("--modules")
+    cmd += ["-o", "-"]
     result = subprocess.run(
-        [sys.executable, "-m", "macrotype", str(Path(__file__).with_name(src)), "-o", "-"],
+        cmd,
         capture_output=True,
         text=True,
         cwd=Path(__file__).resolve().parents[1],
@@ -38,42 +47,47 @@ def test_cli_stdout(tmp_path, src: str, expected: str) -> None:
     assert result.stdout.strip().splitlines() == expected_lines
 
 
-@pytest.mark.parametrize("src, expected", CASES)
-def test_stub_generation_matches_expected(src: str, expected: str) -> None:
+@pytest.mark.parametrize("src, expected, use_modules", CASES)
+def test_stub_generation_matches_expected(src: str, expected: str, use_modules: bool) -> None:
     src_path = Path(__file__).with_name(src)
     sys.modules.pop(src_path.stem, None)
     sys.modules.pop(f"tests.{src_path.stem}", None)
     loaded = load_module_from_path(src_path)
-    module = PyiModule.from_module(loaded)
-    generated = module.render()
+    generated = stubgen.stub_lines(loaded, use_modules=use_modules, strict=use_modules)
 
     expected_path = Path(__file__).with_name(expected)
     expected_lines = expected_path.read_text().splitlines()[2:]
+    if use_modules:
+        expected_lines = [line for line in expected_lines if line != "# fmt: off"]
 
     assert generated == expected_lines
 
 
-@pytest.mark.parametrize("src, expected", CASES)
-def test_process_file(tmp_path, src: str, expected: str) -> None:
+@pytest.mark.parametrize("src, expected, use_modules", CASES)
+def test_process_file(tmp_path, src: str, expected: str, use_modules: bool) -> None:
     src_path = Path(__file__).with_name(src)
     sys.modules.pop(src_path.stem, None)
     sys.modules.pop(f"tests.{src_path.stem}", None)
     dest = tmp_path / f"out_{src_path.stem}.pyi"
-    process_file(src_path, dest)
+    process_file(src_path, dest, use_modules=use_modules, strict=use_modules)
     expected_lines = Path(__file__).with_name(expected).read_text().splitlines()[2:]
+    if use_modules:
+        expected_lines = [line for line in expected_lines if line != "# fmt: off"]
     assert dest.read_text().splitlines() == expected_lines
 
 
-@pytest.mark.parametrize("src, expected", CASES)
-def test_process_directory(tmp_path, src: str, expected: str) -> None:
+@pytest.mark.parametrize("src, expected, use_modules", CASES)
+def test_process_directory(tmp_path, src: str, expected: str, use_modules: bool) -> None:
     src_dir = tmp_path / "src"
     src_dir.mkdir()
     src_path = Path(__file__).with_name(src)
     dest_src = src_dir / src_path.name
     dest_src.write_text(src_path.read_text())
-    process_directory(src_dir, tmp_path)
+    process_directory(src_dir, tmp_path, use_modules=use_modules, strict=use_modules)
     generated = (tmp_path / expected).read_text().splitlines()
     expected_lines = Path(__file__).with_name(expected).read_text().splitlines()[2:]
+    if use_modules:
+        expected_lines = [line for line in expected_lines if line != "# fmt: off"]
     assert generated == expected_lines
 
 
@@ -104,8 +118,7 @@ def test_module_alias(tmp_path) -> None:
     try:
         src_path = Path(__file__).with_name("annotations.py")
         loaded = load_module_from_path(src_path)
-        module = PyiModule.from_module(loaded)
-        lines = module.render()
+        lines = stubgen.stub_lines(loaded)
     finally:
         set_module(pathlib.Path, original)
 
