@@ -97,6 +97,7 @@ def from_module(mod: ModuleType, *, strict: bool = False) -> ModuleDecl:
         for decl in mi.iter_all_decls():
             for site in decl.get_annotation_sites():
                 if site.role != "alias_value":
-                    site.annotation = normalize_annotation(site.annotation)
+                    ctx = "call_params" if site.role == "param" else "top"
+                    site.annotation = normalize_annotation(site.annotation, ctx=ctx)
 
     return mi

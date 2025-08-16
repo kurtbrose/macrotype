@@ -46,12 +46,8 @@ def test_emit_annotations_headers_and_imports() -> None:
 
     assert lines[0] == "# pyright: basic"
     assert lines[1] == "# mypy: allow-any-expr"
-    expected_imports = [
-        "from abc import ABC, abstractmethod",
-        "from collections.abc import Iterator, Sequence",
-        "from functools import cached_property",
-    ]
-    assert lines[2:5] == expected_imports
+    expected_imports = ["from typing import Any, Final, NewType, ParamSpec, TypeVar, TypeVarTuple"]
+    assert lines[2:3] == expected_imports
 
 
 def test_emit_annotations_inline_meta() -> None:

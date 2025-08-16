@@ -116,9 +116,9 @@ def test_module_alias(tmp_path) -> None:
     original = pathlib.Path.__module__
     set_module(pathlib.Path, "pathlib._local")
     try:
-        src_path = Path(__file__).with_name("annotations.py")
+        src_path = Path(__file__).with_name("annotations_new.py")
         loaded = load_module_from_path(src_path)
-        lines = stubgen.stub_lines(loaded)
+        lines = stubgen.stub_lines(loaded, use_modules=True, strict=True)
     finally:
         set_module(pathlib.Path, original)
 
