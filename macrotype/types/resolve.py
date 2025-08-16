@@ -49,6 +49,7 @@ def resolve(t: ParsedTy | Ty, env: ResolveEnv) -> ResolvedTy:
     return ResolvedTy(
         TyRoot(
             ty=inner,
+            annotations=top.annotations,
             is_final=top.is_final,
             is_required=top.is_required,
             is_classvar=top.is_classvar,
