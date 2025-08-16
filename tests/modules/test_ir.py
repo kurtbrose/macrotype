@@ -23,7 +23,10 @@ from macrotype.modules.transformers import canonicalize_foreign_symbols, expand_
 def idx() -> dict[str, object]:
     ann = importlib.import_module("tests.annotations")
     ann_new = importlib.import_module("tests.annotations_new")
-    ann.special_neg = ann_new.special_neg
+    for name in dir(ann_new):
+        if name.startswith("__"):
+            continue
+        setattr(ann, name, getattr(ann_new, name))
     ann.__annotations__ |= ann_new.__annotations__
     mi = scan_module(ann)
     assert isinstance(mi, ModuleDecl)

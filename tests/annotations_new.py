@@ -1,4 +1,6 @@
+import functools
 from typing import (
+    Annotated,
     Any,
     Callable,
     Concatenate,
@@ -10,6 +12,7 @@ from typing import (
     TypeAliasType,
     TypeVar,
     TypeVarTuple,
+    Union,
     Unpack,
 )
 
@@ -130,3 +133,91 @@ BORDER_SIZE: Final = 4
 
 
 class FutureClass: ...
+
+
+# Edge case: unannotated constant should be included
+UNANNOTATED_CONST = 42
+# Edge case: unannotated string constant should be included
+UNANNOTATED_STR = "hi"
+# Edge case: unannotated float constant should be included
+UNANNOTATED_FLOAT = 1.23
+# Explicit None annotation should remain None
+EXPLICIT_NONE: None = None
+
+
+# Aliasing None shouldn't affect annotation rendering
+NONE_ALIAS = None
+
+
+def takes_none_alias(x: NONE_ALIAS) -> NONE_ALIAS:
+    pass
+
+
+# Edge case: subclass constants should preserve subclass type
+class CustomInt(int):
+    pass
+
+
+UNANNOTATED_CUSTOM_INT = CustomInt(7)
+
+# Edge case: boolean constants should be retained
+BOOL_TRUE = True
+BOOL_FALSE = False
+
+# Variable to test Site provenance handling
+SITE_PROV_VAR: int = 1
+
+# Union variable used to exercise strict normalization
+STRICT_UNION: Union[str, int]
+
+
+COMMENTED_VAR: int = 1  # pragma: var
+
+
+# Unannotated parameters infer type from default values
+def mult(a, b=1):
+    return a * b
+
+
+# Defaults of ``None`` do not refine "Any"
+def takes_optional(x=None):
+    return x
+
+
+# Explicit None parameter annotation should emit None, not NoneType
+def takes_none_param(x: None) -> None:
+    pass
+
+
+# Duplicate local aliases should be canonicalized
+def _alias_target() -> None: ...
+
+
+PRIMARY_ALIAS = _alias_target
+SECONDARY_ALIAS = _alias_target
+
+
+# Decorated function should be unwrapped and defaults inferred
+def _wrap(fn):
+    @functools.wraps(fn)
+    def inner(*args, **kwargs):
+        return fn(*args, **kwargs)
+
+    return inner
+
+
+@_wrap
+def wrapped_with_default(x: int, y=1) -> int:
+    return x + y
+
+
+def commented_func(x: int) -> None:  # pragma: func
+    pass
+
+
+# Edge case: lambda expressions should be treated as variables, not functions
+UNTYPED_LAMBDA = lambda x, y: x + y  # noqa: F821
+TYPED_LAMBDA: Callable[[int, int], int] = lambda a, b: a + b
+
+# Additional variable using ``Annotated`` to test type parsing
+ANNOTATED_EXTRA: Annotated[str, "extra"] = "x"

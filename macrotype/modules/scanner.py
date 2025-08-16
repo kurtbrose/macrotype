@@ -40,7 +40,11 @@ def scan_module(mod: ModuleType) -> ModuleDecl:
             continue
 
         if inspect.isfunction(obj):
-            if obj.__name__ != name:
+            if obj.__name__ == "<lambda>":
+                ann = mod_ann.get(name, type(obj))
+                site = Site(role="var", name=name, annotation=ann)
+                decls.append(VarDecl(name=name, site=site, obj=obj))
+            elif obj.__name__ != name:
                 site = Site(role="alias_value", annotation=obj)
                 decls.append(TypeDefDecl(name=name, value=site, obj=obj))
             else:

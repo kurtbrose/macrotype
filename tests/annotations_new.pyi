@@ -1,6 +1,7 @@
 # Generated via: macrotype tests/annotations_new.py --modules -o tests/annotations_new.pyi
 # Do not edit by hand
 from typing import (
+    Annotated,
     Any,
     Callable,
     Concatenate,
@@ -99,6 +100,47 @@ BORDER_SIZE: Final[int]
 
 class FutureClass: ...
 
+UNANNOTATED_CONST: int
+
+UNANNOTATED_STR: str
+
+UNANNOTATED_FLOAT: float
+
+EXPLICIT_NONE: None
+
+NONE_ALIAS: Any
+
+def takes_none_alias(x: None) -> None: ...
+
+class CustomInt(int): ...
+
+UNANNOTATED_CUSTOM_INT: CustomInt
+
+BOOL_TRUE: bool
+
+BOOL_FALSE: bool
+
+SITE_PROV_VAR: int
+
+COMMENTED_VAR: int  # pragma: var
+
+def mult(a, b: int): ...
+def takes_optional(x): ...
+def takes_none_param(x: None) -> None: ...
+def _alias_target() -> None: ...
+
+PRIMARY_ALIAS = _alias_target
+
+SECONDARY_ALIAS = _alias_target
+
+def _wrap(fn): ...
+def wrapped_with_default(x: int, y: int) -> int: ...
+def commented_func(x: int) -> None: ...  # pragma: func
+def UNTYPED_LAMBDA(x, y): ...  # noqa: F821
+def TYPED_LAMBDA(a, b): ...
+
+ANNOTATED_EXTRA: str
+
 GLOBAL: int
 
 CONST: Final[str]
@@ -124,3 +166,5 @@ SET_LIST_VAR: set[list[str]]
 TUPLE_LIST_VAR: tuple[list[str], int]
 
 CALLABLE_LIST_VAR: list[Callable[[int], str]]
+
+STRICT_UNION: int | str
