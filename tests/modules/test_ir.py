@@ -50,7 +50,7 @@ def test_module_var_and_func(idx: dict[str, object]) -> None:
     f = get(idx, "mult")
     assert isinstance(f, FuncDecl)
     names = [p.name for p in f.params]
-    assert "b" not in names
+    assert names == ["a", "b"]
 
 
 def test_basic_class_members(idx: dict[str, object]) -> None:
@@ -223,9 +223,7 @@ def test_flag_transform() -> None:
     assert cls_override.flags.get("override") is True
     assert "override" in cls_override.decorators
 
-    ann_old = importlib.import_module("tests.annotations")
-    mi_old = from_module(ann_old)
-    ab = next(s for s in mi_old.members if s.name == "AbstractBase")
+    ab = next(s for s in mi.members if s.name == "AbstractBase")
     assert isinstance(ab, ClassDecl)
     assert ab.flags.get("abstract") is True
     m = next(m for m in ab.members if isinstance(m, FuncDecl) and m.name == "do_something")

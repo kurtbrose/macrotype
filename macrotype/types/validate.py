@@ -30,8 +30,8 @@ class TypeValidationError(TypeError):
 Context = Literal["top", "tuple_items", "call_params", "concat_args", "other"]
 
 
-def validate(t: NormalizedTy) -> TyRoot:
-    _v(t.ty, ctx="top")
+def validate(t: NormalizedTy, *, ctx: Context = "top") -> TyRoot:
+    _v(t.ty, ctx=ctx)
     return t
 
 

@@ -247,8 +247,8 @@ def test_descriptor_transform() -> None:
     assert cp.decorators == ("cached_property",)
     pm = next(m for m in dcls.members if isinstance(m, FuncDecl) and m.name == "pm")
     assert pm.decorators == ()
-    assert [p.name for p in pm.params] == ["b"]
-    assert pm.params[0].annotation in (str, "str")
+    assert [p.name for p in pm.params] == ["self", "b"]
+    assert pm.params[1].annotation in (str, "str")
     assert pm.ret and pm.ret.annotation in (str, "str")
 
 

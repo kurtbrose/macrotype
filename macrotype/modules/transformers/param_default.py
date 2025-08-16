@@ -24,6 +24,13 @@ def _infer_function(sym: FuncDecl, fn: Callable) -> None:
         if site is not None:
             if site.name != display:
                 site = Site(role="param", name=display, annotation=site.annotation)
+            if (
+                site.annotation is inspect._empty
+                and p.default is not inspect._empty
+                and p.default is not None
+                and name not in {"self", "cls"}
+            ):
+                site = Site(role="param", name=display, annotation=type(p.default))
         else:
             ann = inspect._empty
             if (

@@ -2,9 +2,12 @@ import collections.abc as cabc
 import functools
 import math
 import re
+import sys
+from abc import ABC, abstractmethod
 from dataclasses import InitVar, dataclass
 from enum import Enum, IntEnum, IntFlag
 from functools import cached_property
+from pathlib import Path
 from typing import (
     Annotated,
     Any,
@@ -18,7 +21,6 @@ from typing import (
     LiteralString,
     Never,
     NewType,
-    NoReturn,
     NotRequired,
     Optional,
     ParamSpec,
@@ -34,12 +36,18 @@ from typing import (
     Union,
     Unpack,
     final,
-    overload,
     override,
     runtime_checkable,
 )
 
-from macrotype.meta_types import overload_for
+from macrotype.meta_types import (
+    emit_as,
+    get_caller_module,
+    make_literal_map,
+    overload,
+    overload_for,
+    set_module,
+)
 
 P = ParamSpec("P")
 
@@ -51,6 +59,239 @@ CovariantT = TypeVar("CovariantT", covariant=True)
 ContravariantT = TypeVar("ContravariantT", contravariant=True)
 TDV = TypeVar("TDV")
 UserId = NewType("UserId", int)
+
+# Edge case: LiteralString handling
+LITERAL_STR_VAR: LiteralString
+# Dict without explicit value type should remain as written
+DICT_WITH_IMPLICIT_ANY: dict[int]  # type: ignore[type-arg]  # pyright: ignore[reportInvalidTypeArguments]
+# Dict with nested list to exercise TypeNode in dict key/value
+DICT_LIST_VALUE: dict[str, list[int]]
+# Generic container without type arguments should remain unparameterized
+UNPARAM_LIST: list
+
+
+# Edge case: positional-only and keyword-only parameters
+def pos_only_func(a: int, b: str, /) -> None:
+    pass
+
+
+def kw_only_func(*, x: int, y: str) -> None:
+    pass
+
+
+def pos_and_kw(a: int, /, b: int, *, c: int) -> None:
+    pass
+
+
+# Edge case: using ``collections.abc`` generic types
+def iter_sequence(seq: cabc.Sequence[int]) -> cabc.Iterator[int]:
+    for item in seq:
+        yield item
+
+
+# Edge case: decorated functions should retain original signature
+def simple_wrap(fn: Callable[[int], int]) -> Callable[[int], int]:
+    @functools.wraps(fn)
+    def inner(x: int) -> int:
+        return fn(x)
+
+    return inner
+
+
+@simple_wrap
+@simple_wrap
+def double_wrapped(x: int) -> int:
+    return x + 1
+
+
+@functools.lru_cache()
+def cached_add(a: int, b: int) -> int:
+    return a + b
+
+
+# Edge case: ``Annotated`` parameter and return types
+def annotated_fn(x: Annotated[int, "inp"]) -> Annotated[str, "out"]:
+    return str(x)
+
+
+# Helper decorator to wrap descriptors and set ``__wrapped__``
+def wrap_descriptor(desc):
+    class Wrapper:
+        def __init__(self, d):
+            self.__wrapped__ = d
+            self._d = d
+
+        def __get__(self, obj, objtype=None):
+            return self._d.__get__(obj, objtype)
+
+        def __set__(self, obj, value):
+            return self._d.__set__(obj, value)
+
+        def __delete__(self, obj):
+            return self._d.__delete__(obj)
+
+    return Wrapper(desc)
+
+
+class WrappedDescriptors:
+    """Class with descriptors wrapped by another decorator."""
+
+    @wrap_descriptor
+    @property
+    def wrapped_prop(self) -> int:
+        return 1
+
+    @wrap_descriptor
+    @classmethod
+    def wrapped_cls(cls) -> int:
+        return 2
+
+    @wrap_descriptor
+    @staticmethod
+    def wrapped_static(x: int) -> int:
+        return x
+
+    @wrap_descriptor
+    @cached_property
+    def wrapped_cached(self) -> int:
+        return 3
+
+
+# Test emit_as decorator for functions
+def make_emitter(name: str):
+    @emit_as(name)
+    def inner(x: int) -> int:
+        return x
+
+    return inner
+
+
+emitted_a = make_emitter("emitted_a")
+
+
+# Test emit_as decorator for classes
+def make_emitter_cls(name: str):
+    @emit_as(name)
+    class Inner:
+        value: int
+
+    return Inner
+
+
+EmittedCls = make_emitter_cls("EmittedCls")
+
+
+# Use emit_as with overloads defined dynamically on a class via API helper
+
+
+# Demonstrate adjusting a dynamically created class using helpers
+def make_dynamic_cls():
+    cls = type("FixedModuleCls", (), {"__module__": "tests.factory"})
+    set_module(cls, get_caller_module())
+    return cls
+
+
+FixedModuleCls = make_dynamic_cls()
+
+# Dynamic class built using ``make_literal_map`` for typed lookup
+EmittedMap = make_literal_map("EmittedMap", {"a": 1, "b": 2})
+
+
+# Used to verify import path canonicalization across Python versions
+def path_passthrough(p: Path) -> Path:
+    return p
+
+
+for typ in (bytearray, bytes):
+
+    @overload
+    def loop_over(x: typ) -> str: ...
+
+
+del typ
+
+
+def loop_over(x: bytes | bytearray) -> str:
+    return str(x)
+
+
+# Basic generic function using ``TypeVar``
+def identity(x: T) -> T:
+    return x
+
+
+# Generic function using ``TypeVarTuple``
+def as_tuple(*args: Unpack[Ts]) -> tuple[Unpack[Ts]]:
+    return tuple(args)
+
+
+# Class with variadic type parameters
+class Variadic(Generic[*Ts]):
+    def __init__(self, *args: Unpack[Ts]) -> None:
+        self.args = tuple(args)
+
+    def to_tuple(self) -> tuple[Unpack[Ts]]:
+        return self.args
+
+
+# Default argument example to ensure defaults are applied in overloads
+@overload_for(3)
+def times_two(val: int, factor: int = 2) -> int:
+    return val * factor
+
+
+# Edge case: overload_for should support boolean literals
+@overload_for(True)
+@overload_for(False)
+def bool_gate(flag: bool) -> int:
+    return 1 if flag else 0
+
+
+# Mixing standard overloads with ``overload_for`` literal cases
+@overload
+def mixed_overload(x: str) -> str: ...
+
+
+@overload_for(0)
+def mixed_overload(x: int | str) -> int | str:
+    if x == 0:
+        return 0
+    if isinstance(x, str):
+        return x
+    return x
+
+
+# Class with an abstract method to verify abstract decorators
+class AbstractBase(ABC):
+    @abstractmethod
+    def do_something(self) -> int: ...
+
+
+# Class with non-iterable __parameters__ to ensure graceful handling
+class BadParams:
+    __parameters__ = 1
+    value: int
+
+
+# Demo: dynamically generate a NewType per subclass
+class Mapped(Generic[T]): ...
+
+
+class SQLBase:
+    def __init_subclass__(cls) -> None:
+        typename = f"{cls.__name__}Id"
+        new_type = NewType(typename, int)
+        cls.id_type = new_type
+        cls.__annotations__["id"] = Mapped[new_type]
+        cls.__annotations__["id_type"] = type[new_type]
+        sys.modules[cls.__module__].__dict__[typename] = new_type
+
+
+class ManagerModel(SQLBase): ...
+
+
+class EmployeeModel(SQLBase):
+    manager_id: Mapped[ManagerModel.id_type]
 
 
 # Basic callable examples
@@ -151,7 +392,7 @@ def do_nothing() -> None:
 
 
 # Functions with special control flow
-def always_raises() -> NoReturn:
+def always_raises() -> Never:
     raise RuntimeError()
 
 
@@ -536,7 +777,7 @@ ANNOTATED_FINAL: Final[int] = 5
 ANNOTATED_CLASSVAR: int = 1
 
 # Literal string should retain quotes
-LITERAL_STR_VAR: Literal["hi"] = "hi"
+LITERAL_STR_QUOTED: Literal["hi"] = "hi"
 
 # ``Final`` without explicit type should infer from value
 BOX_SIZE: Final = 20
