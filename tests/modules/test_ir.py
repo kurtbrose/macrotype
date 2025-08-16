@@ -50,7 +50,7 @@ def test_module_var_and_func(idx: dict[str, object]) -> None:
     f = get(idx, "mult")
     assert isinstance(f, FuncDecl)
     names = [p.name for p in f.params]
-    assert "b" not in names
+    assert names == ["a", "b"]
 
 
 def test_basic_class_members(idx: dict[str, object]) -> None:
