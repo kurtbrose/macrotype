@@ -215,7 +215,9 @@ def test_flag_transform() -> None:
     assert ff.flags.get("final") is True
     assert "final" not in ff.decorators
 
-    ol = next(s for s in mi.members if s.name == "OverrideLate")
+    ann_new = importlib.import_module("tests.annotations_new")
+    mi_new = from_module(ann_new)
+    ol = next(s for s in mi_new.members if s.name == "OverrideLate")
     assert isinstance(ol, ClassDecl)
     cls_override = next(
         m for m in ol.members if isinstance(m, FuncDecl) and m.name == "cls_override"

@@ -1,6 +1,8 @@
 # Generated via: macrotype tests/annotations_new.py --modules -o tests/annotations_new.pyi
 # Do not edit by hand
 from collections import deque
+from functools import cached_property
+from re import Pattern
 from typing import (
     Annotated,
     Any,
@@ -14,6 +16,7 @@ from typing import (
     TypeVarTuple,
     Unpack,
     overload,
+    override,
 )
 
 P = ParamSpec("P")
@@ -158,6 +161,59 @@ def UNTYPED_LAMBDA(x, y): ...  # noqa: F821
 def TYPED_LAMBDA(a, b): ...
 
 ANNOTATED_EXTRA: Annotated[str, "extra"]
+
+class Basic:
+    simple: list[str]
+    mapping: dict[str, int]
+    optional: None | int
+    union: int | str  # typing.Union should remain unaltered
+    pipe_union: int | str
+    func: Callable[[int, str], bool]
+    annotated: Annotated[int, "meta"]
+    pattern: Pattern[str]
+    uid: UserId
+    lit_attr: Literal["a", "b"]
+    def copy[T](self, param: T) -> T: ...
+    def curry[**P](self, f: Callable[P, int]) -> Callable[P, int]: ...
+    def literal_method(self, flag: Literal["on", "off"]) -> Literal[1, 0]: ...
+    @classmethod
+    def cls_method(cls, value: int) -> Basic: ...
+    @classmethod
+    def cls_override(cls) -> int: ...
+    @staticmethod
+    def static_method(value: int) -> int: ...
+    @staticmethod
+    def static_override() -> int: ...
+    @property
+    def prop(self) -> int: ...
+    @property
+    def data(self) -> int: ...
+    @data.setter
+    def data(self, value: int) -> None: ...
+    @property
+    def temp(self) -> int: ...
+    @temp.deleter
+    def temp(self) -> None: ...
+    class Nested:
+        x: float
+        y: str
+
+    @cached_property
+    def cached(self) -> int: ...
+
+class Child(Basic): ...
+
+class OverrideChild(Basic):
+    @override
+    def copy[T](self, param: T) -> T: ...
+
+class OverrideLate(Basic):
+    @classmethod
+    @override
+    def cls_override(cls) -> int: ...
+    @staticmethod
+    @override
+    def static_override() -> int: ...
 
 GENERIC_DEQUE: deque[int]
 
