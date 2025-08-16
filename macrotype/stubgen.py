@@ -183,7 +183,17 @@ def load_module_from_code(
     return module
 
 
-def stub_lines(module: ModuleType) -> list[str]:
+def stub_lines(
+    module: ModuleType,
+    *,
+    use_modules: bool = False,
+    strict: bool = False,
+) -> list[str]:
+    if use_modules:
+        from . import modules
+
+        mi = modules.from_module(module, strict=strict)
+        return modules.emit_module(mi)
     return PyiModule.from_module(module).render()
 
 
@@ -230,9 +240,11 @@ def process_file(
     *,
     command: str | None = None,
     stub_overlay_dir: Path | None = None,
+    use_modules: bool = False,
+    strict: bool = False,
 ) -> Path:
     module = load_module_from_path(src)
-    lines = stub_lines(module)
+    lines = stub_lines(module, use_modules=use_modules, strict=strict)
     dest = dest or src.with_suffix(".pyi")
     write_stub(dest, lines, command)
     if stub_overlay_dir is not None:
@@ -246,6 +258,8 @@ def process_directory(
     *,
     command: str | None = None,
     stub_overlay_dir: Path | None = None,
+    use_modules: bool = False,
+    strict: bool = False,
 ) -> list[Path]:
     outputs = []
     for src in iter_python_files(directory):
@@ -257,6 +271,8 @@ def process_directory(
                     dest,
                     command=command,
                     stub_overlay_dir=stub_overlay_dir,
+                    use_modules=use_modules,
+                    strict=strict,
                 )
             )
         except (Exception, SystemExit) as exc:  # pragma: no cover - defensive

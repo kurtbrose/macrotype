@@ -36,6 +36,11 @@ def _stub_main(argv: list[str]) -> int:
         "--stub-overlay-dir",
         help="Symlink generated stubs into this directory for type checkers",
     )
+    parser.add_argument(
+        "--modules",
+        action="store_true",
+        help="Use new modules pipeline for stub generation",
+    )
     args = parser.parse_args(argv)
     command = "macrotype " + " ".join(argv)
     stub_overlay_dir = Path(args.stub_overlay_dir) if args.stub_overlay_dir else None
@@ -56,7 +61,7 @@ def _stub_main(argv: list[str]) -> int:
             parser.error("--stub-overlay-dir cannot be used with stdin")
         code = sys.stdin.read()
         module = stubgen.load_module_from_code(code, "<stdin>")
-        lines = stubgen.stub_lines(module)
+        lines = stubgen.stub_lines(module, use_modules=args.modules, strict=args.modules)
         if args.output and args.output != "-":
             stubgen.write_stub(Path(args.output), lines, command)
         else:
@@ -73,7 +78,11 @@ def _stub_main(argv: list[str]) -> int:
             if args.output == "-":
                 if stub_overlay_dir:
                     parser.error("--stub-overlay-dir requires a file output")
-                lines = stubgen.stub_lines(stubgen.load_module_from_path(path))
+                lines = stubgen.stub_lines(
+                    stubgen.load_module_from_path(path),
+                    use_modules=args.modules,
+                    strict=args.modules,
+                )
                 _stdout_write(lines, command)
             else:
                 dest = Path(args.output) if args.output else default_output
@@ -87,6 +96,8 @@ def _stub_main(argv: list[str]) -> int:
                     dest,
                     command=command,
                     stub_overlay_dir=overlay,
+                    use_modules=args.modules,
+                    strict=args.modules,
                 )
         else:
             if args.output == "-":
@@ -106,6 +117,8 @@ def _stub_main(argv: list[str]) -> int:
                 out_dir,
                 command=command,
                 stub_overlay_dir=overlay,
+                use_modules=args.modules,
+                strict=args.modules,
             )
     return 0
 
