@@ -3,6 +3,7 @@ from typing import (
     Callable,
     Concatenate,
     Final,
+    Literal,
     NewType,
     ParamSpec,
     TypeAlias,
@@ -110,6 +111,22 @@ TUPLE_VAR: tuple[int, ...]
 # Variable using set and frozenset types to test container formatting
 SET_VAR: set[int]
 FROZENSET_VAR: frozenset[str]
+# Set containing a nested list to exercise TypeNode in set elements
+SET_LIST_VAR: set[list[str]]
+# Tuple containing a nested list to exercise TypeNode in tuple items
+TUPLE_LIST_VAR: tuple[list[str], int]
+# List containing a callable to exercise TypeNode in callable parts
+CALLABLE_LIST_VAR: list[Callable[[int], str]]
+# Edge case: annotated constants with values should honor the annotation
+ANNOTATED_FINAL: Final[int] = 5
+ANNOTATED_CLASSVAR: int = 1
+
+# Literal string should retain quotes
+LITERAL_STR_VAR: Literal["hi"] = "hi"
+
+# ``Final`` without explicit type should infer from value
+BOX_SIZE: Final = 20
+BORDER_SIZE: Final = 4
 
 
 class FutureClass: ...

@@ -1,7 +1,18 @@
 # Generated via: macrotype tests/annotations_new.py --modules -o tests/annotations_new.pyi
 # Do not edit by hand
-# fmt: off
-from typing import Any, Callable, Concatenate, Final, Literal, NewType, ParamSpec, TypeVar, TypeVarTuple, Unpack, overload
+from typing import (
+    Any,
+    Callable,
+    Concatenate,
+    Final,
+    Literal,
+    NewType,
+    ParamSpec,
+    TypeVar,
+    TypeVarTuple,
+    Unpack,
+    overload,
+)
 
 P = ParamSpec("P")
 
@@ -21,22 +32,18 @@ TDV = TypeVar("TDV")
 
 UserId = NewType("UserId", int)
 
-def with_paramspec_args_kwargs[**P](fn: Callable[P, int], *args: P.args, **kwargs: P.kwargs) -> int: ...
-
+def with_paramspec_args_kwargs[**P](
+    fn: Callable[P, int], *args: P.args, **kwargs: P.kwargs
+) -> int: ...
 def prepend_one[**P](fn: Callable[Concatenate[int, P], int]) -> Callable[P, int]: ...
-
 @overload
 def special_neg(val: Literal[0]) -> Literal[0]: ...
-
 @overload
 def special_neg(val: Literal[1]) -> Literal[-1]: ...
-
 @overload
 def special_neg(val: int) -> int: ...
-
 @overload
 def parse_int_or_none(val: None) -> None: ...
-
 @overload
 def parse_int_or_none(val: None | str) -> None | int: ...
 
@@ -80,8 +87,17 @@ type TupleUnpackFirst[*Ts] = tuple[Unpack[Ts], int]  # Unpack before trailing el
 
 type RecursiveList[T] = T | list[RecursiveList[T]]
 
-class FutureClass:
-    ...
+ANNOTATED_FINAL: Final[int]
+
+ANNOTATED_CLASSVAR: int
+
+LITERAL_STR_VAR: Literal["hi"]
+
+BOX_SIZE: Final[int]
+
+BORDER_SIZE: Final[int]
+
+class FutureClass: ...
 
 GLOBAL: int
 
@@ -102,3 +118,9 @@ TUPLE_VAR: tuple[int, ...]
 SET_VAR: set[int]
 
 FROZENSET_VAR: frozenset[str]
+
+SET_LIST_VAR: set[list[str]]
+
+TUPLE_LIST_VAR: tuple[list[str], int]
+
+CALLABLE_LIST_VAR: list[Callable[[int], str]]

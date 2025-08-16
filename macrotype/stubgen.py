@@ -3,7 +3,9 @@ from __future__ import annotations
 import ast
 import importlib
 import shutil
+import subprocess
 import sys
+import tempfile
 import typing
 from pathlib import Path
 from types import ModuleType
@@ -29,6 +31,19 @@ def _guess_module_name(path: Path) -> str | None:
     if len(parts) > 1:
         return ".".join(reversed(parts))
     return None
+
+
+def _format_with_ruff(lines: list[str]) -> list[str]:
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp_path = Path(tmpdir) / "out.pyi"
+        tmp_path.write_text("\n".join(lines) + "\n")
+        subprocess.run(["ruff", "format", str(tmp_path)], check=True, capture_output=True)
+        subprocess.run(
+            ["ruff", "check", str(tmp_path), "--select", "I", "--fix", "--exit-zero"],
+            check=True,
+            capture_output=True,
+        )
+        return tmp_path.read_text().splitlines()
 
 
 class _TypeCheckingTransformer(ast.NodeTransformer):
@@ -193,8 +208,10 @@ def stub_lines(
         from . import modules
 
         mi = modules.from_module(module, strict=strict)
-        return modules.emit_module(mi)
-    return PyiModule.from_module(module).render()
+        lines = modules.emit_module(mi)
+    else:
+        lines = PyiModule.from_module(module).render()
+    return _format_with_ruff(lines)
 
 
 def write_stub(dest: Path, lines: list[str], command: str | None = None) -> None:
