@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sys
 import types
 import typing as t
 
@@ -48,16 +47,7 @@ def synthesize_aliases(mi: ModuleDecl) -> None:
         if isinstance(obj, t.TypeAliasType):  # type: ignore[attr-defined]
             sym.value = Site(role="alias_value", annotation=obj.__value__)
             sym.obj_type = obj
-            params: list[str] = []
-            for tp in getattr(obj, "__type_params__", ()):  # pragma: no cover - py312+
-                if sys.version_info >= (3, 13):
-                    params.append(_format_type_param(tp))
-                elif isinstance(tp, t.ParamSpec):
-                    params.append(f"**{tp.__name__}")
-                elif isinstance(tp, t.TypeVarTuple):
-                    params.append(f"*{tp.__name__}")
-                else:
-                    params.append(tp.__name__)
+            params = [_format_type_param(tp) for tp in getattr(obj, "__type_params__", ())]
             sym.type_params = tuple(params)
         elif annotations.get(sym.name) is t.TypeAlias:
             sym.obj_type = t.TypeAlias

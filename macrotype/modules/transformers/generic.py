@@ -31,7 +31,13 @@ def _format_type_param(param: t.Any) -> str:
     if isinstance(param, t.ParamSpec):
         return f"**{param.__name__}"
     if isinstance(param, t.TypeVar):
-        return param.__name__
+        name = param.__name__
+        if param.__bound__ is not None:
+            return f"{name}: {_format_type_param(param.__bound__)}"
+        if param.__constraints__:
+            items = ", ".join(_format_type_param(c) for c in param.__constraints__)
+            return f"{name}: ({items})"
+        return name
     return getattr(param, "__name__", repr(param))
 
 
@@ -45,8 +51,12 @@ def _find_typevars(obj: t.Any) -> set[str]:
         if node is None:
             return
         match node:
-            case TyTypeVar(name=n) | TyParamSpec(name=n) | TyTypeVarTuple(name=n):
+            case TyTypeVar(name=n):
                 found.add(n)
+            case TyParamSpec(name=n):
+                found.add(f"**{n}")
+            case TyTypeVarTuple(name=n):
+                found.add(f"*{n}")
             case TyApp(base=b, args=args):
                 visit(b)
                 for a in args:
