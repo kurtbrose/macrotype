@@ -33,7 +33,8 @@ def scan_module(mod: ModuleType) -> ModuleDecl:
             continue
 
         if inspect.isclass(obj):
-            if obj.__name__ != name:
+            qualname = getattr(obj, "__qualname_override__", obj.__name__)
+            if qualname != name:
                 site = Site(role="alias_value", annotation=obj)
                 decls.append(TypeDefDecl(name=name, value=site, obj=obj))
             else:
@@ -45,11 +46,13 @@ def scan_module(mod: ModuleType) -> ModuleDecl:
                 ann = mod_ann.get(name, type(obj))
                 site = Site(role="var", name=name, annotation=ann)
                 decls.append(VarDecl(name=name, site=site, obj=obj))
-            elif obj.__name__ != name:
-                site = Site(role="alias_value", annotation=obj)
-                decls.append(TypeDefDecl(name=name, value=site, obj=obj))
             else:
-                decls.append(_scan_function(obj))
+                qualname = getattr(obj, "__qualname_override__", obj.__name__)
+                if qualname != name:
+                    site = Site(role="alias_value", annotation=obj)
+                    decls.append(TypeDefDecl(name=name, value=site, obj=obj))
+                else:
+                    decls.append(_scan_function(obj))
             continue
 
         if name in mod_ann:
@@ -114,8 +117,8 @@ def _scan_function(fn: t.Callable) -> FuncDecl:
     try:
         sig = inspect.signature(fn)
         for p in sig.parameters.values():
-            if p.name in raw_ann:
-                params.append(Site(role="param", name=p.name, annotation=raw_ann[p.name]))
+            ann = raw_ann.get(p.name, inspect._empty)
+            params.append(Site(role="param", name=p.name, annotation=ann))
     except (TypeError, ValueError):
         pass
 

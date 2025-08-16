@@ -21,7 +21,6 @@ from typing import (
     LiteralString,
     Never,
     NewType,
-    NoReturn,
     NotRequired,
     Optional,
     ParamSpec,
@@ -393,7 +392,7 @@ def do_nothing() -> None:
 
 
 # Functions with special control flow
-def always_raises() -> NoReturn:
+def always_raises() -> Never:
     raise RuntimeError()
 
 
