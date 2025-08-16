@@ -49,7 +49,7 @@ def norm(t: ResolvedTy | Ty, opts: NormOpts | None = None) -> NormalizedTy:
     """Normalize *t* according to *opts*."""
 
     top = t if isinstance(t, TyRoot) else TyRoot(ty=t)
-    inner = _norm(top.ty, opts or _DEFAULT)
+    inner = _norm(top.ty, opts or _DEFAULT) if top.ty is not None else None
     return NormalizedTy(
         TyRoot(
             ty=inner,
@@ -60,7 +60,9 @@ def norm(t: ResolvedTy | Ty, opts: NormOpts | None = None) -> NormalizedTy:
     )
 
 
-def _norm(n: Ty, o: NormOpts) -> Ty:
+def _norm(n: Ty | None, o: NormOpts) -> Ty | None:
+    if n is None:
+        return None
     ann = n.annotations
     if ann and o.drop_annotated_any and isinstance(n, TyAny):
         return TyAny()

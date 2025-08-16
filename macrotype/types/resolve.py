@@ -45,7 +45,7 @@ class ResolveEnv:
 def resolve(t: ParsedTy | Ty, env: ResolveEnv) -> ResolvedTy:
     """Resolve forward refs and qualify bare names. Pure; returns a new tree."""
     top = t if isinstance(t, TyRoot) else TyRoot(ty=t)
-    inner = _res(top.ty, env)
+    inner = _res(top.ty, env) if top.ty is not None else None
     return ResolvedTy(
         TyRoot(
             ty=inner,
@@ -56,7 +56,9 @@ def resolve(t: ParsedTy | Ty, env: ResolveEnv) -> ResolvedTy:
     )
 
 
-def _res(node: Ty, env: ResolveEnv) -> Ty:
+def _res(node: Ty | None, env: ResolveEnv) -> Ty | None:
+    if node is None:
+        return None
     ann = node.annotations
     match node:
         case TyAny() | TyNever() | TyParamSpec() | TyTypeVar() | TyTypeVarTuple() | TyType():
