@@ -41,10 +41,16 @@ def emit_module(mi: ModuleDecl) -> list[str]:
     if lines and lines[-1] == "":
         lines.pop()
 
-    pre = mi.imports.lines() if mi.imports else []
-    if pre and lines:
-        return pre + [""] + lines
-    return pre + lines
+    pre: list[str] = []
+    if mi.source and mi.source.headers:
+        pre.extend(mi.source.headers)
+    imports = mi.imports.lines() if mi.imports else []
+    pre.extend(imports)
+    if lines:
+        if pre:
+            pre.append("")
+        pre.extend(lines)
+    return pre
 
 
 def _add_comment(line: str, comment: str | None) -> str:
