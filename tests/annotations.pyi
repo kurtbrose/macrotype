@@ -626,26 +626,6 @@ class RequiredUndefinedCls:
 
 def wrapped_callable(x: int, y: str) -> str: ...
 
-GLOBAL: int
-
-CONST: Final[str]
-
-ANY_VAR: Any
-
-FUNC_ELLIPSIS: Callable[..., int]
-
-TUPLE_UNANN: tuple
-
-TUPLE_EMPTY: tuple[()]
-
-TUPLE_ONE: tuple[int]
-
-TUPLE_VAR: tuple[int, ...]
-
-SET_VAR: set[int]
-
-FROZENSET_VAR: frozenset[str]
-
 SET_LIST_VAR: set[list[str]]
 
 TUPLE_LIST_VAR: tuple[list[str], int]

@@ -227,7 +227,7 @@ def stringify_annotation(ann: Any, name_map: dict[int, str]) -> str:
             parts.append(name_map.get(id(meta), _qualname(meta)))
         return f"Annotated[{', '.join(parts)}]"
 
-    if origin is tuple and args == ((),):
+    if origin is tuple and ann is not tuple and not args:
         name = name_map.get(id(origin), _qualname(origin))
         return f"{name}[()]"
 
