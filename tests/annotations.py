@@ -4,8 +4,6 @@ import types
 import typing
 from typing import Any, NewType, ParamSpec, TypeVar, TypeVarTuple
 
-import macrotype.meta_types as mt
-
 T = TypeVar("T")
 P = ParamSpec("P")
 Ts = TypeVarTuple("Ts")
@@ -30,25 +28,6 @@ def strip_null(ann: Any, null: Any) -> Any:
             result |= a
         return result
     return ann
-
-
-# optional() and required() with a custom null sentinel
-class Undefined: ...
-
-
-class UndefinedCls:
-    a: int
-    b: str | Undefined
-
-
-class OptionalUndefinedCls:
-    __annotations__ = {k: v | Undefined for k, v in mt.all_annotations(UndefinedCls).items()}
-
-
-class RequiredUndefinedCls:
-    __annotations__ = {
-        k: strip_null(v, Undefined) for k, v in mt.all_annotations(UndefinedCls).items()
-    }
 
 
 # Callable wrapped by non-function object with __wrapped__

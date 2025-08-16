@@ -185,7 +185,7 @@ def stringify_annotation(ann: Any, name_map: dict[int, str]) -> str:
 
     if origin in {types.UnionType, t.Union}:
         items = [(arg, stringify_annotation(arg, name_map)) for arg in args]
-        items.sort(key=lambda item: (0 if isinstance(item[0], t.TypeVar) else 1))
+        items.sort(key=lambda item: (0 if isinstance(item[0], t.TypeVar) else 1, item[1]))
         return " | ".join(s for _, s in items)
 
     from collections.abc import Callable as ABC_Callable

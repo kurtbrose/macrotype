@@ -23,20 +23,5 @@ TDV = TypeVar("TDV")
 UserId = NewType("UserId", int)
 
 def strip_null(ann: Any, null: Any) -> Any: ...
-
-class Undefined: ...
-
-class UndefinedCls:
-    a: int
-    b: Undefined | str
-
-class OptionalUndefinedCls:
-    a: Undefined | int
-    b: Undefined | str
-
-class RequiredUndefinedCls:
-    a: int
-    b: str
-
 def _wrap(fn): ...
 def wrapped_callable(x: int, y: str) -> str: ...

@@ -129,6 +129,25 @@ class InheritedFinal:
     __annotations__ = {k: Final[v] for k, v in mt.all_annotations(SubInherit).items()}
 
 
+# optional() and required() with a custom null sentinel
+class Undefined: ...
+
+
+class UndefinedCls:
+    a: int
+    b: str | Undefined
+
+
+class OptionalUndefinedCls:
+    __annotations__ = {k: v | Undefined for k, v in mt.all_annotations(UndefinedCls).items()}
+
+
+class RequiredUndefinedCls:
+    __annotations__ = {
+        k: strip_null(v, Undefined) for k, v in mt.all_annotations(UndefinedCls).items()
+    }
+
+
 # Edge case: LiteralString handling
 LITERAL_STR_VAR: LiteralString
 # Dict without explicit value type should remain as written
