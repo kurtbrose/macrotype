@@ -57,6 +57,10 @@ def _v(node: Ty, *, ctx: Context) -> None:
 
         # tuple[...] forms (fixed-length or variadic)
         case TyApp(base=TyType(type_=tuple), args=args):
+            if any(isinstance(a, TyTypeVarTuple) for a in args):
+                raise TypeValidationError(
+                    "TypeVarTuple in tuple[...] must be wrapped in Unpack[...]"
+                )
             # Ellipsis, if present, must be last; only one allowed
             ell_count = sum(1 for a in args if isinstance(a, TyType) and a.type_ is EllipsisType)
             if ell_count:
