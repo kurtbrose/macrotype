@@ -26,19 +26,45 @@ def _format_type_param(param: t.Any) -> str:
         (inner,) = get_args(param)
         text = _format_type_param(inner)
         return text if text.startswith("*") else f"*{text}"
+
+    default = getattr(param, "__default__", None)
+
     if isinstance(param, t.TypeVarTuple):
-        return f"*{param.__name__}"
+        text = f"*{param.__name__}"
+        if default is not None:
+            if isinstance(default, tuple):
+                items = ", ".join(_format_type_param(d) for d in default)
+                text += f" = ({items})"
+            else:
+                text += f" = {_format_type_param(default)}"
+        return text
+
     if isinstance(param, t.ParamSpec):
-        return f"**{param.__name__}"
+        text = f"**{param.__name__}"
+        if default is not None:
+            if isinstance(default, tuple):
+                items = ", ".join(_format_type_param(d) for d in default)
+                text += f" = ({items})"
+            else:
+                text += f" = {_format_type_param(default)}"
+        return text
+
     if isinstance(param, t.TypeVar):
         name = param.__name__
+        text = name
         if param.__bound__ is not None:
-            return f"{name}: {_format_type_param(param.__bound__)}"
-        if param.__constraints__:
+            text += f": {_format_type_param(param.__bound__)}"
+        elif param.__constraints__:
             items = ", ".join(_format_type_param(c) for c in param.__constraints__)
-            return f"{name}: ({items})"
-        return name
-    return getattr(param, "__name__", repr(param))
+            text += f": ({items})"
+        if default is not None:
+            text += f" = {_format_type_param(default)}"
+        return text
+
+    text = getattr(param, "__name__", repr(param))
+    if default is not None:
+        text += f" = {_format_type_param(default)}"
+    return text
 
 
 def _find_typevars(obj: t.Any) -> set[str]:

@@ -1,4 +1,4 @@
-# Generated via: macrotype macrotype/modules/transformers/generic.py -o __macrotype__/macrotype/modules/transformers/generic.pyi --strict
+# Generated via: macrotype macrotype/modules/transformers/generic.py --strict -o __macrotype__/macrotype/modules/transformers/generic.pyi
 # Do not edit by hand
 from __future__ import annotations
 
