@@ -57,47 +57,6 @@ TDV = TypeVar("TDV")
 
 UserId = NewType("UserId", int)
 
-UNANNOTATED_CONST: int
-
-UNANNOTATED_STR: str
-
-UNANNOTATED_FLOAT: float
-
-EXPLICIT_NONE: None
-
-def takes_none_alias(x: None) -> None: ...
-
-class CustomInt(int): ...
-
-UNANNOTATED_CUSTOM_INT: CustomInt
-
-BOOL_TRUE: bool
-
-BOOL_FALSE: bool
-
-SITE_PROV_VAR: int
-
-COMMENTED_VAR: int  # pragma: var
-
-def mult(a, b: int): ...
-def takes_optional(x): ...
-def takes_none_param(x: None) -> None: ...
-def _alias_target() -> None: ...
-
-PRIMARY_ALIAS = _alias_target
-
-SECONDARY_ALIAS = _alias_target
-
-def _wrap(fn): ...
-def wrapped_with_default(x: int, y: int) -> int: ...
-def commented_func(x: int) -> None: ...  # pragma: func
-
-UNTYPED_LAMBDA: function  # noqa: F821
-
-TYPED_LAMBDA: Callable[[int, int], int]
-
-ANNOTATED_EXTRA: Annotated[str, "extra"]
-
 NESTED_ANNOTATED: Annotated[int, "a", "b"]
 
 TRIPLE_ANNOTATED: Annotated[int, "x", "y", "z"]
@@ -535,9 +494,8 @@ class RequiredUndefinedCls:
     a: int
     b: str
 
+def _wrap(fn): ...
 def wrapped_callable(x: int, y: str) -> str: ...
-
-STRICT_UNION: int | str
 
 GENERIC_DEQUE: deque[int]
 
