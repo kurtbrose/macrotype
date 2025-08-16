@@ -89,7 +89,7 @@ def _res(node: Ty, env: ResolveEnv) -> Ty:
             )
 
         case TyUnpack(inner=inner):
-            res = TyUnpack(_res(inner, env))
+            res = TyUnpack(inner=_res(inner, env))
 
         case _:
             res = node
