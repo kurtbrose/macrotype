@@ -3,7 +3,6 @@
 # pyright: basic
 # mypy: allow-any-expr
 from abc import ABC, abstractmethod
-from collections import deque
 from collections.abc import AsyncIterator, Iterator, Sequence
 from dataclasses import InitVar, dataclass
 from enum import Enum, IntEnum, IntFlag
@@ -56,8 +55,6 @@ ContravariantT = TypeVar("ContravariantT", contravariant=True)
 TDV = TypeVar("TDV")
 
 UserId = NewType("UserId", int)
-
-class UserBox[T]: ...
 
 class Basic:
     simple: list[str]
@@ -481,12 +478,6 @@ class RequiredUndefinedCls:
 
 def _wrap(fn): ...
 def wrapped_callable(x: int, y: str) -> str: ...
-
-GENERIC_DEQUE: deque[int]
-
-GENERIC_DEQUE_LIST: deque[list[str]]
-
-GENERIC_USERBOX: UserBox[int]
 
 LITERAL_STR_VAR: LiteralString
 

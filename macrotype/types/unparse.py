@@ -3,7 +3,7 @@ from __future__ import annotations
 import typing as t
 from dataclasses import replace
 from types import EllipsisType
-from typing import Any
+from typing import Any, get_origin
 
 from .ir import (
     Ty,
@@ -80,10 +80,11 @@ def _unparse_no_annos(n: Ty) -> Any:
             return res
         case TyApp(base=base, args=args):
             b = _unparse(base)
+            origin = get_origin(b) or b
             a_objs = tuple(_unparse(a) for a in args)
             if len(a_objs) == 1:
-                return b[a_objs[0]]
-            return b[a_objs]
+                return origin[a_objs[0]]
+            return origin[a_objs]
         case TyLiteral(values=vals):
             return t.Literal[vals]
         case TyCallable(params=ps, ret=r):

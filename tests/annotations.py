@@ -17,7 +17,6 @@ from typing import (
     Any,
     Callable,
     ClassVar,
-    Deque,
     Final,
     Generic,
     Literal,
@@ -64,18 +63,6 @@ CovariantT = TypeVar("CovariantT", covariant=True)
 ContravariantT = TypeVar("ContravariantT", contravariant=True)
 TDV = TypeVar("TDV")
 UserId = NewType("UserId", int)
-
-GENERIC_DEQUE: Deque[int]
-# Deque with nested list to exercise TypeNode inside GenericNode
-GENERIC_DEQUE_LIST: Deque[list[str]]
-
-
-# User-defined generic class to exercise GenericNode
-class UserBox(Generic[T]):
-    pass
-
-
-GENERIC_USERBOX: UserBox[int]
 
 
 class Basic:
