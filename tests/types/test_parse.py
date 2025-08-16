@@ -86,7 +86,7 @@ CASES: list[tuple[object, TyRoot]] = [
     (str, r(b("str"))),
     (None, r(b("None"))),
     (t.Any, r(TyAny())),
-    (t.NoReturn, r(TyNever())),
+    (t.NoReturn, r(typ("NoReturn"))),
     (t.Never, r(TyNever())),
     (t.LiteralString, r(typ("LiteralString"))),
     # Literal (PEP 586 shapes)

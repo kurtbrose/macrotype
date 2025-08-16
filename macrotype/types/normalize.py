@@ -72,6 +72,8 @@ def _norm(n: Ty | None, o: NormOpts) -> Ty | None:
             res = n
 
         case TyType(type_=tp):
+            if tp is t.NoReturn:
+                return TyNever()
             if o.typing_to_builtins and tp in _TYPING_TO_BUILTINS:
                 return TyType(type_=_TYPING_TO_BUILTINS[tp])
             res = n

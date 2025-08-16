@@ -16,9 +16,7 @@ from typing import (
     Final,
     Generic,
     LiteralString,
-    Never,
     NewType,
-    NoReturn,
     ParamSpec,
     TypeGuard,
     TypeVar,
@@ -50,38 +48,11 @@ TDV = TypeVar("TDV")
 UserId = NewType("UserId", int)
 
 
-def sum_of(*args: tuple[int]) -> int:
-    return sum(args)
-
-
-def dict_echo(**kwargs: dict[str, Any]) -> dict[str, Any]:
-    return kwargs
-
-
 # Edge case: ``Concatenate`` parameter handling
 # Edge case: ``Concatenate`` parameter handling (requires PEP 695 generics)
 
 
 # Edge case: direct use of ``P.args`` and ``P.kwargs``
-
-
-def use_params(func: Callable[P, int], *args: P.args, **kwargs: P.kwargs) -> int:
-    return func(*args, **kwargs)
-
-
-# Edge case: function explicitly returning ``None``
-def do_nothing() -> None:
-    return None
-
-
-def always_raises() -> NoReturn:
-    raise RuntimeError()
-
-
-def never_returns() -> Never:
-    raise RuntimeError()
-
-
 # Edge case: ``TypeGuard`` return type
 def is_str_list(val: list[object]) -> TypeGuard[list[str]]:
     return all(isinstance(v, str) for v in val)

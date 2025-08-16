@@ -13,7 +13,9 @@ from typing import (
     Concatenate,
     Final,
     Literal,
+    Never,
     NewType,
+    NoReturn,
     NotRequired,
     ParamSpec,
     Protocol,
@@ -45,6 +47,13 @@ ContravariantT = TypeVar("ContravariantT", contravariant=True)
 TDV = TypeVar("TDV")
 
 UserId = NewType("UserId", int)
+
+def sum_of(*args: tuple[int]) -> int: ...
+def dict_echo(**kwargs: dict[str, Any]) -> dict[str, Any]: ...
+def use_params[**P](func: Callable[P, int], *args: P.args, **kwargs: P.kwargs) -> int: ...
+def do_nothing() -> None: ...
+def always_raises() -> Never: ...
+def never_returns() -> Never: ...
 
 class SelfExample:
     def clone(self: Self) -> Self: ...

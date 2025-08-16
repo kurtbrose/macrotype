@@ -47,6 +47,11 @@ CASES = [
         TyUnion(options=()),
         TyNever(),
     ),
+    # typing.NoReturn -> Never
+    (
+        TyType(type_=t.NoReturn),
+        TyNever(),
+    ),
     # typing.List -> list
     (
         TyApp(base=typ("List"), args=(b("int"),)),
