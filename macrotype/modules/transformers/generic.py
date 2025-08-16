@@ -28,6 +28,8 @@ def _format_type_param(param: t.Any) -> str:
         return text if text.startswith("*") else f"*{text}"
 
     default = getattr(param, "__default__", None)
+    if default in {t.Any, (), None}:
+        default = None
 
     if isinstance(param, t.TypeVarTuple):
         text = f"*{param.__name__}"
@@ -61,7 +63,14 @@ def _format_type_param(param: t.Any) -> str:
             text += f" = {_format_type_param(default)}"
         return text
 
-    text = getattr(param, "__name__", repr(param))
+    name = getattr(param, "__qualname__", getattr(param, "__name__", None))
+    mod = getattr(param, "__module__", "")
+    if name is None:
+        text = repr(param)
+    elif mod in {"typing", "builtins", ""}:
+        text = name
+    else:
+        text = f"{mod}.{name}"
     if default is not None:
         text += f" = {_format_type_param(default)}"
     return text
