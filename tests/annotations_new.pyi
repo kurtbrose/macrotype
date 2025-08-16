@@ -4,6 +4,7 @@ from typing import Callable, Concatenate, ParamSpec
 
 P = ParamSpec("P")
 
-def with_paramspec_args_kwargs[**P](fn: Callable[P, int], *args: P.args, **kwargs: P.kwargs) -> int: ...
-
+def with_paramspec_args_kwargs[**P](
+    fn: Callable[P, int], *args: P.args, **kwargs: P.kwargs
+) -> int: ...
 def prepend_one[**P](fn: Callable[Concatenate[int, P], int]) -> Callable[P, int]: ...
