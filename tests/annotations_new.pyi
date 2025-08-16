@@ -84,8 +84,8 @@ class OmittedCls:
 
 class FinalCls:
     a: Final[int]
-    b: Final[float | None]
-    c: Final[str | None]
+    b: Final[None | float]
+    c: Final[None | str]
     d: Final[bytes]
 
 class ReplacedCls:
@@ -106,6 +106,20 @@ class InheritedOmit:
 class InheritedFinal:
     base: Final[int]
     sub: Final[str]
+
+class Undefined: ...
+
+class UndefinedCls:
+    a: int
+    b: Undefined | str
+
+class OptionalUndefinedCls:
+    a: Undefined | int
+    b: Undefined | str
+
+class RequiredUndefinedCls:
+    a: int
+    b: str
 
 def pos_only_func(a: int, b: str) -> None: ...
 def kw_only_func(x: int, y: str) -> None: ...
@@ -401,7 +415,7 @@ NESTED_ANNOTATED: Annotated[int, "a", "b"]
 
 TRIPLE_ANNOTATED: Annotated[int, "x", "y", "z"]
 
-ANNOTATED_OPTIONAL_META: Annotated[int | None, "meta"]
+ANNOTATED_OPTIONAL_META: Annotated[None | int, "meta"]
 
 ANNOTATED_FINAL_META: Final[Annotated[int, "meta"]]
 

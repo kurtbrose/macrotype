@@ -138,7 +138,7 @@ case4 = (
         "",
         "nested: list[Callable[[int], str]]",
         "",
-        "combo: Callable[[int], str] | Callable[..., bool]",
+        "combo: Callable[..., bool] | Callable[[int], str]",
     ],
 )
 
