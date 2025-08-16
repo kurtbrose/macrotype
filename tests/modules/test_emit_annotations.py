@@ -38,6 +38,15 @@ def test_emit_annotations_enums() -> None:
     assert lines[idx + 2] == "    REF = Point"
 
 
+def test_emit_annotations_typevars() -> None:
+    ann = import_module("tests.annotations_new")
+    mi = from_module(ann)
+    lines = emit_module(mi)
+
+    assert 'U = TypeVar("U", bound=str)' in lines
+    assert 'NumberLike = TypeVar("NumberLike", int, float)' in lines
+
+
 def test_emit_annotations_headers_and_imports() -> None:
     path = Path(__file__).resolve().parent.parent / "annotations.py"
     ann = load_module_from_path(path)
@@ -46,8 +55,10 @@ def test_emit_annotations_headers_and_imports() -> None:
 
     assert lines[0] == "# pyright: basic"
     assert lines[1] == "# mypy: allow-any-expr"
-    expected_imports = ["from typing import Any, NewType, ParamSpec, TypeVar, TypeVarTuple"]
-    assert lines[2:3] == expected_imports
+    # All type variable declarations were migrated to ``annotations_new.py``.
+    # ``annotations.py`` now contains only header directives, so no imports are
+    # expected in the emitted stub.
+    assert lines[2:] == []
 
 
 def test_emit_annotations_inline_meta() -> None:
