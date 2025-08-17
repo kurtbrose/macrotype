@@ -18,6 +18,7 @@ from typing import (
     Final,
     Literal,
     LiteralString,
+    NamedTuple,
     Never,
     NewType,
     NotRequired,
@@ -611,6 +612,10 @@ class NestedOuter:
     class Inner: ...
 
 def nested_class_annotation(x: NestedOuter.Inner) -> NestedOuter.Inner: ...
+
+class PointNT(NamedTuple):
+    x: int
+    y: int
 
 LITERAL_STR_VAR: LiteralString
 
