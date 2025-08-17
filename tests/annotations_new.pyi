@@ -607,6 +607,11 @@ class OverrideEarly(Basic):
 
 def wrapped_callable(x: int, y: str) -> str: ...
 
+class NestedOuter:
+    class Inner: ...
+
+def nested_class_annotation(x: NestedOuter.Inner) -> NestedOuter.Inner: ...
+
 LITERAL_STR_VAR: LiteralString
 
 DICT_WITH_IMPLICIT_ANY: dict[int]  # type: ignore[type-arg]  # pyright: ignore[reportInvalidTypeArguments]
