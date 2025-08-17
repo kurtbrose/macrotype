@@ -85,7 +85,7 @@ def scan_module(mod: ModuleType) -> ModuleDecl:
             continue
 
         ann = type(obj)
-        if obj is None or isinstance(obj, (bool, int, float, str, bytes)):
+        if obj is None or isinstance(obj, (bool, int, float, complex, str, bytes)):
             if obj is None:
                 ann = t.Any
             site = Site(role="var", name=name, annotation=ann)

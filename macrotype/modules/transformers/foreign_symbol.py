@@ -26,11 +26,19 @@ def canonicalize_foreign_symbols(mi: ModuleDecl) -> None:
             new_syms.append(sym)
             continue
         if not hasattr(obj, "__module__"):
-            if sym.name in annotations or isinstance(obj, (int, str, float, bool)) or obj is None:
+            if (
+                sym.name in annotations
+                or isinstance(obj, (int, str, float, complex, bool))
+                or obj is None
+            ):
                 new_syms.append(sym)
             continue
         if obj.__module__ != modname:
-            if sym.name in annotations or isinstance(obj, (int, str, float, bool)) or obj is None:
+            if (
+                sym.name in annotations
+                or isinstance(obj, (int, str, float, complex, bool))
+                or obj is None
+            ):
                 new_syms.append(sym)
                 continue
             alias_name = getattr(obj, "__name__", None)

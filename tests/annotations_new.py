@@ -881,6 +881,8 @@ UNANNOTATED_CONST = 42
 UNANNOTATED_STR = "hi"
 # Edge case: unannotated float constant should be included
 UNANNOTATED_FLOAT = 1.23
+# Edge case: unannotated complex constant should be included
+UNANNOTATED_COMPLEX = 1 + 2j
 # Explicit None annotation should remain None
 EXPLICIT_NONE: None = None
 
