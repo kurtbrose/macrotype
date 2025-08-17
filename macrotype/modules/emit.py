@@ -16,7 +16,10 @@ def _qualname(obj: Any, default: str | None = None) -> str:
     """Return the best available name for *obj* honoring ``__qualname_override__``."""
     if default is None:
         default = repr(obj)
-    return getattr(obj, "__qualname_override__", getattr(obj, "__name__", default))
+    name = getattr(obj, "__name__", default)
+    if "<locals>." in name:
+        name = name.split("<locals>.")[-1]
+    return getattr(obj, "__qualname_override__", name)
 
 
 def emit_module(mi: ModuleDecl) -> list[str]:
@@ -130,10 +133,21 @@ def build_name_map(atoms: Iterable[Any], context: dict[str, Any]) -> dict[int, s
     module_name = context.get("__name__")
     reverse: dict[int, str] = {}
     primitives = (type(None), bool, int, float, complex, str, bytes)
+
+    def _collect_nested(obj: Any, prefix: str) -> None:
+        if not (inspect.isclass(obj) and getattr(obj, "__module__", None) == module_name):
+            return
+        for name, val in obj.__dict__.items():
+            if inspect.isclass(val) and val.__qualname__.startswith(obj.__qualname__ + "."):
+                qual = f"{prefix}.{name}"
+                reverse.setdefault(id(val), qual)
+                _collect_nested(val, qual)
+
     for k, v in context.items():
         if isinstance(v, primitives) or inspect.isroutine(v):
             continue
         reverse.setdefault(id(v), k)
+        _collect_nested(v, k)
 
     name_map: dict[int, str] = {}
 
@@ -145,14 +159,16 @@ def build_name_map(atoms: Iterable[Any], context: dict[str, Any]) -> dict[int, s
         if atom_id in reverse:
             name = reverse[atom_id]
             mod = getattr(atom, "__module__", None)
-            if mod not in {module_name, "builtins"} and (
-                hasattr(atom, "__qualname_override__") or hasattr(atom, "__name__")
-            ):
-                name_map[atom_id] = _qualname(atom)
+            if mod not in {module_name, "builtins"} and hasattr(atom, "__qualname__"):
+                name_map[atom_id] = atom.__qualname__
             else:
                 name_map[atom_id] = name
             continue
-        name_map[atom_id] = _qualname(atom)
+        qual = getattr(atom, "__qualname__", None)
+        if qual and "." in qual:
+            name_map[atom_id] = qual
+        else:
+            name_map[atom_id] = _qualname(atom)
 
     return name_map
 

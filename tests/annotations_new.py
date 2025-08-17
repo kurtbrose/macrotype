@@ -1085,3 +1085,13 @@ def _wrap(fn):
 
 @_wrap
 def wrapped_callable(x: int, y: str) -> str: ...
+
+
+# Nested class annotation should be fully qualified
+class NestedOuter:
+    class Inner:
+        pass
+
+
+def nested_class_annotation(x: NestedOuter.Inner) -> NestedOuter.Inner:
+    return x
