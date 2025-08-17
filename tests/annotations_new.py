@@ -21,6 +21,7 @@ from typing import (
     Generic,
     Literal,
     LiteralString,
+    NamedTuple,
     Never,
     NewType,
     NotRequired,
@@ -1095,3 +1096,9 @@ class NestedOuter:
 
 def nested_class_annotation(x: NestedOuter.Inner) -> NestedOuter.Inner:
     return x
+
+
+# NamedTuple should list its fields
+class PointNT(NamedTuple):
+    x: int
+    y: int
