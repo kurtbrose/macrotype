@@ -19,7 +19,11 @@ def _annotation_for_value(value: Any) -> Any:
         return typing.Literal[value]
     if isinstance(value, bool):
         return typing.Literal[value]
-    if isinstance(value, (int, float, complex, str, bytes)) and not isinstance(value, bool):
+    if isinstance(value, float):
+        return float
+    if isinstance(value, complex):
+        return complex
+    if isinstance(value, (int, str, bytes)) and not isinstance(value, bool):
         return typing.Literal[value]
     if isinstance(value, type):
         return value
