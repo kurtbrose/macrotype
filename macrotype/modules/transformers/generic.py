@@ -28,7 +28,8 @@ def _format_type_param(param: t.Any) -> str:
         return text if text.startswith("*") else f"*{text}"
 
     default = getattr(param, "__default__", None)
-    if default in {t.Any, (), None}:
+    no_default = getattr(t, "NoDefault", object())
+    if default in {t.Any, (), None, no_default}:
         default = None
     if isinstance(param, t.TypeVar):
         if param.__constraints__ and default not in param.__constraints__:
