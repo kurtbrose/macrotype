@@ -335,6 +335,22 @@ def bool_gate(flag: bool) -> int:
     return 1 if flag else 0
 
 
+# Edge case: ``overload_for`` should handle NaN without Literal[nan]
+@overload_for(math.nan)
+def nan_case(x: float | str) -> float:
+    if isinstance(x, float):
+        return x
+    return float("nan")
+
+
+# Edge case: ``overload_for`` should handle float values without Literal
+@overload_for(1.5)
+def float_case(x: float | str) -> float:
+    if isinstance(x, float):
+        return x
+    return float(x)
+
+
 # Mixing standard overloads with ``overload_for`` literal cases
 @overload
 def mixed_overload(x: str) -> str: ...
