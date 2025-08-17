@@ -16,3 +16,14 @@ def test_patch_typing_updates_typing_registry():
     clear_registry()
     assert typing.get_overloads(local) == []
     assert get_overloads(local) == []
+
+
+def test_patch_typing_restores_missing_get_overloads():
+    orig = typing.get_overloads
+    del typing.get_overloads
+    try:
+        with patch_typing():
+            pass
+        assert not hasattr(typing, "get_overloads")
+    finally:
+        typing.get_overloads = orig
