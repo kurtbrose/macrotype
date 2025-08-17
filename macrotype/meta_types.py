@@ -75,6 +75,8 @@ def patch_typing():
         typing.overload = orig_overload
         if orig_get is not None:
             typing.get_overloads = orig_get
+        elif hasattr(typing, "get_overloads"):
+            del typing.get_overloads
 
         new = {mod: dict(funcs) for mod, funcs in _OVERLOAD_REGISTRY.items()}
         _OVERLOAD_REGISTRY.clear()
