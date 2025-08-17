@@ -582,11 +582,19 @@ class OverrideChild(Basic):
     def copy[T](self, param: T) -> T: ...
 
 class OverrideLate(Basic):
+    @override
     @classmethod
-    @override
     def cls_override(cls) -> int: ...
-    @staticmethod
     @override
+    @staticmethod
+    def static_override() -> int: ...
+
+class OverrideEarly(Basic):
+    @override
+    @classmethod
+    def cls_override(cls) -> int: ...
+    @override
+    @staticmethod
     def static_override() -> int: ...
 
 def wrapped_callable(x: int, y: str) -> str: ...

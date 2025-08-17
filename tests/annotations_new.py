@@ -1041,6 +1041,19 @@ class OverrideLate(Basic):
         return 2
 
 
+# Edge case: @override applied before descriptor
+class OverrideEarly(Basic):
+    @classmethod
+    @override
+    def cls_override(cls) -> int:
+        return 3
+
+    @staticmethod
+    @override
+    def static_override() -> int:
+        return 4
+
+
 # Callable wrapped by non-function object with __wrapped__
 def _wrap(fn):
     class Wrapper:

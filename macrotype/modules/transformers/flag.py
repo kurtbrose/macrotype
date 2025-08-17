@@ -14,38 +14,39 @@ def _normalize_function(sym: FuncDecl, fn: Any, *, is_method: bool) -> None:
     flags = sym.flags
     decos = list(sym.decorators)
 
+    # Insert ``final``/``override``/``abstractmethod`` before any descriptor
+    # decorators (``classmethod``, ``staticmethod``, ``property``) so that the
+    # emitted order matches conventional usage, e.g. ``@override`` appearing
+    # before ``@classmethod``.  ``inspect`` does not preserve the original
+    # decorator order for these flags, so we reconstruct it here.
+    def _insert(deco: str) -> None:
+        if not is_method:
+            return
+        descriptor_pos = next(
+            (i for i, d in enumerate(decos) if d in {"classmethod", "staticmethod", "property"}),
+            len(decos),
+        )
+        if deco not in decos:
+            decos.insert(descriptor_pos, deco)
+
     if getattr(fn, "__final__", False):
         flags["final"] = True
-        if is_method:
-            decos.append("final")
+        _insert("final")
     if getattr(fn, "__override__", False):
         flags["override"] = True
-        if is_method:
-            decos.append("override")
+        _insert("override")
     if getattr(fn, "__isabstractmethod__", False):
         flags["abstract"] = True
-        if is_method:
-            decos.append("abstractmethod")
+        _insert("abstractmethod")
 
     norm: list[str] = []
     seen: set[str] = set()
     for deco in decos:
         base = deco.split(".")[-1]
-        if base == "final":
-            flags["final"] = True
-            if is_method and base not in seen:
-                norm.append("final")
-                seen.add("final")
-        elif base == "override":
-            flags["override"] = True
-            if is_method and base not in seen:
-                norm.append("override")
-                seen.add("override")
-        elif base == "abstractmethod":
-            flags["abstract"] = True
-            if is_method and base not in seen:
-                norm.append("abstractmethod")
-                seen.add("abstractmethod")
+        if base in {"final", "override", "abstractmethod"}:
+            if base not in seen:
+                norm.append(base)
+                seen.add(base)
         else:
             if deco not in seen:
                 norm.append(deco)
