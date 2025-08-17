@@ -30,6 +30,15 @@ def _format_type_param(param: t.Any) -> str:
     default = getattr(param, "__default__", None)
     if default in {t.Any, (), None}:
         default = None
+    if isinstance(param, t.TypeVar):
+        if param.__constraints__ and default not in param.__constraints__:
+            default = None
+    if isinstance(param, t.TypeVarTuple):
+        if default is not None and not isinstance(default, (tuple, t.TypeVarTuple)):
+            default = None
+    if isinstance(param, t.ParamSpec):
+        if default is not None and not isinstance(default, (tuple, t.ParamSpec)):
+            default = None
 
     if isinstance(param, t.TypeVarTuple):
         text = f"*{param.__name__}"
