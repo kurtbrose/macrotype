@@ -1,9 +1,12 @@
-# Generated via: macrotype macrotype/modules/transformers/param_default.py -o __macrotype__/macrotype/modules/transformers/param_default.pyi
+# Generated via: macrotype macrotype
 # Do not edit by hand
-from typing import Any, Callable
+from __future__ import annotations
 
-from macrotype.modules.ir import ClassDecl, FuncDecl, ModuleDecl
+from typing import Callable
 
-def _infer_function(sym: FuncDecl, fn: Callable[..., Any]) -> None: ...
-def _transform_class(sym: ClassDecl, cls: type) -> None: ...
+from macrotype.modules.ir import FuncDecl, ModuleDecl
+
+annotations = annotations
+
+def _infer_function(sym: FuncDecl, fn: Callable) -> None: ...
 def infer_param_defaults(mi: ModuleDecl) -> None: ...

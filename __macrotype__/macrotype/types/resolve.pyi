@@ -1,8 +1,17 @@
-# Generated via: macrotype macrotype/types macrotype/modules/emit.py
+# Generated via: macrotype macrotype
 # Do not edit by hand
-from dataclasses import dataclass
+from __future__ import annotations
 
-from macrotype.types.ir import Ty
+from dataclasses import dataclass
+from typing import NewType
+
+from macrotype.types.ir import ParsedTy, ResolvedTy, Ty, TyRoot
+
+annotations = annotations
+
+ParsedTy = NewType("ParsedTy", TyRoot)
+
+ResolvedTy = NewType("ResolvedTy", TyRoot)
 
 @dataclass(frozen=True)
 class ResolveEnv:
@@ -10,4 +19,4 @@ class ResolveEnv:
     imports: dict[str, type]
 
 def resolve(t: ParsedTy | Ty, env: ResolveEnv) -> ResolvedTy: ...
-def _res(node: Ty, env: ResolveEnv) -> Ty: ...
+def _res(node: None | Ty, env: ResolveEnv) -> None | Ty: ...

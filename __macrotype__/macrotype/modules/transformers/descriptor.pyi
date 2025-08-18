@@ -1,7 +1,13 @@
+# Generated via: macrotype macrotype
+# Do not edit by hand
+from __future__ import annotations
+
 from functools import partialmethod
 from typing import Any
 
 from macrotype.modules.ir import ClassDecl, FuncDecl, ModuleDecl
+
+annotations = annotations
 
 _ATTR_DECORATORS: dict[type, tuple[str, str]]
 

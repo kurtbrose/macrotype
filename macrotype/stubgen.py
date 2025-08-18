@@ -133,8 +133,8 @@ def load_module_from_path(
                 module.__macrotype_comments__ = comments
                 module.__macrotype_line_map__ = lines
             return module
-        except ImportError:
-            pass
+        except ImportError as exc:
+            print(f"Could not import {name}: {exc}", file=sys.stderr)
 
     if name in sys.modules:
         module = sys.modules[name]

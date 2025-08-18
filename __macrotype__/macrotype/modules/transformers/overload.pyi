@@ -1,4 +1,4 @@
-# Generated via: macrotype macrotype/modules/transformers/overload.py -o __macrotype__/macrotype/modules/transformers/overload.pyi
+# Generated via: macrotype macrotype
 # Do not edit by hand
 from typing import Any, Callable
 
