@@ -27,7 +27,7 @@ macrotype = "macrotype.cli:main"
 macrotype-check = "macrotype.cli:check_main"
 
 [project.optional-dependencies]
-test = ["mypy", "pyright", "ruff", "pytest"]
+test = ["mypy", "pyright", "ruff", "pytest", "sqlalchemy"]
 build = ["build", "twine"]
 
 [tool.ruff]

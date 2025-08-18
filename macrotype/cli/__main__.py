@@ -72,7 +72,7 @@ def _stub_main(argv: list[str]) -> int:
     for target in args.paths:
         path = Path(target)
         default_output = None
-        if args.output != "-":
+        if args.output is None:
             default_output = _default_output_path(path, cwd, is_file=path.is_file())
         if path.is_file():
             if args.output == "-":
