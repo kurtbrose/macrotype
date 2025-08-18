@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 from .. import stubgen
-from . import DEFAULT_OUT_DIR, _default_output_path
+from . import _default_output_path
 from .watch import watch_and_run
 
 
@@ -86,10 +86,6 @@ def _stub_main(argv: list[str]) -> int:
             else:
                 dest = Path(args.output) if args.output else default_output
                 overlay = stub_overlay_dir
-                if overlay is None and dest.parent != path.parent:
-                    overlay = (
-                        DEFAULT_OUT_DIR if dest.is_relative_to(DEFAULT_OUT_DIR) else dest.parent
-                    )
                 stubgen.process_file(
                     path,
                     dest,
@@ -106,10 +102,6 @@ def _stub_main(argv: list[str]) -> int:
             else:
                 out_dir = Path(args.output) if args.output else default_output
                 overlay = stub_overlay_dir
-                if overlay is None and out_dir and out_dir != path:
-                    overlay = (
-                        DEFAULT_OUT_DIR if out_dir.is_relative_to(DEFAULT_OUT_DIR) else out_dir
-                    )
             stubgen.process_directory(
                 path,
                 out_dir,

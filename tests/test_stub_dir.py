@@ -31,4 +31,7 @@ def test_cli_stub_overlay_dir(tmp_path, overlay_subdir):
     if overlay_subdir:
         args.extend(["--stub-overlay-dir", str(stub_dir)])
     subprocess.run(args, check=True, cwd=repo_root)
-    _check_overlay(stub_dir, dest)
+    if overlay_subdir:
+        _check_overlay(stub_dir, dest)
+    else:
+        assert not (stub_dir / "tests" / "annotations_new.pyi").exists()

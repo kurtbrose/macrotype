@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from ast import If, NodeTransformer, expr, stmt
 from pathlib import Path
+from types import ModuleType
 
 annotations = annotations
 

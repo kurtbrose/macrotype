@@ -268,7 +268,11 @@ def process_directory(
 ) -> list[Path]:
     outputs = []
     for src in iter_python_files(directory):
-        dest = (out_dir / src.with_suffix(".pyi").name) if out_dir else None
+        if out_dir:
+            rel = src.relative_to(directory).with_suffix(".pyi")
+            dest = out_dir / rel
+        else:
+            dest = None
         try:
             outputs.append(
                 process_file(

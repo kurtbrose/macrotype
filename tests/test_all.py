@@ -97,9 +97,24 @@ def test_process_directory_skips_dunder_main(tmp_path) -> None:
 
     out = tmp_path / "out"
     process_directory(pkg, out)
-    names = {p.name for p in out.iterdir()}
+    names = {p.name for p in (out / "sub").iterdir()}
     assert "mod.pyi" in names
     assert "__main__.pyi" not in names
+
+
+def test_process_directory_preserves_structure(tmp_path) -> None:
+    pkg = tmp_path / "pkg"
+    (pkg / "a").mkdir(parents=True)
+    (pkg / "a" / "__init__.py").write_text("")
+    (pkg / "a" / "mod.py").write_text("A = 1\n")
+    (pkg / "b").mkdir(parents=True)
+    (pkg / "b" / "__init__.py").write_text("")
+    (pkg / "b" / "mod.py").write_text("B = 2\n")
+
+    out = tmp_path / "out"
+    process_directory(pkg, out)
+    assert (out / "a" / "mod.pyi").exists()
+    assert (out / "b" / "mod.pyi").exists()
 
 
 def test_module_alias(tmp_path) -> None:
