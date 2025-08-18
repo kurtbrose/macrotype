@@ -1,20 +1,20 @@
-# Generated via: macrotype macrotype/modules/ir.py -o __macrotype__/macrotype/modules/ir.pyi
+# Generated via: macrotype macrotype
 # Do not edit by hand
+from __future__ import annotations
+
 from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import Literal
+from typing import Decl, Literal
 
-EllipsisType = ellipsis
-
-ModuleType = module
+annotations = annotations
 
 @dataclass(kw_only=True)
 class Decl:
     name: str
-    obj: None | ellipsis | object
+    obj: EllipsisType | None | object
     comment: None | str
     emit: bool
-    def get_children(self) -> tuple[Decl, ...]: ...
+    def get_children(self) -> tuple["Decl", ...]: ...
     def get_annotation_sites(self) -> tuple[Site, ...]: ...
     def walk(self) -> Iterator[Decl]: ...
 
@@ -29,8 +29,8 @@ class Site:
 @dataclass(kw_only=True)
 class VarDecl(Decl):
     site: Site
-    obj: None | ellipsis | object
-    flags: dict[str, bool]
+    obj: EllipsisType | None | object
+    flags: dict[str, bool]  # final, classvar
     def get_annotation_sites(self) -> tuple[Site, ...]: ...
 
 @dataclass(kw_only=True)
@@ -40,7 +40,8 @@ class FuncDecl(Decl):
     obj: None | object
     decorators: tuple[str, ...]
     type_params: tuple[str, ...]
-    flags: dict[str, bool]
+    flags: dict[str, bool]  # e.g., staticmethod, classmethod
+    is_async: bool
     def get_annotation_sites(self) -> tuple[Site, ...]: ...
 
 @dataclass(kw_only=True)
@@ -49,10 +50,10 @@ class ClassDecl(Decl):
     td_fields: tuple[Site, ...]
     is_typeddict: bool
     td_total: None | bool
-    members: tuple[Decl, ...]
+    members: tuple[Decl, ...]  # nested Var/Func/Class
     obj: None | object
     decorators: tuple[str, ...]
-    flags: dict[str, bool]
+    flags: dict[str, bool]  # e.g., protocol, abstract
     type_params: tuple[str, ...]
     def get_children(self) -> tuple[Decl, ...]: ...
     def get_annotation_sites(self) -> tuple[Site, ...]: ...
@@ -66,9 +67,23 @@ class TypeDefDecl(Decl):
     def get_annotation_sites(self) -> tuple[Site, ...]: ...
 
 @dataclass(kw_only=True)
+class SourceInfo:
+    headers: list[str]
+    comments: dict[int, str]
+    line_map: dict[str, int]
+
+@dataclass(kw_only=True)
+class ImportBlock:
+    typing: set[str]
+    froms: dict[str, set[str]]
+    def lines(self) -> list[str]: ...
+
+@dataclass(kw_only=True)
 class ModuleDecl(Decl):
-    obj: module
+    obj: ModuleType
     members: list[Decl]
+    imports: ImportBlock
+    source: None | SourceInfo
     def get_children(self) -> tuple[Decl, ...]: ...
     def iter_all_decls(self) -> Iterator[Decl]: ...
     def get_all_decls(self) -> list[Decl]: ...
