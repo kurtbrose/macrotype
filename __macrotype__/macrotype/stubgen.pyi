@@ -1,4 +1,4 @@
-# Generated via: macrotype macrotype/stubgen.py --strict -o __macrotype__/macrotype/stubgen.pyi
+# Generated via: macrotype macrotype/stubgen.py
 # Do not edit by hand
 from __future__ import annotations
 
