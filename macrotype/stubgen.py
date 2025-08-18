@@ -230,7 +230,7 @@ def _link_stub_overlay(src: Path, dest: Path, overlay_dir: Path) -> None:
         overlay = overlay_dir.joinpath(*parts, "__init__.pyi")
     else:
         overlay = overlay_dir.joinpath(*parts[:-1], parts[-1] + ".pyi")
-    if overlay.resolve() == dest.resolve():
+    if overlay.exists() and overlay.resolve() == dest.resolve():
         return
     overlay.parent.mkdir(parents=True, exist_ok=True)
     try:
