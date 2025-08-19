@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import collections.abc as abc
 import enum
+from functools import cache
 import types as _types
 import typing as t
 from dataclasses import dataclass, replace
@@ -117,7 +118,22 @@ def _origin_args(tp: object) -> tuple[object | None, tuple[object, ...]]:
 
 # ---------- Main parser ----------
 
+_CACHE = {}
 
+
+def _cached[T](f: T) -> T:
+    def wrapped(tp: object, env: ParseEnv) -> Ty:
+        cache_key = id(tp), env
+        if cache_key not in _CACHE:
+            _CACHE[cache_key] = f(tp, env)
+        return _CACHE[cache_key]
+
+    wrapped.wrapped = f
+
+    return wrapped
+
+
+@_cached
 def _to_ir(tp: object, env: ParseEnv) -> Ty:
     """Parse a Python typing object into IR. Non-strict; preserves opaque bits."""
 
