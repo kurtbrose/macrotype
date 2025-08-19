@@ -147,11 +147,14 @@ def _scan_function(fn: t.Callable) -> FuncDecl:
                 ann = _eval_annotation(ann, fn.__globals__)
             params.append(Site(role="param", name=p.name, annotation=ann))
     except (TypeError, ValueError):
-        pass
+        params.append(Site(role="param", name="...", annotation=t.Any))
 
     ret = None
     if "return" in raw_ann:
         ann = _eval_annotation(raw_ann["return"], fn.__globals__)
+        ret = Site(role="return", annotation=ann)
+    elif params and params[0].name == "...":
+        ann: t.Any = fn if isinstance(fn, type) else t.Any
         ret = Site(role="return", annotation=ann)
 
     decos: list[str] = []

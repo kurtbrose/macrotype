@@ -16,7 +16,7 @@ from macrotype.modules.ir import (
     TypeDefDecl,
     VarDecl,
 )
-from macrotype.modules.scanner import scan_module
+from macrotype.modules.scanner import _scan_function, scan_module
 from macrotype.modules.transformers import canonicalize_foreign_symbols, expand_overloads
 
 
@@ -117,6 +117,13 @@ def test_properties_detected_as_functions_or_vars(idx: dict[str, object]) -> Non
     assert isinstance(w, ClassDecl)
     members = {m.name for m in w.members}
     assert {"wrapped_prop", "wrapped_static", "wrapped_cls"} <= members
+
+
+def test_builtin_function_signature() -> None:
+    decl = _scan_function(bytes)
+    assert isinstance(decl, FuncDecl)
+    assert [p.name for p in decl.params] == ["..."]
+    assert decl.ret and decl.ret.annotation is bytes
 
 
 def test_variadic_things_dont_crash(idx: dict[str, object]) -> None:
