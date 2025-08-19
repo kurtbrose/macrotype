@@ -1,15 +1,16 @@
 # Generated via: macrotype macrotype
 # Do not edit by hand
 from __future__ import annotations
-
 from collections.abc import Iterable
-from typing import Any, ParamSpec, TypeVar, TypeVarTuple
-
 from macrotype.modules.ir import Decl, ModuleDecl
+
+from typing import Any, ParamSpec, TypeVar, TypeVarTuple
 
 annotations = annotations
 
 INDENT: str
+
+_TYPING_ATTR_TYPES: tuple[type, ...]
 
 def _qualname(obj: Any, default: None | str) -> str: ...
 def emit_module(mi: ModuleDecl) -> list[str]: ...
