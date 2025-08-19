@@ -378,6 +378,7 @@ def test_overload_transform() -> None:
 
     @overload_for(1)
     @overload_for("a")
+    @overload_for(b"b")
     def lit(x):
         return x
     """
@@ -392,7 +393,7 @@ def test_overload_transform() -> None:
     assert len(bars) == 2
     assert all("overload" in m.decorators for m in bars)
     lits = [s for s in mi.members if isinstance(s, FuncDecl) and s.name == "lit"]
-    assert len(lits) == 3
+    assert len(lits) == 4
     assert all("overload" in s.decorators for s in lits)
 
 
