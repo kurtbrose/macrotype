@@ -41,28 +41,56 @@ def _has_type_checking_guard(code: str) -> bool:
     return False
 
 
+def _module_name_and_packages(path: Path) -> tuple[str, list[tuple[str, Path]]]:
+    parts = [path.stem]
+    pkg_dirs: list[Path] = []
+    parent = path.parent
+    while (parent / "__init__.py").exists():
+        parts.append(parent.name)
+        pkg_dirs.append(parent)
+        parent = parent.parent
+    module_name = ".".join(reversed(parts))
+    package_parts = list(reversed(parts[1:]))
+    pkg_dirs = list(reversed(pkg_dirs))
+    packages: list[tuple[str, Path]] = []
+    acc: list[str] = []
+    for part, dir in zip(package_parts, pkg_dirs):
+        acc.append(part)
+        packages.append((".".join(acc), dir))
+    return module_name, packages
+
+
 def load_module_from_path(path: Path, *, allow_type_checking: bool = False) -> ModuleType:
     code = path.read_text()
     if not allow_type_checking and _has_type_checking_guard(code):
         raise RuntimeError(f"Skipped {path} due to TYPE_CHECKING guard")
-    pkg_name = "__stubgen__"
-    pkg = sys.modules.get(pkg_name)
-    if pkg is None:
-        pkg = ModuleType(pkg_name)
-        pkg.__path__ = []  # type: ignore[attr-defined]
-        sys.modules[pkg_name] = pkg
-    pkg_paths = getattr(pkg, "__path__")
-    parent = str(path.parent)
-    if parent not in pkg_paths:
-        pkg_paths.append(parent)
-    name = f"{pkg_name}.{abs(hash(path.resolve()))}"
-    spec = importlib.util.spec_from_file_location(name, path)
+    module_name, packages = _module_name_and_packages(path)
+    existing_module = sys.modules.get(module_name)
+    pre_modules = set(sys.modules)
+    for pkg_name, pkg_dir in packages:
+        if pkg_name not in sys.modules:
+            pkg = ModuleType(pkg_name)
+            pkg.__path__ = [str(pkg_dir)]  # type: ignore[attr-defined]
+            sys.modules[pkg_name] = pkg
+    spec = importlib.util.spec_from_file_location(module_name, path)
     if spec is None or spec.loader is None:
         raise ImportError(f"Cannot import {path}")
     module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
+    module.__package__ = module_name.rpartition(".")[0]
+    sys.modules[module_name] = module
     with patch_typing():
         spec.loader.exec_module(module)
+    added = set(sys.modules) - pre_modules
+
+    def _cleanup() -> None:
+        if existing_module is not None:
+            sys.modules[module_name] = existing_module
+        else:
+            sys.modules.pop(module_name, None)
+        for name in added - {module_name}:
+            sys.modules.pop(name, None)
+
+    module.__dict__["__cleanup__"] = _cleanup
     return module
 
 
