@@ -201,19 +201,15 @@ def _declared_bases_for_stub(cls: type) -> tuple[t.Any, ...]:
         if isinstance(origin, getattr(t, "_TypedDictMeta", ())):
             out.append(db)
             continue
-        if origin in mro_set:
+        if origin in rt:
             out.append(db)
             continue
         matched = False
         for rb in rt:
-            if not isinstance(rb, type):
-                continue
-            try:
-                if issubclass(rb, origin):
-                    matched = True
-                    break
-            except TypeError:
-                continue
+            rb_origin = t.get_origin(rb) or rb
+            if rb_origin is origin:
+                matched = True
+                break
         if matched:
             out.append(db)
             continue
