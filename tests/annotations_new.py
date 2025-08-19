@@ -453,6 +453,9 @@ DICT_FROMKEYS_CM = dict.fromkeys
 # operator.attrgetter returns a callable without __name__
 ATTRGETTER_VAR = attrgetter("b")
 
+# operator.attrgetter instance used as Annotated metadata
+ANNOTATED_ATTRGETTER_META: Annotated[int, attrgetter("c")] = 0
+
 # Variable with pragma comment should retain comment in stub
 PRAGMA_VAR = 1  # type: ignore
 

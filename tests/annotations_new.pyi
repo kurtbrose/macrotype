@@ -245,6 +245,8 @@ DICT_FROMKEYS_CM = dict.fromkeys
 
 ATTRGETTER_VAR: attrgetter
 
+ANNOTATED_ATTRGETTER_META: Annotated[int, attrgetter]
+
 PRAGMA_VAR: int  # type: ignore
 
 def local_alias_target(x: int) -> int: ...
@@ -257,6 +259,7 @@ NONE_VAR: None
 
 async def async_add_one(x: int) -> int: ...
 async def gen_range[*Ts](n: int) -> AsyncIterator[int]: ...
+
 @final
 class FinalClass: ...
 
