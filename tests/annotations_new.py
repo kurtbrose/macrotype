@@ -1141,3 +1141,18 @@ class Repeater(StdModel):
 # Simulate frameworks that replace __orig_bases__ with an unrelated generic
 StdModel.__orig_bases__ = (Unrelated,)  # type: ignore[attr-defined]
 Repeater.__orig_bases__ = (Unrelated,)  # type: ignore[attr-defined]
+
+
+# Overloaded classmethod should retain parameters
+class OverloadedClassMethod:
+    @overload
+    @classmethod
+    def get_by_id(cls, model_id: None) -> None: ...
+
+    @overload
+    @classmethod
+    def get_by_id(cls, model_id: int) -> Self: ...
+
+    @classmethod
+    def get_by_id(cls, model_id: int | None) -> Self | None:
+        return None if model_id is None else cls()

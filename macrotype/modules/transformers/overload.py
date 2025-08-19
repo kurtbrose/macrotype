@@ -55,7 +55,7 @@ def _expand_function(fn: Callable, sym: FuncDecl) -> list[FuncDecl]:
     decos = sym.decorators + ("overload",)
     members: list[FuncDecl] = []
     for ov in ovs:
-        ov_sym = _scan_function(ov)
+        ov_sym = _scan_function(getattr(ov, "__func__", ov))
         ov_sym = replace(ov_sym, name=sym.name, decorators=decos)
         members.append(ov_sym)
     for args, kwargs, result in cases:
