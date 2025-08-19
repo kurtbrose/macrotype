@@ -139,19 +139,20 @@ def _scan_function(fn: t.Callable) -> FuncDecl:
 
     raw_ann: dict[str, t.Any] = getattr(fn, "__annotations__", {}) or {}
     params: list[Site] = []
+    glb = getattr(fn, "__globals__", {})
     try:
         sig = inspect.signature(fn)
         for p in sig.parameters.values():
             ann = raw_ann.get(p.name, inspect._empty)
             if ann is not inspect._empty:
-                ann = _eval_annotation(ann, fn.__globals__)
+                ann = _eval_annotation(ann, glb)
             params.append(Site(role="param", name=p.name, annotation=ann))
     except (TypeError, ValueError):
         params.append(Site(role="param", name="...", annotation=t.Any))
 
     ret = None
     if "return" in raw_ann:
-        ann = _eval_annotation(raw_ann["return"], fn.__globals__)
+        ann = _eval_annotation(raw_ann["return"], glb)
         ret = Site(role="return", annotation=ann)
     elif params and params[0].name == "...":
         ann: t.Any = fn if isinstance(fn, type) else t.Any
