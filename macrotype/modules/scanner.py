@@ -174,10 +174,60 @@ def _scan_function(fn: t.Callable) -> FuncDecl:
     )
 
 
+def _declared_bases_for_stub(cls: type) -> tuple[t.Any, ...]:
+    declared: list[t.Any] = list(getattr(cls, "__orig_bases__", ()))
+    if not declared:
+        declared = list(cls.__bases__)
+    mro_set = set(cls.__mro__)
+    rt = tuple(cls.__bases__)
+
+    out: list[t.Any] = []
+    special: set[t.Any] = {t.TypedDict, t.NamedTuple}
+    proto = getattr(t, "Protocol", None)
+    if proto is not None:
+        special.add(proto)
+
+    for db in declared:
+        if db in special:
+            out.append(db)
+            continue
+
+        origin = t.get_origin(db) or db
+        if origin in special:
+            out.append(db)
+            continue
+        if not isinstance(origin, type):
+            continue
+        if isinstance(origin, getattr(t, "_TypedDictMeta", ())):
+            out.append(db)
+            continue
+        if origin in mro_set:
+            out.append(db)
+            continue
+        matched = False
+        for rb in rt:
+            if not isinstance(rb, type):
+                continue
+            try:
+                if issubclass(rb, origin):
+                    matched = True
+                    break
+            except TypeError:
+                continue
+        if matched:
+            out.append(db)
+            continue
+
+    if not out:
+        filtered = [b for b in rt if not getattr(b, "__module__", "").startswith("sqlalchemy.")]
+        out = filtered or list(rt)
+
+    return tuple(out)
+
+
 def _scan_class(cls: type) -> ClassDecl:
     name = getattr(cls, "__qualname_override__", cls.__name__)
-
-    bases_src = getattr(cls, "__orig_bases__", None) or cls.__bases__
+    bases_src = _declared_bases_for_stub(cls)
     bases: list[Site] = []
     for i, b in enumerate(bases_src):
         if b is object:
