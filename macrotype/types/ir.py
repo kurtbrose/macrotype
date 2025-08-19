@@ -6,7 +6,7 @@ from types import EllipsisType
 from typing import Literal, NewType, Optional, TypeAlias
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class TyAnnoTree:
     annos: tuple[object, ...]
     child: Optional[TyAnnoTree] = None
@@ -20,7 +20,7 @@ class TyAnnoTree:
         return tuple(parts)
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class TyRoot:
     ty: Ty | None  # None here for bare Final
     annotations: TyAnnoTree | None = None
@@ -29,28 +29,28 @@ class TyRoot:
     is_classvar: bool = False
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class Ty:
     """Base IR node (type-level AST)."""
 
     annotations: Optional["TyAnnoTree"] = field(default=None, repr=False)
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class TyAny(Ty):
     """The top type `Any`."""
 
     # e.g., `x: Any`
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class TyNever(Ty):
     """The bottom type `Never`/`NoReturn`."""
 
     # e.g., `def f() -> Never: ...`
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class TyType(Ty):
     """
     A (possibly annotated) regular python type, like int, MyClass, or Sequence.
@@ -59,7 +59,7 @@ class TyType(Ty):
     type_: type
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class TyApp(Ty):
     """
     Generic application (type constructor applied to type arguments).
@@ -75,7 +75,7 @@ class TyApp(Ty):
     args: tuple[Ty, ...]
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class TyUnion(Ty):
     """
     Union type (already canonicalized in normalization).
@@ -93,7 +93,7 @@ LitPrim: TypeAlias = int | bool | str | bytes | None | enum.Enum
 LitVal: TypeAlias = LitPrim | tuple["LitVal", ...]
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class TyLiteral(Ty):
     """
     Literal values per PEP 586.
@@ -107,7 +107,7 @@ class TyLiteral(Ty):
     values: tuple[LitVal, ...]
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class TyCallable(Ty):
     """
     Callable type. Parameters may include TyParamSpec / TyUnpack for advanced forms.
@@ -122,7 +122,7 @@ class TyCallable(Ty):
     ret: Ty
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class TyForward(Ty):
     """
     Unresolved forward reference (string form).
@@ -134,7 +134,7 @@ class TyForward(Ty):
     qualname: str
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class TyTypeVar(Ty):
     """
     Type variable declaration (single type parameter).
@@ -151,7 +151,7 @@ class TyTypeVar(Ty):
     contrav: bool
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class TyParamSpec(Ty):
     """
     ParamSpec declaration for callable parameter packs.
@@ -165,7 +165,7 @@ class TyParamSpec(Ty):
     flavor: Literal["args", "kwargs"] | None = None
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class TyTypeVarTuple(Ty):
     """
     TypeVarTuple declaration for variadic generics (PEP 646).
@@ -178,7 +178,7 @@ class TyTypeVarTuple(Ty):
     name: str
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class TyUnpack(Ty):
     """
     Unpack wrapper for variadic forms (PEP 646).
