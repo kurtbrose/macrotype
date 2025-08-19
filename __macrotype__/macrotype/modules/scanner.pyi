@@ -1,8 +1,7 @@
-# Generated via: macrotype macrotype/modules/scanner.py -o __macrotype__/macrotype/modules/scanner.pyi
+# Generated via: macrotype macrotype
 # Do not edit by hand
 from __future__ import annotations
 
-from types import ModuleType
 from typing import Any, Callable
 
 from macrotype.modules.ir import ClassDecl, FuncDecl, ModuleDecl

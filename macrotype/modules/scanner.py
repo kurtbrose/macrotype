@@ -206,31 +206,18 @@ def _scan_class(cls: type) -> ClassDecl:
             raw = raw.__wrapped__
         decorators: tuple[str, ...] = ()
         fn: t.Callable | None = None
-        if inspect.isfunction(raw) and getattr(raw, "__module__", None) == cls.__module__:
+        if inspect.isfunction(raw):
             fn = raw
         elif isinstance(raw, staticmethod):
             fn = raw.__func__
-            if getattr(fn, "__module__", None) != cls.__module__:
-                fn = None
-            else:
-                decorators = ("staticmethod",)
+            decorators = ("staticmethod",)
         elif isinstance(raw, classmethod):
             fn = raw.__func__
-            if getattr(fn, "__module__", None) != cls.__module__:
-                fn = None
-            else:
-                decorators = ("classmethod",)
+            decorators = ("classmethod",)
         elif isinstance(raw, property):
             fn = raw.fget
-            if fn and getattr(fn, "__module__", None) != cls.__module__:
-                fn = None
-            else:
-                decorators = ("property",)
-        elif (
-            inspect.isclass(raw)
-            and getattr(raw, "__module__", None) == cls.__module__
-            and raw.__qualname__.startswith(cls.__qualname__ + ".")
-        ):
+            decorators = ("property",)
+        elif inspect.isclass(raw) and raw.__qualname__.startswith(cls.__qualname__ + "."):
             members.append(_scan_class(raw))
 
         if fn:
