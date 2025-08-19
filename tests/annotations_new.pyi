@@ -10,6 +10,7 @@ from math import sin
 from operator import attrgetter
 from pathlib import Path
 from re import Pattern
+from tests.external_nested import ExternalOuter
 
 from typing import Annotated, Any, Callable, ClassVar, Concatenate, Final, Literal, LiteralString, NamedTuple, Never, NewType, NotRequired, ParamSpec, Protocol, Required, Self, TypeGuard, TypeVar, TypeVarTuple, TypedDict, Unpack, dataclass_transform, final, overload, override, runtime_checkable
 
@@ -663,6 +664,8 @@ class NestedOuter:
         ...
 
 def nested_class_annotation(x: NestedOuter.Inner) -> NestedOuter.Inner: ...
+
+def external_nested_class_annotation(x: ExternalOuter.Inner) -> ExternalOuter.Inner: ...
 
 class PointNT(NamedTuple):
     x: int

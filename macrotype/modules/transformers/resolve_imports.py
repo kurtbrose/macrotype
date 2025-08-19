@@ -68,7 +68,8 @@ def resolve_imports(mi: ModuleDecl) -> None:
             continue
         if modname == "types" and name == "UnionType":
             continue
-        external[modname].add(name)
+        base_name = name.split(".", 1)[0]
+        external[modname].add(base_name)
 
     mi.imports = ImportBlock(typing=typing_names, froms=dict(external))
 
