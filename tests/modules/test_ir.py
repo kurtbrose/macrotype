@@ -241,6 +241,6 @@ def test_strict_mode_normalizes_union() -> None:
 
 
 def test_strict_mode_raises_on_invalid_annotation() -> None:
-    mod = importlib.import_module("tests.strict_error")
+    mod = importlib.reload(importlib.import_module("tests.strict_error"))
     with pytest.raises(TypeError):
         from_module(mod, strict=True)

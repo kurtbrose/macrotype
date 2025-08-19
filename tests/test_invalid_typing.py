@@ -19,6 +19,7 @@ def test_invalid_literal_error():
     msg = str(exc.value)
     assert "Illegal Literal value" in msg
     assert "Literal" in msg
+    getattr(mod, "__cleanup__")()
 
 
 def test_invalid_non_type_error():
@@ -28,6 +29,7 @@ def test_invalid_non_type_error():
     info = SourceInfo(headers=header, comments=comments, line_map=line_map)
     lines = stub_lines(mod, source_info=info, strict=True)
     assert lines[-1] == "BAD_NON_TYPE: 123"
+    getattr(mod, "__cleanup__")()
 
 
 def test_unresolved_string_kept_as_name(tmp_path):
@@ -73,3 +75,4 @@ def test_misplaced_ellipsis_in_tuple_raises_error() -> None:
     msg = str(exc.value)
     assert "Ellipsis" in msg
     assert "final argument" in msg
+    getattr(mod, "__cleanup__")()
