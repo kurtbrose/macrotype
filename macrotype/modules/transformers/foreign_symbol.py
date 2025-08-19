@@ -52,6 +52,9 @@ def canonicalize_foreign_symbols(mi: ModuleDecl) -> None:
                         emit=sym.emit,
                     )
                 )
+                continue
+            if callable(obj) and alias_name is None:
+                new_syms.append(sym)
             continue
         new_syms.append(sym)
     mi.members = new_syms
