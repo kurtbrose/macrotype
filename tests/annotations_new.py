@@ -446,6 +446,10 @@ COS_VAR: Callable[[float], float] = math.cos
 PI_ALIAS = math.pi
 
 
+# Alias to a built-in classmethod implemented in C
+DICT_FROMKEYS_CM = dict.fromkeys
+
+
 # operator.attrgetter returns a callable without __name__
 ATTRGETTER_VAR = attrgetter("b")
 
