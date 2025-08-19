@@ -85,6 +85,7 @@ def from_module(
     _t.transform_enums(mi)
     _t.transform_generics(mi)
     _t.transform_dataclasses(mi)
+    _t.apply_dataclass_transform(mi)
     _t.infer_constant_types(mi)
     _t.prune_inherited_typeddict_fields(mi)
     _t.normalize_descriptors(mi)

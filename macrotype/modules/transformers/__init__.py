@@ -1,7 +1,7 @@
 from .add_comment import add_comments
 from .alias import synthesize_aliases
 from .constant import infer_constant_types
-from .dataclass import transform_dataclasses
+from .dataclass import apply_dataclass_transform, transform_dataclasses
 from .decorator import unwrap_decorated_functions
 from .descriptor import normalize_descriptors
 from .duplicate import canonicalize_local_aliases
@@ -24,6 +24,7 @@ __all__ = [
     "synthesize_aliases",
     "infer_constant_types",
     "transform_dataclasses",
+    "apply_dataclass_transform",
     "normalize_descriptors",
     "transform_enums",
     "normalize_flags",
