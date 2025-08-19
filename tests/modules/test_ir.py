@@ -223,6 +223,16 @@ def test_flag_transform() -> None:
     assert "abstractmethod" in m.decorators
 
 
+def test_orig_bases_prefer_real_bases(idx: dict[str, object]) -> None:
+    ann = importlib.import_module("tests.annotations_new")
+
+    rep = typing.cast(ClassDecl, get(idx, "Repeater"))
+    assert [b.annotation for b in rep.bases] == [ann.StdModel]
+
+    std = typing.cast(ClassDecl, get(idx, "StdModel"))
+    assert [b.annotation for b in std.bases] == [ann.BaseModel]
+
+
 def test_strict_mode_normalizes_union() -> None:
     ann = importlib.import_module("tests.strict_union")
 

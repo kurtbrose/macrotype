@@ -1102,3 +1102,25 @@ def nested_class_annotation(x: NestedOuter.Inner) -> NestedOuter.Inner:
 class PointNT(NamedTuple):
     x: int
     y: int
+
+
+# __orig_bases__ mismatch should not override declared bases
+class Unrelated:
+    pass
+
+
+class BaseModel:
+    pass
+
+
+class StdModel(BaseModel):
+    pass
+
+
+class Repeater(StdModel):
+    pass
+
+
+# Simulate frameworks that replace __orig_bases__ with an unrelated generic
+StdModel.__orig_bases__ = (Unrelated,)  # type: ignore[attr-defined]
+Repeater.__orig_bases__ = (Unrelated,)  # type: ignore[attr-defined]
