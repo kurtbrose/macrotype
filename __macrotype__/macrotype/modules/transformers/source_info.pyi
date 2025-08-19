@@ -1,9 +1,7 @@
-# Generated via: macrotype macrotype
+# Generated via: manual edit
 # Do not edit by hand
 from __future__ import annotations
 
-from macrotype.modules.ir import ModuleDecl
+from macrotype.modules.ir import ModuleDecl, SourceInfo
 
-annotations = annotations
-
-def add_source_info(mi: ModuleDecl) -> None: ...
+def add_source_info(mi: ModuleDecl, source_info: SourceInfo | None = ...) -> None: ...

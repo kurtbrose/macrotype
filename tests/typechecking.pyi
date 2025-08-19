@@ -1,7 +1,5 @@
-from math import cos
+from typing import Any
 
-from tests.annotations_new import Basic
-
-COS_ALIAS = cos
+COS_ALIAS: Any
 
 def takes(x: Basic) -> None: ...

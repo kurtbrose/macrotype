@@ -1,9 +1,14 @@
-# Generated via: macrotype macrotype
+# Generated via: manual edit
 # Do not edit by hand
 from __future__ import annotations
 
-from macrotype.modules.ir import ModuleDecl
+from types import ModuleType
 
-annotations = annotations
+from macrotype.modules.ir import ModuleDecl, SourceInfo
 
-def from_module(mod: ModuleType, strict: bool) -> ModuleDecl: ...
+def from_module(
+    mod: ModuleType,
+    *,
+    source_info: SourceInfo | None = ...,
+    strict: bool = ...,
+) -> ModuleDecl: ...

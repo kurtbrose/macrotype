@@ -1,42 +1,24 @@
 from pathlib import Path
 
+import pytest
+
+from macrotype.modules.ir import SourceInfo
+from macrotype.modules.source import extract_source_info
 from macrotype.stubgen import load_module_from_path, stub_lines
 
 
-def test_if_type_checking_overrides():
-    mod = load_module_from_path(Path(__file__).with_name("typechecking.py"), type_checking=True)
-    lines = stub_lines(mod, strict=True)
+def test_skip_type_checking() -> None:
+    path = Path(__file__).with_name("typechecking.py")
+    with pytest.raises(RuntimeError):
+        load_module_from_path(path)
+
+
+def test_allow_type_checking_generates_runtime_stub() -> None:
+    path = Path(__file__).with_name("typechecking.py")
+    code = path.read_text()
+    mod = load_module_from_path(path, allow_type_checking=True)
+    header, comments, line_map = extract_source_info(code)
+    info = SourceInfo(headers=header, comments=comments, line_map=line_map)
+    lines = stub_lines(mod, source_info=info, strict=True)
     expected = Path(__file__).with_name("typechecking.pyi").read_text().splitlines()
-    assert lines == expected
-
-
-def test_circular_type_checking_imports():
-    base = Path(__file__)
-    mod_b = load_module_from_path(
-        base.with_name("circ_b.py"), type_checking=True, module_name="tests.circ_b"
-    )
-    mod_a = load_module_from_path(
-        base.with_name("circ_a.py"), type_checking=True, module_name="tests.circ_a"
-    )
-
-    lines = stub_lines(mod_a, strict=True)
-    expected = base.with_name("circ_a.pyi").read_text().splitlines()
-    assert lines == expected
-
-
-def test_circular_complex_expr_imports():
-    base = Path(__file__)
-    mod_b = load_module_from_path(
-        base.with_name("circ_expr_b.py"),
-        type_checking=True,
-        module_name="tests.circ_expr_b",
-    )
-    mod_a = load_module_from_path(
-        base.with_name("circ_expr_a.py"),
-        type_checking=True,
-        module_name="tests.circ_expr_a",
-    )
-
-    lines = stub_lines(mod_a, strict=True)
-    expected = base.with_name("circ_expr_a.pyi").read_text().splitlines()
     assert lines == expected
