@@ -173,9 +173,24 @@ def _declared_bases_for_stub(cls: type) -> tuple[t.Any, ...]:
     rt = tuple(cls.__bases__)
 
     out: list[t.Any] = []
+    special: set[t.Any] = {t.TypedDict, t.NamedTuple}
+    proto = getattr(t, "Protocol", None)
+    if proto is not None:
+        special.add(proto)
+
     for db in declared:
+        if db in special:
+            out.append(db)
+            continue
+
         origin = t.get_origin(db) or db
+        if origin in special:
+            out.append(db)
+            continue
         if not isinstance(origin, type):
+            continue
+        if isinstance(origin, getattr(t, "_TypedDictMeta", ())):
+            out.append(db)
             continue
         if origin in mro_set:
             out.append(db)
