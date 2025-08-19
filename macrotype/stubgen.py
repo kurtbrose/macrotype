@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ast
 import fnmatch
+import importlib
 import importlib.util
 import sys
 from pathlib import Path
@@ -41,28 +42,38 @@ def _has_type_checking_guard(code: str) -> bool:
     return False
 
 
-def load_module_from_path(path: Path, *, allow_type_checking: bool = False) -> ModuleType:
-    code = path.read_text()
-    if not allow_type_checking and _has_type_checking_guard(code):
-        raise RuntimeError(f"Skipped {path} due to TYPE_CHECKING guard")
-    pkg_name = "__stubgen__"
-    pkg = sys.modules.get(pkg_name)
-    if pkg is None:
-        pkg = ModuleType(pkg_name)
-        pkg.__path__ = []  # type: ignore[attr-defined]
-        sys.modules[pkg_name] = pkg
-    pkg_paths = getattr(pkg, "__path__")
-    parent = str(path.parent)
-    if parent not in pkg_paths:
-        pkg_paths.append(parent)
-    name = f"{pkg_name}.{abs(hash(path.resolve()))}"
-    spec = importlib.util.spec_from_file_location(name, path)
-    if spec is None or spec.loader is None:
-        raise ImportError(f"Cannot import {path}")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
+def _module_name_from_path(path: Path) -> str:
+    parts = [path.stem]
+    parent = path.parent
+    while (parent / "__init__.py").exists():
+        parts.append(parent.name)
+        parent = parent.parent
+    return ".".join(reversed(parts))
+
+
+def load_module(name: str, *, allow_type_checking: bool = False) -> ModuleType:
+    pre_modules = set(sys.modules)
+    spec = importlib.util.find_spec(name)
+    if spec is None or spec.origin is None or not spec.origin.endswith(".py"):
+        raise ImportError(f"Cannot import {name}")
+    if not allow_type_checking:
+        code = Path(spec.origin).read_text()
+        if _has_type_checking_guard(code):
+            raise RuntimeError(f"Skipped {name} due to TYPE_CHECKING guard")
+    existing_module = sys.modules.get(name)
     with patch_typing():
-        spec.loader.exec_module(module)
+        module = importlib.import_module(name)
+    added = set(sys.modules) - pre_modules
+
+    def _cleanup() -> None:
+        if existing_module is not None:
+            sys.modules[name] = existing_module
+        else:
+            sys.modules.pop(name, None)
+        for mod_name in added - {name}:
+            sys.modules.pop(mod_name, None)
+
+    module.__dict__["__cleanup__"] = _cleanup
     return module
 
 
@@ -121,7 +132,8 @@ def process_file(
     code = src.read_text()
     if not allow_type_checking and _has_type_checking_guard(code):
         raise RuntimeError(f"Skipped {src} due to TYPE_CHECKING guard")
-    module = load_module_from_path(src, allow_type_checking=allow_type_checking)
+    module_name = _module_name_from_path(src)
+    module = load_module(module_name, allow_type_checking=True)
     header, comments, line_map = extract_source_info(code)
     info = SourceInfo(headers=header, comments=comments, line_map=line_map)
     lines = stub_lines(module, source_info=info, strict=strict)
@@ -162,7 +174,7 @@ def process_directory(
 
 
 __all__ = [
-    "load_module_from_path",
+    "load_module",
     "load_module_from_code",
     "stub_lines",
     "write_stub",
