@@ -1156,3 +1156,19 @@ class OverloadedClassMethod:
     @classmethod
     def get_by_id(cls, model_id: int | None) -> Self | None:
         return None if model_id is None else cls()
+
+
+# __orig_bases__ supertype should not override declared base
+class TopBase:
+    pass
+
+
+class MidBase(TopBase):
+    pass
+
+
+class BotBase(MidBase):
+    pass
+
+
+BotBase.__orig_bases__ = (TopBase,)  # type: ignore[attr-defined]
