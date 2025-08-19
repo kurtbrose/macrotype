@@ -1141,3 +1141,19 @@ class Repeater(StdModel):
 # Simulate frameworks that replace __orig_bases__ with an unrelated generic
 StdModel.__orig_bases__ = (Unrelated,)  # type: ignore[attr-defined]
 Repeater.__orig_bases__ = (Unrelated,)  # type: ignore[attr-defined]
+
+
+# __orig_bases__ supertype should not override declared base
+class TopBase:
+    pass
+
+
+class MidBase(TopBase):
+    pass
+
+
+class BotBase(MidBase):
+    pass
+
+
+BotBase.__orig_bases__ = (TopBase,)  # type: ignore[attr-defined]
