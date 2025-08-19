@@ -9,6 +9,7 @@ from abc import ABC, abstractmethod
 from dataclasses import InitVar, dataclass
 from enum import Enum, IntEnum, IntFlag
 from functools import cached_property
+from operator import attrgetter
 from pathlib import Path
 from typing import (
     Annotated,
@@ -444,6 +445,9 @@ COS_VAR: Callable[[float], float] = math.cos
 # Edge case: alias to a foreign constant should retain its type
 PI_ALIAS = math.pi
 
+
+# operator.attrgetter returns a callable without __name__
+ATTRGETTER_VAR = attrgetter("b")
 
 # Variable with pragma comment should retain comment in stub
 PRAGMA_VAR = 1  # type: ignore

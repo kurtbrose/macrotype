@@ -108,10 +108,15 @@ def scan_module(mod: ModuleType) -> ModuleDecl:
             decls.append(TypeDefDecl(name=name, value=site, obj=obj, obj_type=types.GenericAlias))
             continue
         if hasattr(obj, "__module__") and obj.__module__ != modname:
-            if getattr(obj, "__name__", None) == name:
+            obj_name = getattr(obj, "__name__", None)
+            if obj_name == name:
                 continue
-            site = Site(role="alias_value", annotation=obj)
-            decls.append(TypeDefDecl(name=name, value=site, obj=obj))
+            if callable(obj) and obj_name is None:
+                site = Site(role="var", name=name, annotation=ann)
+                decls.append(VarDecl(name=name, site=site, obj=obj))
+            else:
+                site = Site(role="alias_value", annotation=obj)
+                decls.append(TypeDefDecl(name=name, value=site, obj=obj))
             continue
         if callable(obj):
             site = Site(role="var", name=name, annotation=ann)
