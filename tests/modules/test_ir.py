@@ -171,6 +171,19 @@ def test_dataclass_transform() -> None:
     assert "__eq__" in {m.name for m in nae.members}
 
 
+def test_dataclass_transform_carrier() -> None:
+    ann = importlib.import_module("tests.annotations_new")
+    mi = from_module(ann)
+    base = next(s for s in mi.members if s.name == "DCTransformBase")
+    assert isinstance(base, ClassDecl)
+    assert "dataclass_transform" in base.decorators[0]
+
+    sub = next(s for s in mi.members if s.name == "DCTransformed")
+    assert isinstance(sub, ClassDecl)
+    assert all(not d.startswith("dataclass") for d in sub.decorators)
+    assert "__init__" not in {m.name for m in sub.members}
+
+
 def test_expand_overloads_transform() -> None:
     ann = importlib.import_module("tests.annotations_new")
     mi = scan_module(ann)

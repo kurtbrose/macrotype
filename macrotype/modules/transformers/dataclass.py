@@ -5,6 +5,8 @@ from typing import Any
 
 from macrotype.modules.ir import ClassDecl, ModuleDecl
 
+from .dataclass_transform import has_transform
+
 # Defaults used when recreating a ``@dataclass`` decorator.
 _DATACLASS_DEFAULTS: dict[str, Any] = {
     "init": True,
@@ -100,10 +102,12 @@ def _dataclass_decorator(klass: type) -> str | None:
 
 def _transform_class(sym: ClassDecl, cls: type) -> None:
     deco = _dataclass_decorator(cls)
-    if deco:
-        params = getattr(cls, "__dataclass_params__", None)
-        auto_methods = _dataclass_auto_methods(params)
-        sym.members = tuple(m for m in sym.members if m.name not in auto_methods)
+    if not deco:
+        return
+    params = getattr(cls, "__dataclass_params__", None)
+    auto_methods = _dataclass_auto_methods(params)
+    sym.members = tuple(m for m in sym.members if m.name not in auto_methods)
+    if not has_transform(cls):
         sym.decorators = sym.decorators + (deco,)
 
 
