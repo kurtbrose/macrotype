@@ -4,7 +4,6 @@ import importlib
 import sys
 import types
 import typing
-from typing import Any
 
 import pytest
 
@@ -124,7 +123,7 @@ def test_builtin_function_signature() -> None:
     decl = _scan_function(bytes)
     assert isinstance(decl, FuncDecl)
     assert [p.name for p in decl.params] == ["..."]
-    assert decl.ret and decl.ret.annotation is Any
+    assert decl.ret and decl.ret.annotation is bytes
 
 
 def test_variadic_things_dont_crash(idx: dict[str, object]) -> None:
