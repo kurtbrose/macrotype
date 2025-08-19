@@ -28,6 +28,13 @@ from .ir import (
     TyUnpack,
 )
 
+_TYPING_ATTR_TYPES: tuple[type, ...] = (type, _types.GenericAlias, str)
+if hasattr(_types, "UnionType"):
+    _TYPING_ATTR_TYPES += (_types.UnionType,)
+TypeAliasType = getattr(t, "TypeAliasType", None)
+if TypeAliasType is not None:
+    _TYPING_ATTR_TYPES += (TypeAliasType,)
+
 # ---------- Environment (minimal) ----------
 
 
@@ -110,8 +117,14 @@ def _origin_args(tp: object) -> tuple[object | None, tuple[object, ...]]:
     origin = get_origin(tp)
     if origin is not None:
         return origin, get_args(tp)
-    if not isinstance(tp, type) and hasattr(tp, "type"):
-        return type(tp), (getattr(tp, "type"),)
+    if not isinstance(tp, type):
+        try:
+            type_attr = object.__getattribute__(tp, "type")
+        except AttributeError:
+            pass
+        else:
+            if isinstance(type_attr, _TYPING_ATTR_TYPES) or get_origin(type_attr) is not None:
+                return type(tp), (type_attr,)
     return None, ()
 
 
@@ -122,6 +135,9 @@ _CACHE = {}
 
 def _cached[T](f: T) -> T:
     def wrapped(tp: object, env: ParseEnv) -> Ty:
+        origin = get_origin(tp)
+        if origin in (t.ClassVar, t.Final, t.Required, t.NotRequired):
+            return f(tp, env)
         cache_key = id(tp), env
         if cache_key not in _CACHE:
             _CACHE[cache_key] = f(tp, env)
