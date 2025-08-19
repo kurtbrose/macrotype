@@ -234,7 +234,7 @@ class EmployeeModel(SQLBase):
 
 def sum_of(*args: tuple[int]) -> int: ...
 
-def dict_echo(**kwargs: dict[str, Any]) -> dict[str, Any]: ...
+def dict_echo[*Ts](**kwargs: dict[str, Any]) -> dict[str, Any]: ...
 
 def use_params[**P](func: Callable[P, int], *args: P.args, **kwargs: P.kwargs) -> int: ...
 
@@ -252,6 +252,8 @@ PI_ALIAS: float
 
 ATTRGETTER_VAR: attrgetter
 
+ANNOTATED_ATTRGETTER_META: Annotated[int, attrgetter]
+
 PRAGMA_VAR: int  # type: ignore
 
 def local_alias_target(x: int) -> int: ...
@@ -264,7 +266,7 @@ NONE_VAR: None
 
 async def async_add_one(x: int) -> int: ...
 
-async def gen_range(n: int) -> AsyncIterator[int]: ...
+async def gen_range[*Ts](n: int) -> AsyncIterator[int]: ...
 
 @final
 class FinalClass:

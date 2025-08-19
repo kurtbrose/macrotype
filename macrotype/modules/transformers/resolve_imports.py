@@ -57,7 +57,7 @@ def resolve_imports(mi: ModuleDecl) -> None:
         if name in typing_names:
             continue
         modname = _MODULE_ALIASES.get(modname, modname)
-        if modname in {"builtins", "typing", mi.obj.__name__}:
+        if modname in {"builtins", "typing", getattr(mi.obj, "__name__", repr(mi.obj))}:
             continue
         if modname == "enum" and name in {"Flag", "ReprEnum"}:
             continue
@@ -82,7 +82,7 @@ def _collect_typing_names(symbols: Iterable[Decl]) -> set[str]:
                 if isinstance(alias, (t.TypeVar, t.ParamSpec, t.TypeVarTuple)):
                     names.add(type(alias).__name__)
                 elif alias is t.NewType:
-                    names.add(alias.__name__)
+                    names.add(getattr(alias, "__name__", repr(alias)))
             case ClassDecl(members=members):
                 names.update(_collect_typing_names(members))
     return names
