@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import collections.abc as abc
 import enum
-from functools import cache
 import types as _types
 import typing as t
 from dataclasses import dataclass, replace
