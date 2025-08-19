@@ -5,6 +5,8 @@ import sys
 from pathlib import Path
 
 from .. import stubgen
+from ..modules.ir import SourceInfo
+from ..modules.source import extract_source_info
 from . import _default_output_path
 from .watch import watch_and_run
 
@@ -33,17 +35,18 @@ def _stub_main(argv: list[str]) -> int:
         help="Watch for changes and regenerate stubs",
     )
     parser.add_argument(
-        "--stub-overlay-dir",
-        help="Symlink generated stubs into this directory for type checkers",
-    )
-    parser.add_argument(
         "--strict",
         action="store_true",
         help="Normalize and validate annotations",
     )
+    parser.add_argument(
+        "--allow-type-checking",
+        action="store_true",
+        help="Process modules guarded by TYPE_CHECKING",
+    )
     args = parser.parse_args(argv)
     command = "macrotype " + " ".join(argv)
-    stub_overlay_dir = Path(args.stub_overlay_dir) if args.stub_overlay_dir else None
+    allow_tc = args.allow_type_checking
 
     if args.watch:
         if args.paths == ["-"]:
@@ -57,11 +60,11 @@ def _stub_main(argv: list[str]) -> int:
         return watch_and_run(args.paths, cmd)
 
     if args.paths == ["-"]:
-        if stub_overlay_dir:
-            parser.error("--stub-overlay-dir cannot be used with stdin")
         code = sys.stdin.read()
-        module = stubgen.load_module_from_code(code, "<stdin>")
-        lines = stubgen.stub_lines(module, strict=args.strict)
+        module = stubgen.load_module_from_code(code, "<stdin>", allow_type_checking=allow_tc)
+        header, comments, line_map = extract_source_info(code)
+        info = SourceInfo(headers=header, comments=comments, line_map=line_map)
+        lines = stubgen.stub_lines(module, source_info=info, strict=args.strict)
         if args.output and args.output != "-":
             stubgen.write_stub(Path(args.output), lines, command)
         else:
@@ -76,38 +79,31 @@ def _stub_main(argv: list[str]) -> int:
             default_output = _default_output_path(path, cwd, is_file=path.is_file())
         if path.is_file():
             if args.output == "-":
-                if stub_overlay_dir:
-                    parser.error("--stub-overlay-dir requires a file output")
-                lines = stubgen.stub_lines(
-                    stubgen.load_module_from_path(path),
-                    strict=args.strict,
-                )
+                code = path.read_text()
+                module = stubgen.load_module_from_path(path, allow_type_checking=allow_tc)
+                header, comments, line_map = extract_source_info(code)
+                info = SourceInfo(headers=header, comments=comments, line_map=line_map)
+                lines = stubgen.stub_lines(module, source_info=info, strict=args.strict)
                 _stdout_write(lines, command)
             else:
                 dest = Path(args.output) if args.output else default_output
-                overlay = stub_overlay_dir
                 stubgen.process_file(
                     path,
                     dest,
                     command=command,
-                    stub_overlay_dir=overlay,
                     strict=args.strict,
+                    allow_type_checking=allow_tc,
                 )
         else:
-            if args.output == "-":
-                if stub_overlay_dir:
-                    parser.error("--stub-overlay-dir requires a directory output")
-                out_dir = None
-                overlay = None
-            else:
-                out_dir = Path(args.output) if args.output else default_output
-                overlay = stub_overlay_dir
+            out_dir = (
+                None if args.output == "-" else Path(args.output) if args.output else default_output
+            )
             stubgen.process_directory(
                 path,
                 out_dir,
                 command=command,
-                stub_overlay_dir=overlay,
                 strict=args.strict,
+                allow_type_checking=allow_tc,
             )
     return 0
 

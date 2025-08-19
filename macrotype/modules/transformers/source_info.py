@@ -5,14 +5,9 @@ from __future__ import annotations
 from macrotype.modules.ir import ModuleDecl, SourceInfo
 
 
-def add_source_info(mi: ModuleDecl) -> None:
-    """Populate ``mi.source`` with source metadata from its module."""
-    mod = mi.obj
-    mi.source = SourceInfo(
-        headers=getattr(mod, "__macrotype_header_lines__", []),
-        comments=getattr(mod, "__macrotype_comments__", {}),
-        line_map=getattr(mod, "__macrotype_line_map__", {}),
-    )
+def add_source_info(mi: ModuleDecl, source_info: SourceInfo | None = None) -> None:
+    """Populate ``mi.source`` with provided source metadata."""
+    mi.source = source_info or SourceInfo(headers=[], comments={}, line_map={})
 
 
 __all__ = ["add_source_info"]

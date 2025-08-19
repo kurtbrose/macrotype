@@ -5,7 +5,7 @@ from __future__ import annotations
 from types import ModuleType
 
 from .emit import emit_module
-from .ir import ModuleDecl
+from .ir import ModuleDecl, SourceInfo
 from .scanner import scan_module
 
 __all__ = [
@@ -61,7 +61,12 @@ def __getattr__(name: str):
     raise AttributeError(name)
 
 
-def from_module(mod: ModuleType, *, strict: bool = False) -> ModuleDecl:
+def from_module(
+    mod: ModuleType,
+    *,
+    source_info: SourceInfo | None = None,
+    strict: bool = False,
+) -> ModuleDecl:
     """Scan *mod* into a :class:`ModuleDecl` and attach comments.
 
     If *strict* is ``True``, all annotations are normalized and validated via
@@ -71,7 +76,7 @@ def from_module(mod: ModuleType, *, strict: bool = False) -> ModuleDecl:
     from . import transformers as _t
 
     mi = scan_module(mod)
-    _t.add_source_info(mi)
+    _t.add_source_info(mi, source_info)
     _t.canonicalize_foreign_symbols(mi)
     _t.unwrap_decorated_functions(mi)
     _t.canonicalize_local_aliases(mi)

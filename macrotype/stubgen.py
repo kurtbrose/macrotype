@@ -1,17 +1,15 @@
 from __future__ import annotations
 
 import ast
-import importlib
+import fnmatch
 import importlib.util
-import shutil
-import subprocess
 import sys
-import tempfile
-import typing
 from pathlib import Path
 from types import ModuleType
+from typing import Sequence
 
 from .meta_types import patch_typing
+from .modules.ir import SourceInfo
 from .modules.source import extract_source_info
 
 
@@ -22,38 +20,10 @@ def _header_lines(command: str | None) -> list[str]:
     return []
 
 
-def _guess_module_name(path: Path) -> str | None:
-    """Best-effort guess of the importable module name for *path*."""
-    parts = [path.stem]
-    parent = path.parent
-    while (parent / "__init__.py").exists():
-        parts.append(parent.name)
-        parent = parent.parent
-    if len(parts) > 1:
-        return ".".join(reversed(parts))
-    return None
+def _has_type_checking_guard(code: str) -> bool:
+    tree = ast.parse(code)
 
-
-def _format_with_ruff(lines: list[str]) -> list[str]:
-    with tempfile.TemporaryDirectory() as tmpdir:
-        tmp_path = Path(tmpdir) / "out.pyi"
-        tmp_path.write_text("\n".join(lines) + "\n")
-        subprocess.run(["ruff", "format", str(tmp_path)], check=True, capture_output=True)
-        subprocess.run(
-            ["ruff", "check", str(tmp_path), "--select", "I", "--fix", "--exit-zero"],
-            check=True,
-            capture_output=True,
-        )
-        return tmp_path.read_text().splitlines()
-
-
-class _TypeCheckingTransformer(ast.NodeTransformer):
-    """Rewrite ``if TYPE_CHECKING`` blocks to execute their body."""
-
-    @staticmethod
-    def _contains_type_checking(expr: ast.expr) -> bool:
-        """Return ``True`` if ``expr`` references ``TYPE_CHECKING`` anywhere."""
-
+    def mentions_TYPE_CHECKING(expr: ast.AST) -> bool:
         if isinstance(expr, ast.Name) and expr.id == "TYPE_CHECKING":
             return True
         if (
@@ -63,113 +33,36 @@ class _TypeCheckingTransformer(ast.NodeTransformer):
             and expr.attr == "TYPE_CHECKING"
         ):
             return True
+        return any(mentions_TYPE_CHECKING(c) for c in ast.iter_child_nodes(expr))
 
-        for child in ast.iter_child_nodes(expr):
-            if _TypeCheckingTransformer._contains_type_checking(child):
-                return True
-        return False
-
-    def visit_If(self, node: ast.If) -> ast.stmt:
-        self.generic_visit(node)
-        if self._contains_type_checking(node.test):
-            # Execute the body and ignore the else branch. Errors while
-            # executing the body (e.g. ImportError due to circular imports)
-            # are suppressed so stub generation can proceed.
-            return ast.Try(
-                body=node.body,
-                handlers=[
-                    ast.ExceptHandler(
-                        type=ast.Name("Exception", ast.Load()),
-                        name=None,
-                        body=[ast.Pass()],
-                    )
-                ],
-                orelse=[],
-                finalbody=[],
-            )
-        return node
+    for node in ast.walk(tree):
+        if isinstance(node, ast.If) and mentions_TYPE_CHECKING(node.test):
+            return True
+    return False
 
 
-def _exec_with_type_checking(code: str, module: ModuleType) -> None:
-    """Execute *code* in *module* with ``TYPE_CHECKING`` blocks enabled."""
-    tree = ast.parse(code)
-    tree = _TypeCheckingTransformer().visit(tree)
-    ast.fix_missing_locations(tree)
-
-    module.__dict__["TYPE_CHECKING"] = True
-    original = typing.TYPE_CHECKING
-    typing.TYPE_CHECKING = True
-    try:
-        with patch_typing():
-            exec(compile(tree, getattr(module, "__file__", "<string>"), "exec"), module.__dict__)
-    finally:
-        typing.TYPE_CHECKING = original
-
-
-def load_module_from_path(
-    path: Path,
-    *,
-    type_checking: bool = False,
-    module_name: str | None = None,
-) -> ModuleType:
-    """Load a module from ``path``.
-
-    When ``type_checking`` is ``True`` the module is executed with
-    ``TYPE_CHECKING`` blocks enabled and their contents executed.
-
-    ``module_name`` controls the name used in :data:`sys.modules` and defaults
-    to ``path.stem``.
-    """
-    name = module_name or _guess_module_name(path) or path.stem
-    if not type_checking and "." in name and name not in sys.modules:
-        try:
-            with patch_typing():
-                module = importlib.import_module(name)
-            if getattr(module, "__file__", None) and not hasattr(
-                module, "__macrotype_header_lines__"
-            ):
-                header, comments, lines = extract_source_info(Path(module.__file__).read_text())
-                module.__macrotype_header_lines__ = header
-                module.__macrotype_comments__ = comments
-                module.__macrotype_line_map__ = lines
-            return module
-        except ImportError as exc:
-            print(f"Could not import {name}: {exc}", file=sys.stderr)
-
-    if name in sys.modules:
-        module = sys.modules[name]
-        if getattr(module, "__file__", None) and Path(module.__file__).resolve() == path.resolve():
-            if not hasattr(module, "__macrotype_header_lines__"):
-                header, comments, lines = extract_source_info(Path(module.__file__).read_text())
-                module.__macrotype_header_lines__ = header
-                module.__macrotype_comments__ = comments
-                module.__macrotype_line_map__ = lines
-            return module
-        del sys.modules[name]
-
-    if not type_checking:
-        spec = importlib.util.spec_from_file_location(name, path)
-        if spec is None or spec.loader is None:
-            raise ImportError(f"Cannot import {path}")
-        module = importlib.util.module_from_spec(spec)
-        sys.modules[name] = module
-        with patch_typing():
-            spec.loader.exec_module(module)
-        header, comments, lines = extract_source_info(Path(path).read_text())
-        module.__macrotype_header_lines__ = header
-        module.__macrotype_comments__ = comments
-        module.__macrotype_line_map__ = lines
-        return module
-
-    code = Path(path).read_text()
-    module = ModuleType(name)
-    module.__file__ = str(path)
+def load_module_from_path(path: Path, *, allow_type_checking: bool = False) -> ModuleType:
+    code = path.read_text()
+    if not allow_type_checking and _has_type_checking_guard(code):
+        raise RuntimeError(f"Skipped {path} due to TYPE_CHECKING guard")
+    pkg_name = "__stubgen__"
+    pkg = sys.modules.get(pkg_name)
+    if pkg is None:
+        pkg = ModuleType(pkg_name)
+        pkg.__path__ = []  # type: ignore[attr-defined]
+        sys.modules[pkg_name] = pkg
+    pkg_paths = getattr(pkg, "__path__")
+    parent = str(path.parent)
+    if parent not in pkg_paths:
+        pkg_paths.append(parent)
+    name = f"{pkg_name}.{abs(hash(path.resolve()))}"
+    spec = importlib.util.spec_from_file_location(name, path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Cannot import {path}")
+    module = importlib.util.module_from_spec(spec)
     sys.modules[name] = module
-    header, comments, lines = extract_source_info(code)
-    module.__macrotype_header_lines__ = header
-    module.__macrotype_comments__ = comments
-    module.__macrotype_line_map__ = lines
-    _exec_with_type_checking(code, module)
+    with patch_typing():
+        spec.loader.exec_module(module)
     return module
 
 
@@ -177,31 +70,27 @@ def load_module_from_code(
     code: str,
     name: str = "<string>",
     *,
-    type_checking: bool = False,
-    module_name: str | None = None,
+    allow_type_checking: bool = False,
 ) -> ModuleType:
-    name = module_name or name
+    if not allow_type_checking and _has_type_checking_guard(code):
+        raise RuntimeError("Skipped module due to TYPE_CHECKING guard")
     module = ModuleType(name)
-    header, comments, lines = extract_source_info(code)
-    module.__macrotype_header_lines__ = header
-    module.__macrotype_comments__ = comments
-    module.__macrotype_line_map__ = lines
-    if type_checking:
-        sys.modules[name] = module
-        _exec_with_type_checking(code, module)
-    else:
-        sys.modules[name] = module
-        with patch_typing():
-            exec(compile(code, name, "exec"), module.__dict__)
+    sys.modules[name] = module
+    with patch_typing():
+        exec(compile(code, name, "exec"), module.__dict__)
     return module
 
 
-def stub_lines(module: ModuleType, *, strict: bool = False) -> list[str]:
+def stub_lines(
+    module: ModuleType,
+    *,
+    source_info: SourceInfo | None = None,
+    strict: bool = False,
+) -> list[str]:
     from . import modules
 
-    mi = modules.from_module(module, strict=strict)
-    lines = modules.emit_module(mi)
-    return _format_with_ruff(lines)
+    mi = modules.from_module(module, source_info=source_info, strict=strict)
+    return modules.emit_module(mi)
 
 
 def write_stub(dest: Path, lines: list[str], command: str | None = None) -> None:
@@ -209,36 +98,16 @@ def write_stub(dest: Path, lines: list[str], command: str | None = None) -> None
     dest.write_text("\n".join(_header_lines(command) + list(lines)) + "\n")
 
 
-def iter_python_files(target: Path) -> list[Path]:
+def iter_python_files(target: Path, *, skip: Sequence[str] = ()) -> list[Path]:
     if target.is_file():
         return [target]
-    files = []
+    files: list[Path] = []
     for p in target.rglob("*.py"):
-        if p.name == "__main__.py" and p.parent != target:
-            continue
         rel = p.relative_to(target)
-        if rel.parts and rel.parts[0] == "test":
+        if any(fnmatch.fnmatch(str(rel), pattern) for pattern in skip):
             continue
         files.append(p)
     return files
-
-
-def _link_stub_overlay(src: Path, dest: Path, overlay_dir: Path) -> None:
-    module_name = _guess_module_name(src) or src.stem
-    parts = module_name.split(".")
-    if src.name == "__init__.py":
-        overlay = overlay_dir.joinpath(*parts, "__init__.pyi")
-    else:
-        overlay = overlay_dir.joinpath(*parts[:-1], parts[-1] + ".pyi")
-    if overlay.exists() and overlay.resolve() == dest.resolve():
-        return
-    overlay.parent.mkdir(parents=True, exist_ok=True)
-    try:
-        if overlay.exists() or overlay.is_symlink():
-            overlay.unlink()
-        overlay.symlink_to(dest)
-    except OSError:  # pragma: no cover - fallback on systems without symlink
-        shutil.copy2(dest, overlay)
 
 
 def process_file(
@@ -246,15 +115,18 @@ def process_file(
     dest: Path | None = None,
     *,
     command: str | None = None,
-    stub_overlay_dir: Path | None = None,
     strict: bool = False,
+    allow_type_checking: bool = False,
 ) -> Path:
-    module = load_module_from_path(src)
-    lines = stub_lines(module, strict=strict)
+    code = src.read_text()
+    if not allow_type_checking and _has_type_checking_guard(code):
+        raise RuntimeError(f"Skipped {src} due to TYPE_CHECKING guard")
+    module = load_module_from_path(src, allow_type_checking=allow_type_checking)
+    header, comments, line_map = extract_source_info(code)
+    info = SourceInfo(headers=header, comments=comments, line_map=line_map)
+    lines = stub_lines(module, source_info=info, strict=strict)
     dest = dest or src.with_suffix(".pyi")
     write_stub(dest, lines, command)
-    if stub_overlay_dir is not None:
-        _link_stub_overlay(src, dest, stub_overlay_dir)
     return dest
 
 
@@ -263,11 +135,12 @@ def process_directory(
     out_dir: Path | None = None,
     *,
     command: str | None = None,
-    stub_overlay_dir: Path | None = None,
     strict: bool = False,
+    allow_type_checking: bool = False,
+    skip: Sequence[str] = (),
 ) -> list[Path]:
-    outputs = []
-    for src in iter_python_files(directory):
+    outputs: list[Path] = []
+    for src in iter_python_files(directory, skip=skip):
         if out_dir:
             rel = src.relative_to(directory).with_suffix(".pyi")
             dest = out_dir / rel
@@ -279,8 +152,8 @@ def process_directory(
                     src,
                     dest,
                     command=command,
-                    stub_overlay_dir=stub_overlay_dir,
                     strict=strict,
+                    allow_type_checking=allow_type_checking,
                 )
             )
         except (Exception, SystemExit) as exc:  # pragma: no cover - defensive
