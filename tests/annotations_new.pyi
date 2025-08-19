@@ -683,6 +683,14 @@ class MidBase(TopBase):
 class BotBase(MidBase):
     ...
 
+class OverloadedClassMethod:
+    @classmethod
+    @overload
+    def get_by_id(cls, model_id: None) -> None: ...
+    @classmethod
+    @overload
+    def get_by_id(cls, model_id: int) -> Self: ...
+
 LITERAL_STR_VAR: LiteralString
 
 DICT_WITH_IMPLICIT_ANY: dict[int]  # type: ignore[type-arg]  # pyright: ignore[reportInvalidTypeArguments]

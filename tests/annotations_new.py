@@ -1143,6 +1143,21 @@ StdModel.__orig_bases__ = (Unrelated,)  # type: ignore[attr-defined]
 Repeater.__orig_bases__ = (Unrelated,)  # type: ignore[attr-defined]
 
 
+# Overloaded classmethod should retain parameters
+class OverloadedClassMethod:
+    @overload
+    @classmethod
+    def get_by_id(cls, model_id: None) -> None: ...
+
+    @overload
+    @classmethod
+    def get_by_id(cls, model_id: int) -> Self: ...
+
+    @classmethod
+    def get_by_id(cls, model_id: int | None) -> Self | None:
+        return None if model_id is None else cls()
+
+
 # __orig_bases__ supertype should not override declared base
 class TopBase:
     pass
