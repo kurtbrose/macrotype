@@ -31,12 +31,13 @@ def test_cli_self(tmp_path: Path) -> None:
 def test_cli_default_output_dir(tmp_path: Path) -> None:
     pkg = tmp_path / "pkg"
     pkg.mkdir()
+    (pkg / "__init__.py").write_text("")
     src = pkg / "mod.py"
     src.write_text("VAL = 1\n")
 
     repo_root = STUBS_DIR.parents[1]
     env = dict(os.environ)
-    env["PYTHONPATH"] = str(repo_root)
+    env["PYTHONPATH"] = f"{tmp_path}{os.pathsep}{repo_root}"
     subprocess.run(
         [
             sys.executable,

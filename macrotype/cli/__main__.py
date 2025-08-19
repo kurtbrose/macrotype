@@ -80,7 +80,8 @@ def _stub_main(argv: list[str]) -> int:
         if path.is_file():
             if args.output == "-":
                 code = path.read_text()
-                module = stubgen.load_module_from_path(path, allow_type_checking=allow_tc)
+                module_name = stubgen._module_name_from_path(path)
+                module = stubgen.load_module(module_name, allow_type_checking=allow_tc)
                 header, comments, line_map = extract_source_info(code)
                 info = SourceInfo(headers=header, comments=comments, line_map=line_map)
                 lines = stubgen.stub_lines(module, source_info=info, strict=args.strict)
