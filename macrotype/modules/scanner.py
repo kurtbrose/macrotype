@@ -108,10 +108,15 @@ def scan_module(mod: ModuleType) -> ModuleDecl:
             decls.append(TypeDefDecl(name=name, value=site, obj=obj, obj_type=types.GenericAlias))
             continue
         if hasattr(obj, "__module__") and obj.__module__ != modname:
-            if getattr(obj, "__name__", None) == name:
+            obj_name = getattr(obj, "__name__", None)
+            if obj_name == name:
                 continue
-            site = Site(role="alias_value", annotation=obj)
-            decls.append(TypeDefDecl(name=name, value=site, obj=obj))
+            if callable(obj) and obj_name is None:
+                site = Site(role="var", name=name, annotation=ann)
+                decls.append(VarDecl(name=name, site=site, obj=obj))
+            else:
+                site = Site(role="alias_value", annotation=obj)
+                decls.append(TypeDefDecl(name=name, value=site, obj=obj))
             continue
         if callable(obj):
             site = Site(role="var", name=name, annotation=ann)
@@ -134,19 +139,23 @@ def _scan_function(fn: t.Callable) -> FuncDecl:
 
     raw_ann: dict[str, t.Any] = getattr(fn, "__annotations__", {}) or {}
     params: list[Site] = []
+    glb = getattr(fn, "__globals__", {})
     try:
         sig = inspect.signature(fn)
         for p in sig.parameters.values():
             ann = raw_ann.get(p.name, inspect._empty)
             if ann is not inspect._empty:
-                ann = _eval_annotation(ann, fn.__globals__)
+                ann = _eval_annotation(ann, glb)
             params.append(Site(role="param", name=p.name, annotation=ann))
     except (TypeError, ValueError):
-        pass
+        params.append(Site(role="param", name="...", annotation=t.Any))
 
     ret = None
     if "return" in raw_ann:
-        ann = _eval_annotation(raw_ann["return"], fn.__globals__)
+        ann = _eval_annotation(raw_ann["return"], glb)
+        ret = Site(role="return", annotation=ann)
+    elif params and params[0].name == "...":
+        ann: t.Any = fn if isinstance(fn, type) else t.Any
         ret = Site(role="return", annotation=ann)
 
     decos: list[str] = []

@@ -9,6 +9,7 @@ from abc import ABC, abstractmethod
 from dataclasses import InitVar, dataclass
 from enum import Enum, IntEnum, IntFlag
 from functools import cached_property
+from operator import attrgetter
 from pathlib import Path
 from typing import (
     Annotated,
@@ -352,6 +353,12 @@ def float_case(x: float | str) -> float:
     return float(x)
 
 
+# Edge case: ``overload_for`` should handle bytes values
+@overload_for(b"x")
+def bytes_case(x: bytes) -> bytes:
+    return x
+
+
 # Mixing standard overloads with ``overload_for`` literal cases
 @overload
 def mixed_overload(x: str) -> str: ...
@@ -438,6 +445,13 @@ COS_VAR: Callable[[float], float] = math.cos
 # Edge case: alias to a foreign constant should retain its type
 PI_ALIAS = math.pi
 
+
+# Alias to a built-in classmethod implemented in C
+DICT_FROMKEYS_CM = dict.fromkeys
+
+
+# operator.attrgetter returns a callable without __name__
+ATTRGETTER_VAR = attrgetter("b")
 
 # Variable with pragma comment should retain comment in stub
 PRAGMA_VAR = 1  # type: ignore
