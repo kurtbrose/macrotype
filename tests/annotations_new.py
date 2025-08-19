@@ -406,6 +406,14 @@ class EmployeeModel(SQLBase):
     manager_id: Mapped[ManagerModel.id_type]
 
 
+# Forward reference to a local class should not generate typing imports
+class ForwardRefModel: ...
+
+
+class UsesForwardRef:
+    items: list["ForwardRefModel"]
+
+
 # Basic callable examples
 def sum_of(*args: tuple[int]) -> int:
     return sum(args)

@@ -39,13 +39,18 @@ def resolve_imports(mi: ModuleDecl) -> None:
         if (
             (
                 getattr(a, "__module__", None) == "typing"
-                and not isinstance(a, (t.TypeVar, t.ParamSpec, t.TypeVarTuple))
+                and not isinstance(a, (t.TypeVar, t.ParamSpec, t.TypeVarTuple, t.ForwardRef))
                 and a is not t.Union
             )
             or a is Callable
             or a is ABC_Callable
         )
     }
+    for a in atoms.values():
+        if isinstance(a, t.ForwardRef):
+            name = name_map[id(a)]
+            if name not in context:
+                typing_names.add(name)
     typing_names.update(_collect_typing_names(mi.members))
 
     external: dict[str, set[str]] = defaultdict(set)
