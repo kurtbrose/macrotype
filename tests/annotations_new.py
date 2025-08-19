@@ -352,6 +352,12 @@ def float_case(x: float | str) -> float:
     return float(x)
 
 
+# Edge case: ``overload_for`` should handle bytes values
+@overload_for(b"x")
+def bytes_case(x: bytes) -> bytes:
+    return x
+
+
 # Mixing standard overloads with ``overload_for`` literal cases
 @overload
 def mixed_overload(x: str) -> str: ...
