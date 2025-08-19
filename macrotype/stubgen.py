@@ -52,7 +52,6 @@ def _module_name_from_path(path: Path) -> str:
 
 
 def load_module(name: str, *, allow_type_checking: bool = False) -> ModuleType:
-    pre_modules = set(sys.modules)
     spec = importlib.util.find_spec(name)
     if spec is None or spec.origin is None or not spec.origin.endswith(".py"):
         raise ImportError(f"Cannot import {name}")
@@ -60,20 +59,8 @@ def load_module(name: str, *, allow_type_checking: bool = False) -> ModuleType:
         code = Path(spec.origin).read_text()
         if _has_type_checking_guard(code):
             raise RuntimeError(f"Skipped {name} due to TYPE_CHECKING guard")
-    existing_module = sys.modules.get(name)
     with patch_typing():
         module = importlib.import_module(name)
-    added = set(sys.modules) - pre_modules
-
-    def _cleanup() -> None:
-        if existing_module is not None:
-            sys.modules[name] = existing_module
-        else:
-            sys.modules.pop(name, None)
-        for mod_name in added - {name}:
-            sys.modules.pop(mod_name, None)
-
-    module.__dict__["__cleanup__"] = _cleanup
     return module
 
 
@@ -109,6 +96,24 @@ def write_stub(dest: Path, lines: list[str], command: str | None = None) -> None
     dest.write_text("\n".join(_header_lines(command) + list(lines)) + "\n")
 
 
+def process_module(
+    module: ModuleType,
+    dest: Path | None = None,
+    *,
+    command: str | None = None,
+    strict: bool = False,
+    source_info: SourceInfo | None = None,
+) -> Path:
+    lines = stub_lines(module, source_info=source_info, strict=strict)
+    if dest is None:
+        file = getattr(module, "__file__", None)
+        if file is None:
+            raise ValueError("dest must be provided for modules without __file__")
+        dest = Path(file).with_suffix(".pyi")
+    write_stub(dest, lines, command)
+    return dest
+
+
 def iter_python_files(target: Path, *, skip: Sequence[str] = ()) -> list[Path]:
     if target.is_file():
         return [target]
@@ -136,10 +141,14 @@ def process_file(
     module = load_module(module_name, allow_type_checking=True)
     header, comments, line_map = extract_source_info(code)
     info = SourceInfo(headers=header, comments=comments, line_map=line_map)
-    lines = stub_lines(module, source_info=info, strict=strict)
     dest = dest or src.with_suffix(".pyi")
-    write_stub(dest, lines, command)
-    return dest
+    return process_module(
+        module,
+        dest,
+        command=command,
+        strict=strict,
+        source_info=info,
+    )
 
 
 def process_directory(
@@ -178,6 +187,7 @@ __all__ = [
     "load_module_from_code",
     "stub_lines",
     "write_stub",
+    "process_module",
     "iter_python_files",
     "process_file",
     "process_directory",

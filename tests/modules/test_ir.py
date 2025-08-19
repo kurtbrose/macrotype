@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import sys
 import types
 import typing
 
@@ -242,5 +243,8 @@ def test_strict_mode_normalizes_union() -> None:
 
 def test_strict_mode_raises_on_invalid_annotation() -> None:
     mod = importlib.reload(importlib.import_module("tests.strict_error"))
-    with pytest.raises(TypeError):
-        from_module(mod, strict=True)
+    try:
+        with pytest.raises(TypeError):
+            from_module(mod, strict=True)
+    finally:
+        sys.modules.pop("tests.strict_error", None)
