@@ -9,6 +9,13 @@ INDENT = "    "
 
 import typing as t
 
+_TYPING_ATTR_TYPES: tuple[type, ...] = (type, types.GenericAlias, str)
+if hasattr(types, "UnionType"):
+    _TYPING_ATTR_TYPES += (types.UnionType,)
+TypeAliasType = getattr(t, "TypeAliasType", None)
+if TypeAliasType is not None:
+    _TYPING_ATTR_TYPES += (TypeAliasType,)
+
 from .ir import ClassDecl, Decl, FuncDecl, ModuleDecl, TypeDefDecl, VarDecl
 
 
@@ -80,8 +87,14 @@ def _origin_and_args(obj: Any) -> tuple[Any | None, tuple[Any, ...]]:
     origin = get_origin(obj)
     if origin is not None:
         return origin, get_args(obj)
-    if not isinstance(obj, type) and hasattr(obj, "type"):
-        return type(obj), (getattr(obj, "type"),)
+    if not isinstance(obj, type):
+        try:
+            type_attr = object.__getattribute__(obj, "type")
+        except AttributeError:
+            pass
+        else:
+            if isinstance(type_attr, _TYPING_ATTR_TYPES) or get_origin(type_attr) is not None:
+                return type(obj), (type_attr,)
     return None, ()
 
 
