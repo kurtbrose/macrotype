@@ -45,6 +45,7 @@ from typing import (
     runtime_checkable,
 )
 
+from sqlalchemy.engine import Result as SAResult
 from sqlalchemy.sql.selectable import Select as SASelect
 from sqlalchemy.sql.selectable import TypedReturnsRows as SATypedReturnsRows
 
@@ -1261,6 +1262,10 @@ def one[T1, T2, *Ts](query: TypedReturnsRows[tuple[T1, T2, *Ts]]) -> tuple[T1, T
 
 def one(query):
     return None
+
+
+# SQLAlchemy Result generic without string annotation
+SA_RESULT_DIRECT: SAResult[int]
 
 
 # SQLAlchemy generics should preserve type arguments when used as parameters

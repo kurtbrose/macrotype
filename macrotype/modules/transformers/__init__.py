@@ -14,6 +14,7 @@ from .newtype import transform_newtypes
 from .overload import expand_overloads
 from .param_default import infer_param_defaults
 from .protocol import prune_protocol_methods
+from .recover_custom_generics import recover_custom_generics
 from .resolve_imports import resolve_imports
 from .source_info import add_source_info
 from .typeddict import prune_inherited_typeddict_fields
@@ -29,6 +30,7 @@ __all__ = [
     "transform_enums",
     "normalize_flags",
     "canonicalize_foreign_symbols",
+    "recover_custom_generics",
     "canonicalize_local_aliases",
     "expand_overloads",
     "transform_newtypes",

@@ -17,6 +17,7 @@ __all__ = [
     "normalize_flags",
     "normalize_descriptors",
     "canonicalize_foreign_symbols",
+    "recover_custom_generics",
     "canonicalize_local_aliases",
     "unwrap_decorated_functions",
     "infer_param_defaults",
@@ -39,6 +40,7 @@ def __getattr__(name: str):
         "add_source_info",
         "add_comments",
         "canonicalize_foreign_symbols",
+        "recover_custom_generics",
         "canonicalize_local_aliases",
         "unwrap_decorated_functions",
         "infer_param_defaults",
@@ -78,6 +80,7 @@ def from_module(
     mi = scan_module(mod)
     _t.add_source_info(mi, source_info)
     _t.canonicalize_foreign_symbols(mi)
+    _t.recover_custom_generics(mi)
     _t.unwrap_decorated_functions(mi)
     _t.canonicalize_local_aliases(mi)
     _t.synthesize_aliases(mi)
