@@ -97,6 +97,7 @@ def from_module(
     _t.normalize_flags(mi)
     _t.prune_protocol_methods(mi)
     _t.expand_overloads(mi)
+    _t.recover_custom_generics(mi)
     _t.add_comments(mi)
     _t.resolve_imports(mi)
 

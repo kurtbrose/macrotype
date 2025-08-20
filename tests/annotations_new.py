@@ -1318,3 +1318,18 @@ SA_GENERIC_TUPLE_DIRECT: tuple[
     SASelect[int],
     SATypedReturnsRows[int],
 ]
+
+
+# Overloaded function combining SQLAlchemy TypedReturnsRows and generics
+@overload
+def SATRR_first[T](query: SATypedReturnsRows[tuple[T]]) -> T | None: ...
+
+
+@overload
+def SATRR_first[T1, T2, *Ts](
+    query: SATypedReturnsRows[tuple[T1, T2, Unpack[Ts]]],
+) -> tuple[T1, T2, Unpack[Ts]] | None: ...
+
+
+def SATRR_first(query):
+    return None
