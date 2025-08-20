@@ -1223,3 +1223,38 @@ class DCTransformBase:
 class DCTransformed(DCTransformBase):
     a: int
     b: int
+
+
+# Generic overloads should preserve parameterized arguments and emit base case
+T1 = TypeVar("T1")
+T2 = TypeVar("T2")
+
+
+class TypedReturnsRows(Generic[T]):
+    pass
+
+
+@overload
+def first[T](query: TypedReturnsRows[tuple[T]]) -> T | None: ...
+
+
+@overload
+def first[T1, T2, *Ts](
+    query: TypedReturnsRows[tuple[T1, T2, *Ts]],
+) -> tuple[T1, T2, *Ts] | None: ...
+
+
+def first(query):
+    return None
+
+
+@overload
+def one[T](query: TypedReturnsRows[tuple[T]]) -> T: ...
+
+
+@overload
+def one[T1, T2, *Ts](query: TypedReturnsRows[tuple[T1, T2, *Ts]]) -> tuple[T1, T2, *Ts]: ...
+
+
+def one(query):
+    return None

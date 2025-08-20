@@ -190,8 +190,9 @@ def test_expand_overloads_transform() -> None:
     expand_overloads(mi)
 
     overs = [s for s in mi.members if s.name == "over"]
-    assert len(overs) == 2
-    assert all("overload" in s.decorators for s in overs)
+    assert len(overs) == 3
+    assert all("overload" in s.decorators for s in overs[:-1])
+    assert "overload" not in overs[-1].decorators
 
     specials = [s for s in mi.members if s.name == "special_neg"]
     assert len(specials) == 3

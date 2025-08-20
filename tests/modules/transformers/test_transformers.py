@@ -417,15 +417,18 @@ def test_overload_transform() -> None:
     mi = scan_module(mod)
     expand_overloads(mi)
     by_name = [s for s in mi.members if isinstance(s, FuncDecl) and s.name == "foo"]
-    assert len(by_name) == 2
-    assert all("overload" in s.decorators for s in by_name)
+    assert len(by_name) == 3
+    assert all("overload" in s.decorators for s in by_name[:-1])
+    assert "overload" not in by_name[-1].decorators
     cls = next(s for s in mi.members if isinstance(s, ClassDecl) and s.name == "C")
     bars = [m for m in cls.members if isinstance(m, FuncDecl) and m.name == "bar"]
-    assert len(bars) == 2
-    assert all("overload" in m.decorators for m in bars)
+    assert len(bars) == 3
+    assert all("overload" in m.decorators for m in bars[:-1])
+    assert "overload" not in bars[-1].decorators
     lits = [s for s in mi.members if isinstance(s, FuncDecl) and s.name == "lit"]
     assert len(lits) == 4
-    assert all("overload" in s.decorators for s in lits)
+    assert all("overload" in s.decorators for s in lits[:-1])
+    assert "overload" not in lits[-1].decorators
 
 
 def test_protocol_transform() -> None:

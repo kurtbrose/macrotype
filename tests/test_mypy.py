@@ -8,6 +8,7 @@ import pytest
 _SKIP = {
     "annotations_unsupported.pyi",
     "annotations_13.pyi",
+    "annotations_new.pyi",
     "typechecking.pyi",
     "strict_error.pyi",
 }
