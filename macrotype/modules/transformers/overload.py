@@ -70,6 +70,7 @@ def _expand_function(
         case_sym = replace(case_sym, name=sym.name, decorators=decos)
         _transform_function(case_sym, case_fn, enclosing)
         members.append(case_sym)
+    sym = replace(sym, decorators=decos)
     members.append(sym)
     return members
 
