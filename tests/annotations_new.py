@@ -326,6 +326,23 @@ class Variadic(Generic[*Ts]):
         return self.args
 
 
+# Overloaded function with PEP 695 type parameters
+class Wrapped(Generic[T]):
+    pass
+
+
+@overload
+def pep695_overload[T](x: Wrapped[tuple[T]]) -> T: ...
+
+
+@overload
+def pep695_overload[T, T2, *Ts](x: Wrapped[tuple[T, T2, *Ts]]) -> tuple[T, T2, *Ts]: ...
+
+
+def pep695_overload(x):
+    return x
+
+
 # Default argument example to ensure defaults are applied in overloads
 @overload_for(3)
 def times_two(val: int, factor: int = 2) -> int:

@@ -9,6 +9,8 @@ from macrotype.meta_types import get_overloads as _get_overloads
 from macrotype.modules.ir import ClassDecl, Decl, FuncDecl, ModuleDecl
 from macrotype.modules.scanner import _scan_function
 
+from .generic import _transform_function
+
 # Helper to synthesize literal overloads
 
 
@@ -46,7 +48,9 @@ def _make_literal_overload(fn: Callable, args: tuple, kwargs: dict, result: Any)
     return new_fn
 
 
-def _expand_function(fn: Callable, sym: FuncDecl) -> list[FuncDecl]:
+def _expand_function(
+    fn: Callable, sym: FuncDecl, enclosing: tuple[str, ...] = ()
+) -> list[FuncDecl]:
     ovs = _get_overloads(fn)
     cases = getattr(fn, "__overload_for__", [])
     if not ovs and not cases:
@@ -55,13 +59,16 @@ def _expand_function(fn: Callable, sym: FuncDecl) -> list[FuncDecl]:
     decos = sym.decorators + ("overload",)
     members: list[FuncDecl] = []
     for ov in ovs:
-        ov_sym = _scan_function(getattr(ov, "__func__", ov))
+        ov_fn = getattr(ov, "__func__", ov)
+        ov_sym = _scan_function(ov_fn)
         ov_sym = replace(ov_sym, name=sym.name, decorators=decos)
+        _transform_function(ov_sym, ov_fn, enclosing)
         members.append(ov_sym)
     for args, kwargs, result in cases:
         case_fn = _make_literal_overload(fn, args, kwargs, result)
         case_sym = _scan_function(case_fn)
         case_sym = replace(case_sym, name=sym.name, decorators=decos)
+        _transform_function(case_sym, case_fn, enclosing)
         members.append(case_sym)
     if cases:
         members.append(replace(sym, decorators=decos))
@@ -81,7 +88,7 @@ def _transform_class(sym: ClassDecl) -> None:
         if isinstance(m, FuncDecl):
             fn = _get_function(m)
             if fn is not None:
-                expanded = _expand_function(fn, m)
+                expanded = _expand_function(fn, m, sym.type_params)
                 if expanded != [m]:
                     members[i : i + 1] = expanded
     sym.members = tuple(members)
