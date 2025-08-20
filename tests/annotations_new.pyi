@@ -34,13 +34,12 @@ from typing import (
     Unpack,
     dataclass_transform,
     final,
+    overload,
     override,
     runtime_checkable,
 )
+from tests.external_nested import ExternalOuter
 
-from macrotype.meta_types import (
-    overload,
-)
 
 P = ParamSpec("P")
 
@@ -176,6 +175,14 @@ class Variadic[*Ts]:
     def __init__(self, *args: Unpack[Ts]) -> None: ...
     def to_tuple(self) -> tuple[Unpack[Ts]]: ...
 
+class Wrapped[T]: ...
+
+@overload
+def pep695_overload[T](x: Wrapped[tuple[T]]) -> T: ...
+@overload
+def pep695_overload[T, T2, *Ts](
+    x: Wrapped[tuple[T, T2, Unpack[Ts]]],
+) -> tuple[T, T2, Unpack[Ts]]: ...
 @overload
 def times_two(val: Literal[3], factor: Literal[2]) -> Literal[6]: ...
 @overload
@@ -632,6 +639,8 @@ class NestedOuter:
     class Inner: ...
 
 def nested_class_annotation(x: NestedOuter.Inner) -> NestedOuter.Inner: ...
+
+def external_nested_class_annotation(x: ExternalOuter.Inner) -> ExternalOuter.Inner: ...
 
 class PointNT(NamedTuple):
     x: int

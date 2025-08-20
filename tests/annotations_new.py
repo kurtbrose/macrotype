@@ -54,6 +54,7 @@ from macrotype.meta_types import (
     overload_for,
     set_module,
 )
+from tests.external_nested import ExternalOuter
 
 # Imported assignment should remain a simple import in stubs
 from tests.modules.namespace_assign import namespace  # noqa: F401
@@ -326,6 +327,23 @@ class Variadic(Generic[*Ts]):
 
     def to_tuple(self) -> tuple[Unpack[Ts]]:
         return self.args
+
+
+# Overloaded function with PEP 695 type parameters
+class Wrapped(Generic[T]):
+    pass
+
+
+@overload
+def pep695_overload[T](x: Wrapped[tuple[T]]) -> T: ...
+
+
+@overload
+def pep695_overload[T, T2, *Ts](x: Wrapped[tuple[T, T2, *Ts]]) -> tuple[T, T2, *Ts]: ...
+
+
+def pep695_overload(x):
+    return x
 
 
 # Default argument example to ensure defaults are applied in overloads
@@ -1124,6 +1142,13 @@ class NestedOuter:
 
 
 def nested_class_annotation(x: NestedOuter.Inner) -> NestedOuter.Inner:
+    return x
+
+
+# Nested class from external module should import base name only
+def external_nested_class_annotation(
+    x: ExternalOuter.Inner,
+) -> ExternalOuter.Inner:
     return x
 
 
