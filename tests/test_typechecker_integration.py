@@ -20,12 +20,16 @@ def test_macrotype_check(tmp_path: Path, tool: str) -> None:
         str(stub_dir),
         "--",
     ]
+    env = os.environ.copy()
+    stub_path = repo_root / "__macrotype__"
+    env["MYPYPATH"] = str(stub_path) + os.pathsep + env.get("MYPYPATH", "")
+    env["PYTHONPATH"] = str(stub_path) + os.pathsep + env.get("PYTHONPATH", "")
     result = subprocess.run(
         cmd,
         cwd=repo_root,
         capture_output=True,
         text=True,
-        env=os.environ,
+        env=env,
     )
     assert result.returncode == 0, result.stdout + result.stderr
     assert (stub_dir / "tests" / "annotations_new.pyi").exists()

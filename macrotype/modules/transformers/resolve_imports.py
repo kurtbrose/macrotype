@@ -78,8 +78,9 @@ def resolve_imports(mi: ModuleDecl) -> None:
         modname = getattr(obj, "__module__", None)
         if not modname or modname in {mi.obj.__name__, "typing", "builtins"}:
             continue
+        modname = _MODULE_ALIASES.get(modname, modname)
         orig_mod = sys.modules.get(modname)
-        if orig_mod is not None and getattr(orig_mod, name, None) is obj:
+        if orig_mod is None or getattr(orig_mod, name, None) is obj:
             external[modname].add(name)
 
     for names in external.values():
