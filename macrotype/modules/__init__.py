@@ -100,10 +100,17 @@ def from_module(
     if strict:
         from macrotype.types import normalize_annotation
 
+        from .ir import AnnExpr
+
         for decl in mi.iter_all_decls():
             for site in decl.get_annotation_sites():
                 if site.role != "alias_value":
                     ctx = "call_params" if site.role == "param" else "top"
-                    site.annotation = normalize_annotation(site.annotation, ctx=ctx)
+                    ann = site.annotation
+                    if isinstance(ann, AnnExpr):
+                        norm = normalize_annotation(ann.evaluated, ctx=ctx)
+                        site.annotation = AnnExpr(expr=ann.expr, evaluated=norm)
+                    else:
+                        site.annotation = normalize_annotation(ann, ctx=ctx)
 
     return mi

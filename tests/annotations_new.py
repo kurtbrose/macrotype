@@ -45,6 +45,9 @@ from typing import (
     runtime_checkable,
 )
 
+from sqlalchemy.sql.selectable import Select as SASelect
+from sqlalchemy.sql.selectable import TypedReturnsRows as SATypedReturnsRows
+
 import macrotype.meta_types as mt
 from macrotype.meta_types import (
     emit_as,
@@ -1258,3 +1261,12 @@ def one[T1, T2, *Ts](query: TypedReturnsRows[tuple[T1, T2, *Ts]]) -> tuple[T1, T
 
 def one(query):
     return None
+
+
+# SQLAlchemy generics should preserve type arguments when used as parameters
+def count[T](query: "SASelect[tuple[T]]") -> int:
+    return 0
+
+
+def scalar[T](query: "SATypedReturnsRows[tuple[T]]") -> T:
+    raise NotImplementedError

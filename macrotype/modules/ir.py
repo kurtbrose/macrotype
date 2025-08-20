@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from types import EllipsisType, ModuleType
-from typing import Iterator, Literal, Optional
+from typing import Any, Iterator, Literal, Optional
 
 
 @dataclass(kw_only=True)
@@ -33,6 +33,12 @@ class Site:
     index: Optional[int] = None
     annotation: object = None
     comment: str | None = None
+
+
+@dataclass(kw_only=True, frozen=True)
+class AnnExpr:
+    expr: str
+    evaluated: Any
 
 
 @dataclass(kw_only=True)

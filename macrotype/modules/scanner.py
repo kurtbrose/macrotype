@@ -7,7 +7,7 @@ import typing as t
 from dataclasses import replace
 from types import ModuleType
 
-from .ir import ClassDecl, Decl, FuncDecl, ModuleDecl, Site, TypeDefDecl, VarDecl
+from .ir import AnnExpr, ClassDecl, Decl, FuncDecl, ModuleDecl, Site, TypeDefDecl, VarDecl
 
 
 def _eval_annotation(
@@ -20,9 +20,19 @@ def _eval_annotation(
         ):
             expr = expr[1:-1]
         try:
-            return eval(expr, glb, lcl or {})
+            evaluated = eval(expr, glb, lcl or {})
         except Exception:  # pragma: no cover - fall back to original
             return ann
+        origin = t.get_origin(evaluated)
+        if "[" in expr and origin is None:
+            # Some libraries (SQLAlchemy is the motivating case) implement
+            # ``__class_getitem__`` to intentionally discard generic arguments
+            # at runtime.  Evaluating ``Select[int]`` therefore yields the
+            # plain ``Select`` class, erasing the user's type parameters and
+            # defeating dynamic analysis.  Preserve the original expression so
+            # we can re-emit those generics later.
+            return AnnExpr(expr=expr, evaluated=evaluated)
+        return evaluated
     return ann
 
 

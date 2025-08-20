@@ -25,6 +25,16 @@ def normalize_annotation(obj: object, *, ctx: str = "top") -> object:
     converted back into a Python typing object.
     """
 
+    from macrotype.modules.ir import AnnExpr
+
+    if isinstance(obj, AnnExpr):
+        # ``AnnExpr`` carries both the original textual annotation and the
+        # object produced by evaluating it.  This is needed for cases like
+        # SQLAlchemy where ``__class_getitem__`` drops generic parameters; the
+        # evaluated object alone would lose information.  Use the evaluated
+        # form for normalization while keeping the source text for later
+        # emission.
+        obj = obj.evaluated
     return unparse_top(from_type(obj, ctx=ctx))
 
 
