@@ -54,6 +54,7 @@ from macrotype.meta_types import (
     overload_for,
     set_module,
 )
+from tests.external_nested import ExternalOuter
 
 P = ParamSpec("P")
 
@@ -1138,6 +1139,13 @@ class NestedOuter:
 
 
 def nested_class_annotation(x: NestedOuter.Inner) -> NestedOuter.Inner:
+    return x
+
+
+# Nested class from external module should import base name only
+def external_nested_class_annotation(
+    x: ExternalOuter.Inner,
+) -> ExternalOuter.Inner:
     return x
 
 

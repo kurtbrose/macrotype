@@ -38,6 +38,9 @@ from typing import (
     override,
     runtime_checkable,
 )
+from tests.external_nested import ExternalOuter
+
+
 
 P = ParamSpec("P")
 
@@ -637,6 +640,8 @@ class NestedOuter:
     class Inner: ...
 
 def nested_class_annotation(x: NestedOuter.Inner) -> NestedOuter.Inner: ...
+
+def external_nested_class_annotation(x: ExternalOuter.Inner) -> ExternalOuter.Inner: ...
 
 class PointNT(NamedTuple):
     x: int
