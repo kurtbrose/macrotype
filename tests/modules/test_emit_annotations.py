@@ -62,3 +62,11 @@ def test_emit_annotations_inline_meta() -> None:
     mi = from_module(mod)
     lines = emit_module(mi)
     assert "x: Annotated[int, InlineMeta]" in lines
+
+
+def test_imported_assignment_not_unpacked() -> None:
+    ann = import_module("tests.annotations_new")
+    mi = from_module(ann)
+    lines = emit_module(mi)
+    assert "from tests.modules.namespace_assign import namespace" in lines
+    assert "namespace = Namespace.make" not in lines

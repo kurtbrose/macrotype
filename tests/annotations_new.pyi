@@ -41,7 +41,6 @@ from typing import (
 from tests.external_nested import ExternalOuter
 
 
-
 P = ParamSpec("P")
 
 T = TypeVar("T")

@@ -56,6 +56,9 @@ from macrotype.meta_types import (
 )
 from tests.external_nested import ExternalOuter
 
+# Imported assignment should remain a simple import in stubs
+from tests.modules.namespace_assign import namespace  # noqa: F401
+
 P = ParamSpec("P")
 
 T = TypeVar("T")

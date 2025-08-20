@@ -111,6 +111,9 @@ def scan_module(mod: ModuleType) -> ModuleDecl:
             obj_name = getattr(obj, "__name__", None)
             if obj_name == name:
                 continue
+            orig_mod = sys.modules.get(obj.__module__)
+            if orig_mod is not None and getattr(orig_mod, name, None) is obj:
+                continue
             if callable(obj) and obj_name is None:
                 site = Site(role="var", name=name, annotation=ann)
                 decls.append(VarDecl(name=name, site=site, obj=obj))
