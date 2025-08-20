@@ -38,6 +38,9 @@ from typing import (
     runtime_checkable,
 )
 
+from sqlalchemy.sql.selectable import Select as SASelect
+from sqlalchemy.sql.selectable import TypedReturnsRows as SATypedReturnsRows
+
 from macrotype.meta_types import (
     overload,
 )
@@ -691,6 +694,8 @@ def one[T1, T2, *Ts](
     query: TypedReturnsRows[tuple[T1, T2, Unpack[Ts]]],
 ) -> tuple[T1, T2, Unpack[Ts]]: ...
 def one(query): ...
+def count[T](query: SASelect[tuple[T]]) -> int: ...
+def scalar[T](query: SATypedReturnsRows[tuple[T]]) -> T: ...
 
 LITERAL_STR_VAR: LiteralString
 

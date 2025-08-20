@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from typing import Any, Iterable, ParamSpec, TypeVar, TypeVarTuple
 
-from macrotype.modules.ir import Decl, ModuleDecl
+from macrotype.modules.ir import (
+    Decl,
+    ModuleDecl,
+)
 
 INDENT: str
 

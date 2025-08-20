@@ -21,7 +21,7 @@ if hasattr(types, "UnionType"):
     _UNION_ORIGINS += (types.UnionType,)
 
 
-from .ir import ClassDecl, Decl, FuncDecl, ModuleDecl, TypeDefDecl, VarDecl
+from .ir import AnnExpr, ClassDecl, Decl, FuncDecl, ModuleDecl, TypeDefDecl, VarDecl
 
 
 def _qualname(obj: Any, default: str | None = None) -> str:
@@ -111,6 +111,9 @@ def flatten_annotation_atoms(ann: Any) -> dict[int, Any]:
 
     while stack:
         obj = stack.pop()
+        if isinstance(obj, AnnExpr):
+            stack.append(obj.evaluated)
+            continue
         obj_id = id(obj)
         if obj_id in visited:
             continue
@@ -212,6 +215,9 @@ def stringify_annotation(ann: Any, name_map: dict[int, str], module_name: str | 
     """Emit string form of a type annotation."""
     if ann is Ellipsis:
         return "..."
+
+    if isinstance(ann, AnnExpr):
+        return ann.expr
 
     if isinstance(ann, ForwardRef):
         return ann.__forward_arg__
