@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 from dataclasses import dataclass, field
 from types import EllipsisType, ModuleType
 from typing import Any, Iterator, Literal, Optional
@@ -104,6 +105,16 @@ class SourceInfo:
     comments: dict[int, str]
     line_map: dict[str, int]
     tc_imports: dict[str, set[str]] = field(default_factory=dict)
+    code: str | None = None
+    _tree: ast.AST | None = field(default=None, init=False, repr=False)
+
+    @property
+    def tree(self) -> ast.AST:
+        if self._tree is None:
+            if self.code is None:
+                raise ValueError("No source code available for AST")
+            self._tree = ast.parse(self.code)
+        return self._tree
 
 
 @dataclass(kw_only=True)

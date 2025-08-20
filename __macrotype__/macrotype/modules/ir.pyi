@@ -2,6 +2,7 @@
 # Do not edit by hand
 from __future__ import annotations
 
+from ast import AST
 from dataclasses import dataclass
 from typing import Any, Iterator, Literal
 
@@ -74,6 +75,10 @@ class SourceInfo:
     comments: dict[int, str]
     line_map: dict[str, int]
     tc_imports: dict[str, set[str]]
+    code: None | str
+    _tree: AST | None
+    @property
+    def tree(self) -> AST: ...
 
 @dataclass(kw_only=True)
 class ImportBlock:

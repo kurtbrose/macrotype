@@ -1,4 +1,4 @@
-# Generated via: macrotype macrotype -o __macrotype__/macrotype
+# Generated via: macrotype macrotype/modules/transformers/recover_custom_generics.py -o __macrotype__/macrotype/modules/transformers/recover_custom_generics.pyi
 # Do not edit by hand
 from __future__ import annotations
 
