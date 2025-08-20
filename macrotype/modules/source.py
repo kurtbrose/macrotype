@@ -9,6 +9,8 @@ import tokenize
 from collections import defaultdict
 from typing import Dict, Set
 
+from .ir import SourceInfo
+
 # Comments matching this pattern are considered "pragma" headers that should be
 # preserved in generated stubs.  Other leading comments are treated as regular
 # source comments.
@@ -60,10 +62,8 @@ def extract_type_checking_imports(
     return _tc_imports_from_tree(tree, allow_complex=allow_type_checking)
 
 
-def extract_source_info(
-    code: str, *, allow_type_checking: bool = False
-) -> tuple[list[str], dict[int, str], dict[str, int], Dict[str, Set[str]]]:
-    """Return header comments, comment map, name line map, and TYPE_CHECKING imports."""
+def extract_source_info(code: str, *, allow_type_checking: bool = False) -> SourceInfo:
+    """Return SourceInfo for *code* including parsed AST."""
 
     comments: dict[int, str] = {}
     header: list[str] = []
@@ -99,7 +99,15 @@ def extract_source_info(
 
     tc_imports = _tc_imports_from_tree(tree, allow_complex=allow_type_checking)
 
-    return header, comments, line_map, tc_imports
+    info = SourceInfo(
+        headers=header,
+        comments=comments,
+        line_map=line_map,
+        tc_imports=tc_imports,
+        code=code,
+    )
+    info._tree = tree
+    return info
 
 
 __all__ = ["extract_source_info", "extract_type_checking_imports", "PRAGMA_PREFIX"]

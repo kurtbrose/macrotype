@@ -142,21 +142,13 @@ def process_file(
 ) -> Path:
     code = src.read_text()
     try:
-        header, comments, line_map, tc_imports = extract_source_info(
-            code, allow_type_checking=allow_type_checking
-        )
+        info = extract_source_info(code, allow_type_checking=allow_type_checking)
     except RuntimeError:
         raise RuntimeError(f"Skipped {src} due to TYPE_CHECKING guard")
     module_name = _module_name_from_path(src)
     if _looks_like_mypy_plugin(module_name):
         raise MypyPluginError(f"{module_name} appears to be a mypy plugin")
     module = load_module(module_name, allow_type_checking=True)
-    info = SourceInfo(
-        headers=header,
-        comments=comments,
-        line_map=line_map,
-        tc_imports=tc_imports,
-    )
     dest = dest or src.with_suffix(".pyi")
     return process_module(
         module,

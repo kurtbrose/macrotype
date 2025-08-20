@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import ast
 import typing as t
-from pathlib import Path
 
 from macrotype.modules.ir import AnnExpr, FuncDecl, ModuleDecl, VarDecl
 from macrotype.modules.scanner import _eval_annotation
@@ -78,13 +77,10 @@ def _apply_recover(
 
 
 def recover_custom_generics(mi: ModuleDecl) -> None:
-    if mi.source is None:
+    if mi.source is None or mi.source.code is None:
         return
-    file = getattr(mi.obj, "__file__", None)
-    if not file:
-        return
-    code = Path(file).read_text()
-    tree = ast.parse(code)
+    code = mi.source.code
+    tree = mi.source.tree
     var_map, param_map, ret_map = _build_maps(tree, code)
     glb = vars(mi.obj)
     fn_counts: dict[str, int] = {}
