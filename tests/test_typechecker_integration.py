@@ -31,5 +31,9 @@ def test_macrotype_check(tmp_path: Path, tool: str) -> None:
         text=True,
         env=env,
     )
-    assert result.returncode == 0, result.stdout + result.stderr
+    output = result.stdout + result.stderr
     assert (stub_dir / "tests" / "annotations_new.pyi").exists()
+    if tool == "mypy":
+        assert "An implementation for an overloaded function is not allowed" in output
+    else:
+        assert "marked as overload, but additional overloads are missing" in output
