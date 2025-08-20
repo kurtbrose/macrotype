@@ -82,6 +82,9 @@ def resolve_imports(mi: ModuleDecl) -> None:
         if orig_mod is not None and getattr(orig_mod, name, None) is obj:
             external[modname].add(name)
 
+    for names in external.values():
+        typing_names.difference_update(names)
+
     mi.imports = ImportBlock(typing=typing_names, froms=dict(external))
 
 
