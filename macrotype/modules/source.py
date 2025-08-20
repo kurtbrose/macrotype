@@ -6,6 +6,8 @@ import ast
 import io
 import re
 import tokenize
+from collections import defaultdict
+from typing import Dict, Set
 
 # Comments matching this pattern are considered "pragma" headers that should be
 # preserved in generated stubs.  Other leading comments are treated as regular
@@ -13,8 +15,55 @@ import tokenize
 PRAGMA_PREFIX = re.compile(r"#\s*(?:type:|pyright:|mypy:|pyre-|pyre:)")
 
 
-def extract_source_info(code: str) -> tuple[list[str], dict[int, str], dict[str, int]]:
-    """Return header comments, comment map, and name line map for *code*."""
+def _mentions_type_checking(expr: ast.AST) -> bool:
+    if isinstance(expr, ast.Name) and expr.id == "TYPE_CHECKING":
+        return True
+    if (
+        isinstance(expr, ast.Attribute)
+        and isinstance(expr.value, ast.Name)
+        and expr.value.id == "typing"
+        and expr.attr == "TYPE_CHECKING"
+    ):
+        return True
+    return any(_mentions_type_checking(c) for c in ast.iter_child_nodes(expr))
+
+
+def _tc_imports_from_tree(tree: ast.AST, *, allow_complex: bool) -> Dict[str, Set[str]]:
+    imports: Dict[str, Set[str]] = defaultdict(set)
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.If) or not _mentions_type_checking(node.test):
+            continue
+        if node.orelse and not allow_complex:
+            raise RuntimeError("Skipped module due to TYPE_CHECKING guard")
+        for stmt in node.body:
+            if (
+                isinstance(stmt, ast.ImportFrom)
+                and stmt.module
+                and stmt.level == 0
+                and not any(alias.asname for alias in stmt.names)
+            ):
+                for alias in stmt.names:
+                    imports[stmt.module].add(alias.name)
+            elif isinstance(stmt, ast.ImportFrom | ast.Import) and allow_complex:
+                continue
+            else:
+                if allow_complex:
+                    continue
+                raise RuntimeError("Skipped module due to TYPE_CHECKING guard")
+    return imports
+
+
+def extract_type_checking_imports(
+    code: str, *, allow_type_checking: bool = False
+) -> Dict[str, Set[str]]:
+    tree = ast.parse(code)
+    return _tc_imports_from_tree(tree, allow_complex=allow_type_checking)
+
+
+def extract_source_info(
+    code: str, *, allow_type_checking: bool = False
+) -> tuple[list[str], dict[int, str], dict[str, int], Dict[str, Set[str]]]:
+    """Return header comments, comment map, name line map, and TYPE_CHECKING imports."""
 
     comments: dict[int, str] = {}
     header: list[str] = []
@@ -48,7 +97,9 @@ def extract_source_info(code: str) -> tuple[list[str], dict[int, str], dict[str,
         elif hasattr(ast, "TypeAlias") and isinstance(node, ast.TypeAlias):
             line_map[node.name] = node.lineno
 
-    return header, comments, line_map
+    tc_imports = _tc_imports_from_tree(tree, allow_complex=allow_type_checking)
+
+    return header, comments, line_map, tc_imports
 
 
-__all__ = ["extract_source_info", "PRAGMA_PREFIX"]
+__all__ = ["extract_source_info", "extract_type_checking_imports", "PRAGMA_PREFIX"]

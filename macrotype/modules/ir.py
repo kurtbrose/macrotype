@@ -97,6 +97,7 @@ class SourceInfo:
     headers: list[str]
     comments: dict[int, str]
     line_map: dict[str, int]
+    tc_imports: dict[str, set[str]] = field(default_factory=dict)
 
 
 @dataclass(kw_only=True)

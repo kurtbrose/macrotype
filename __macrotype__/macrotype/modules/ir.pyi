@@ -1,12 +1,10 @@
-# Generated via: macrotype macrotype
+# Generated via: macrotype macrotype/modules/ir.py -o __macrotype__/macrotype/modules/ir.pyi
 # Do not edit by hand
 from __future__ import annotations
-
 from collections.abc import Iterator
-from dataclasses import dataclass
-from typing import Decl, Literal
+from dataclasses import dataclass, field
 
-annotations = annotations
+from typing import Literal
 
 @dataclass(kw_only=True)
 class Decl:
@@ -14,13 +12,13 @@ class Decl:
     obj: EllipsisType | None | object
     comment: None | str
     emit: bool
-    def get_children(self) -> tuple["Decl", ...]: ...
+    def get_children(self) -> tuple['Decl', ...]: ...
     def get_annotation_sites(self) -> tuple[Site, ...]: ...
     def walk(self) -> Iterator[Decl]: ...
 
 @dataclass(kw_only=True)
 class Site:
-    role: Literal["var", "return", "param", "base", "alias_value", "td_field"]
+    role: Literal['var', 'return', 'param', 'base', 'alias_value', 'td_field']
     name: None | str
     index: None | int
     annotation: object
@@ -71,6 +69,7 @@ class SourceInfo:
     headers: list[str]
     comments: dict[int, str]
     line_map: dict[str, int]
+    tc_imports: dict[str, set[str]]
 
 @dataclass(kw_only=True)
 class ImportBlock:

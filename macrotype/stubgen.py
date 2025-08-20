@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import ast
 import fnmatch
 import importlib
 import importlib.util
@@ -11,7 +10,7 @@ from typing import Sequence
 
 from .meta_types import patch_typing
 from .modules.ir import SourceInfo
-from .modules.source import extract_source_info
+from .modules.source import extract_source_info, extract_type_checking_imports
 
 
 class MypyPluginError(RuntimeError):
@@ -38,27 +37,6 @@ def _header_lines(command: str | None) -> list[str]:
     return []
 
 
-def _has_type_checking_guard(code: str) -> bool:
-    tree = ast.parse(code)
-
-    def mentions_TYPE_CHECKING(expr: ast.AST) -> bool:
-        if isinstance(expr, ast.Name) and expr.id == "TYPE_CHECKING":
-            return True
-        if (
-            isinstance(expr, ast.Attribute)
-            and isinstance(expr.value, ast.Name)
-            and expr.value.id == "typing"
-            and expr.attr == "TYPE_CHECKING"
-        ):
-            return True
-        return any(mentions_TYPE_CHECKING(c) for c in ast.iter_child_nodes(expr))
-
-    for node in ast.walk(tree):
-        if isinstance(node, ast.If) and mentions_TYPE_CHECKING(node.test):
-            return True
-    return False
-
-
 def _module_name_from_path(path: Path) -> str:
     parts = [path.stem]
     parent = path.parent
@@ -74,8 +52,10 @@ def load_module(name: str, *, allow_type_checking: bool = False) -> ModuleType:
         raise ImportError(f"Cannot import {name}")
     if not allow_type_checking:
         code = Path(spec.origin).read_text()
-        if _has_type_checking_guard(code):
-            raise RuntimeError(f"Skipped {name} due to TYPE_CHECKING guard")
+        try:
+            extract_type_checking_imports(code)
+        except RuntimeError as exc:
+            raise RuntimeError(f"Skipped {name} due to TYPE_CHECKING guard") from exc
     try:
         with patch_typing():
             module = importlib.import_module(name)
@@ -93,8 +73,11 @@ def load_module_from_code(
     *,
     allow_type_checking: bool = False,
 ) -> ModuleType:
-    if not allow_type_checking and _has_type_checking_guard(code):
-        raise RuntimeError("Skipped module due to TYPE_CHECKING guard")
+    if not allow_type_checking:
+        try:
+            extract_type_checking_imports(code)
+        except RuntimeError as exc:
+            raise RuntimeError("Skipped module due to TYPE_CHECKING guard") from exc
     module = ModuleType(name)
     sys.modules[name] = module
     with patch_typing():
@@ -158,14 +141,22 @@ def process_file(
     allow_type_checking: bool = False,
 ) -> Path:
     code = src.read_text()
-    if not allow_type_checking and _has_type_checking_guard(code):
+    try:
+        header, comments, line_map, tc_imports = extract_source_info(
+            code, allow_type_checking=allow_type_checking
+        )
+    except RuntimeError:
         raise RuntimeError(f"Skipped {src} due to TYPE_CHECKING guard")
     module_name = _module_name_from_path(src)
     if _looks_like_mypy_plugin(module_name):
         raise MypyPluginError(f"{module_name} appears to be a mypy plugin")
     module = load_module(module_name, allow_type_checking=True)
-    header, comments, line_map = extract_source_info(code)
-    info = SourceInfo(headers=header, comments=comments, line_map=line_map)
+    info = SourceInfo(
+        headers=header,
+        comments=comments,
+        line_map=line_map,
+        tc_imports=tc_imports,
+    )
     dest = dest or src.with_suffix(".pyi")
     return process_module(
         module,

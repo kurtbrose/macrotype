@@ -12,7 +12,7 @@ from macrotype.types.validate import TypeValidationError
 def test_invalid_literal_error():
     path = Path(__file__).with_name("annotations_invalid.py")
     mod = load_module("tests.annotations_invalid")
-    header, comments, line_map = extract_source_info(path.read_text())
+    header, comments, line_map, _ = extract_source_info(path.read_text())
     info = SourceInfo(headers=header, comments=comments, line_map=line_map)
     with pytest.raises(TypeValidationError) as exc:
         stub_lines(mod, source_info=info, strict=True)
@@ -25,7 +25,7 @@ def test_invalid_literal_error():
 def test_invalid_non_type_error():
     path = Path(__file__).with_name("annotations_invalid_non_type.py")
     mod = load_module("tests.annotations_invalid_non_type")
-    header, comments, line_map = extract_source_info(path.read_text())
+    header, comments, line_map, _ = extract_source_info(path.read_text())
     info = SourceInfo(headers=header, comments=comments, line_map=line_map)
     lines = stub_lines(mod, source_info=info, strict=True)
     assert lines[-1] == "BAD_NON_TYPE: 123"
@@ -42,7 +42,7 @@ def test_unresolved_string_kept_as_name(tmp_path):
     finally:
         sys.path.remove(str(tmp_path))
         sys.modules.pop("unresolved_mod", None)
-    header, comments, line_map = extract_source_info(code)
+    header, comments, line_map, _ = extract_source_info(code)
     info = SourceInfo(headers=header, comments=comments, line_map=line_map)
     lines = stub_lines(mod, source_info=info, strict=True)
     assert lines == ["X: Missing"]
@@ -58,7 +58,7 @@ def test_forward_ref_kept_as_name(tmp_path):
     finally:
         sys.path.remove(str(tmp_path))
         sys.modules.pop("forward_ref_mod", None)
-    header, comments, line_map = extract_source_info(code)
+    header, comments, line_map, _ = extract_source_info(code)
     info = SourceInfo(headers=header, comments=comments, line_map=line_map)
     lines = stub_lines(mod, source_info=info, strict=True)
     assert lines[0] == "from typing import Missing"
@@ -68,7 +68,7 @@ def test_forward_ref_kept_as_name(tmp_path):
 def test_misplaced_ellipsis_in_tuple_raises_error() -> None:
     path = Path(__file__).with_name("strict_error.py")
     mod = load_module("tests.strict_error")
-    header, comments, line_map = extract_source_info(path.read_text())
+    header, comments, line_map, _ = extract_source_info(path.read_text())
     info = SourceInfo(headers=header, comments=comments, line_map=line_map)
     with pytest.raises(TypeValidationError) as exc:
         stub_lines(mod, source_info=info, strict=True)
