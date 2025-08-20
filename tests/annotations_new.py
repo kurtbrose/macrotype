@@ -1295,6 +1295,11 @@ CUSTOM_CG_CHILD_DIRECT: CustomCGChild[int]
 SA_RESULT_DIRECT: SAResult[int]
 
 
+# Function return with type parameter and custom ``__class_getitem__``
+def custom_cg_with_type_param[Model](model: type[Model]) -> CustomCG[tuple[Model]]:
+    raise NotImplementedError
+
+
 # SQLAlchemy generics should preserve type arguments when used as parameters
 def count[T](query: "SASelect[tuple[T]]") -> int:
     return 0

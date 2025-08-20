@@ -1,0 +1,16 @@
+# Generated via: macrotype macrotype -o __macrotype__/macrotype
+# Do not edit by hand
+from __future__ import annotations
+
+from ast import Module
+from typing import Any
+
+from macrotype.modules.ir import ModuleDecl
+
+def _has_custom_class_getitem(obj: object) -> bool: ...
+def _needs_recover(obj: object) -> bool: ...
+def _build_maps(tree: Module, code: str): ...
+def _apply_recover(
+    site, expr: None | str, name: str, glb: dict[str, Any], lcl: None | dict[str, Any]
+) -> None: ...
+def recover_custom_generics(mi: ModuleDecl) -> None: ...

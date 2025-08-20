@@ -52,10 +52,16 @@ def _build_maps(tree: ast.Module, code: str):
     return var_map, param_map, ret_map
 
 
-def _apply_recover(site, expr: str | None, name: str, glb: dict[str, t.Any]) -> None:
+def _apply_recover(
+    site,
+    expr: str | None,
+    name: str,
+    glb: dict[str, t.Any],
+    lcl: dict[str, t.Any] | None = None,
+) -> None:
     if not expr or "[" not in expr:
         return
-    new_ann = _eval_annotation(expr, glb)
+    new_ann = _eval_annotation(expr, glb, lcl)
     if isinstance(new_ann, str):
         raise RuntimeError(
             f"Annotation for {name} uses non-standard __class_getitem__; switch to a string annotation"
@@ -83,15 +89,16 @@ def recover_custom_generics(mi: ModuleDecl) -> None:
                 expr = var_map.get(decl.name)
                 _apply_recover(site, expr, decl.name, glb)
         elif isinstance(decl, FuncDecl):
+            lcl = {tp.__name__: tp for tp in getattr(decl.obj, "__type_params__", ())}
             for site in decl.get_annotation_sites():
                 if not _needs_recover(site.annotation):
                     continue
                 if site.role == "return":
                     expr = ret_map.get(decl.name)
-                    _apply_recover(site, expr, f"{decl.name} return", glb)
+                    _apply_recover(site, expr, f"{decl.name} return", glb, lcl)
                 elif site.role == "param" and site.name is not None:
                     expr = param_map.get((decl.name, site.name))
-                    _apply_recover(site, expr, f"{decl.name}.{site.name}", glb)
+                    _apply_recover(site, expr, f"{decl.name}.{site.name}", glb, lcl)
 
 
 __all__ = ["recover_custom_generics"]
