@@ -70,3 +70,15 @@ def test_imported_assignment_not_unpacked() -> None:
     lines = emit_module(mi)
     assert "from tests.modules.namespace_assign import namespace" in lines
     assert "namespace = Namespace.make" not in lines
+
+
+def test_generic_overload_preserves_params() -> None:
+    ann = import_module("tests.annotations_new")
+    mi = from_module(ann)
+    lines = emit_module(mi)
+
+    line = next(text for text in lines if text.startswith("def first[T1, T2, *Ts]"))
+    assert "TypedReturnsRows[tuple[T1, T2, Unpack[Ts]]]" in line
+
+    line = next(text for text in lines if text.startswith("def one[T1, T2, *Ts]"))
+    assert "TypedReturnsRows[tuple[T1, T2, Unpack[Ts]]]" in line
