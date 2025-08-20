@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 import typing as t
 from collections import defaultdict
 from collections.abc import Callable as ABC_Callable
@@ -69,6 +70,17 @@ def resolve_imports(mi: ModuleDecl) -> None:
         if modname == "types" and name == "UnionType":
             continue
         external[modname].add(name)
+
+    defined = {sym.name for sym in mi.members}
+    for name, obj in mi.obj.__dict__.items():
+        if name in defined or name.startswith("_"):
+            continue
+        modname = getattr(obj, "__module__", None)
+        if not modname or modname in {mi.obj.__name__, "typing", "builtins"}:
+            continue
+        orig_mod = sys.modules.get(modname)
+        if orig_mod is not None and getattr(orig_mod, name, None) is obj:
+            external[modname].add(name)
 
     mi.imports = ImportBlock(typing=typing_names, froms=dict(external))
 
