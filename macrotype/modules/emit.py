@@ -131,6 +131,7 @@ def flatten_annotation_atoms(ann: Any) -> dict[int, Any]:
             continue
 
         if origin is not None:
+            atoms[obj_id] = obj
             atoms[id(origin)] = origin
             stack.extend(args)
         elif args:
