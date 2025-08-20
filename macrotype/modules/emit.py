@@ -16,6 +16,10 @@ TypeAliasType = getattr(t, "TypeAliasType", None)
 if TypeAliasType is not None:
     _TYPING_ATTR_TYPES += (TypeAliasType,)
 
+_UNION_ORIGINS: tuple[Any, ...] = (t.Union,)
+if hasattr(types, "UnionType"):
+    _UNION_ORIGINS += (types.UnionType,)
+
 
 from .ir import ClassDecl, Decl, FuncDecl, ModuleDecl, TypeDefDecl, VarDecl
 
@@ -131,6 +135,9 @@ def flatten_annotation_atoms(ann: Any) -> dict[int, Any]:
             continue
 
         if origin is not None:
+            if origin in _UNION_ORIGINS:
+                stack.extend(args)
+                continue
             atoms[obj_id] = obj
             atoms[id(origin)] = origin
             stack.extend(args)
