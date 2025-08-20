@@ -87,6 +87,10 @@ def resolve_imports(mi: ModuleDecl) -> None:
     for names in external.values():
         typing_names.difference_update(names)
 
+    existing = mi.imports
+    typing_names.update(existing.typing)
+    for mod, names in existing.froms.items():
+        external[mod].update(names)
     mi.imports = ImportBlock(typing=typing_names, froms=dict(external))
 
 

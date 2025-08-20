@@ -61,9 +61,16 @@ def _stub_main(argv: list[str]) -> int:
 
     if args.paths == ["-"]:
         code = sys.stdin.read()
-        module = stubgen.load_module_from_code(code, "<stdin>", allow_type_checking=allow_tc)
-        header, comments, line_map = extract_source_info(code)
-        info = SourceInfo(headers=header, comments=comments, line_map=line_map)
+        header, comments, line_map, tc_imports = extract_source_info(
+            code, allow_type_checking=allow_tc
+        )
+        module = stubgen.load_module_from_code(code, "<stdin>", allow_type_checking=True)
+        info = SourceInfo(
+            headers=header,
+            comments=comments,
+            line_map=line_map,
+            tc_imports=tc_imports,
+        )
         lines = stubgen.stub_lines(module, source_info=info, strict=args.strict)
         if args.output and args.output != "-":
             stubgen.write_stub(Path(args.output), lines, command)
@@ -81,9 +88,16 @@ def _stub_main(argv: list[str]) -> int:
             if args.output == "-":
                 code = path.read_text()
                 module_name = stubgen._module_name_from_path(path)
-                module = stubgen.load_module(module_name, allow_type_checking=allow_tc)
-                header, comments, line_map = extract_source_info(code)
-                info = SourceInfo(headers=header, comments=comments, line_map=line_map)
+                header, comments, line_map, tc_imports = extract_source_info(
+                    code, allow_type_checking=allow_tc
+                )
+                module = stubgen.load_module(module_name, allow_type_checking=True)
+                info = SourceInfo(
+                    headers=header,
+                    comments=comments,
+                    line_map=line_map,
+                    tc_imports=tc_imports,
+                )
                 lines = stubgen.stub_lines(module, source_info=info, strict=args.strict)
                 _stdout_write(lines, command)
             else:

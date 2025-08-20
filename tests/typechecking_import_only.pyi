@@ -1,0 +1,3 @@
+from decimal import Decimal
+
+def uses_decimal(x: Decimal) -> None: ...

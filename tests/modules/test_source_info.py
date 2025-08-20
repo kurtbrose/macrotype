@@ -19,7 +19,7 @@ def test_source_info_attached(tmp_path: Path) -> None:
     finally:
         sys.path.remove(str(tmp_path))
         sys.modules.pop("source_info_mod", None)
-    header, comments, line_map = extract_source_info(code)
+    header, comments, line_map, _ = extract_source_info(code)
     info = SourceInfo(headers=header, comments=comments, line_map=line_map)
     mi = from_module(mod, source_info=info)
     assert mi.source is not None
