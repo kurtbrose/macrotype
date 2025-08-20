@@ -12,7 +12,7 @@ from operator import attrgetter
 from pathlib import Path
 from re import Pattern
 from sqlalchemy.engine.result import Result
-from sqlalchemy.sql.selectable import Select, TypedReturnsRows
+from sqlalchemy.sql.selectable import AliasedReturnsRows, ExecutableReturnsRows, ReturnsRows, Select, TypedReturnsRows
 from tests.external_nested import ExternalOuter
 from tests.modules.namespace_assign import namespace
 
@@ -746,6 +746,13 @@ def one[T1, T2, *Ts](query: TypedReturnsRows[tuple[T1, T2, Unpack[Ts]]]) -> tupl
 
 def one(query): ...
 
+class CustomCG:
+    @classmethod
+    def __class_getitem__(cls, item): ...
+
+class CustomCGChild(CustomCG):
+    ...
+
 def count[T](query: SASelect[tuple[T]]) -> int: ...
 
 def scalar[T](query: SATypedReturnsRows[tuple[T]]) -> T: ...
@@ -792,4 +799,17 @@ CALLABLE_LIST_VAR: list[Callable[[int], str]]
 
 STRICT_UNION: int | str
 
+CUSTOM_CG_DIRECT: CustomCG[int]
+
+CUSTOM_CG_CHILD_DIRECT: CustomCGChild[int]
+
 SA_RESULT_DIRECT: Result[int]
+
+SA_GENERIC_TUPLE_DIRECT: tuple[
+    SAResult[int],
+    SAReturnsRows[int],
+    SAAliasedReturnsRows[int],
+    SAExecutableReturnsRows[int],
+    SASelect[int],
+    SATypedReturnsRows[int],
+]

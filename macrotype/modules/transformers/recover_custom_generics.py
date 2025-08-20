@@ -4,20 +4,26 @@ import ast
 import typing as t
 from pathlib import Path
 
-from macrotype.modules.ir import FuncDecl, ModuleDecl, VarDecl
+from macrotype.modules.ir import AnnExpr, FuncDecl, ModuleDecl, VarDecl
 from macrotype.modules.scanner import _eval_annotation
 
 
 def _has_custom_class_getitem(obj: object) -> bool:
-    return (
-        isinstance(obj, type)
-        and "__class_getitem__" in obj.__dict__
-        and obj.__module__ not in {"builtins", "typing"}
-    )
+    if not isinstance(obj, type):
+        return False
+    for cls in obj.__mro__:
+        if "__class_getitem__" in cls.__dict__ and cls.__module__ not in {"builtins", "typing"}:
+            return True
+    return False
 
 
 def _needs_recover(obj: object) -> bool:
-    return _has_custom_class_getitem(obj) and t.get_origin(obj) is None
+    if _has_custom_class_getitem(obj) and t.get_origin(obj) is None:
+        return True
+    origin = t.get_origin(obj)
+    if origin is None:
+        return False
+    return any(_needs_recover(arg) for arg in t.get_args(obj))
 
 
 def _build_maps(tree: ast.Module, code: str):
@@ -54,7 +60,10 @@ def _apply_recover(site, expr: str | None, name: str, glb: dict[str, t.Any]) -> 
         raise RuntimeError(
             f"Annotation for {name} uses non-standard __class_getitem__; switch to a string annotation"
         )
-    site.annotation = new_ann
+    if _needs_recover(new_ann):
+        site.annotation = AnnExpr(expr=expr, evaluated=new_ann)
+    else:
+        site.annotation = new_ann
 
 
 def recover_custom_generics(mi: ModuleDecl) -> None:

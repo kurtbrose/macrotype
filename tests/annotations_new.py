@@ -46,8 +46,21 @@ from typing import (
 )
 
 from sqlalchemy.engine import Result as SAResult
-from sqlalchemy.sql.selectable import Select as SASelect
-from sqlalchemy.sql.selectable import TypedReturnsRows as SATypedReturnsRows
+from sqlalchemy.sql.selectable import (
+    AliasedReturnsRows as SAAliasedReturnsRows,
+)
+from sqlalchemy.sql.selectable import (
+    ExecutableReturnsRows as SAExecutableReturnsRows,
+)
+from sqlalchemy.sql.selectable import (
+    ReturnsRows as SAReturnsRows,
+)
+from sqlalchemy.sql.selectable import (
+    Select as SASelect,
+)
+from sqlalchemy.sql.selectable import (
+    TypedReturnsRows as SATypedReturnsRows,
+)
 
 import macrotype.meta_types as mt
 from macrotype.meta_types import (
@@ -1264,6 +1277,20 @@ def one(query):
     return None
 
 
+# Custom class overriding __class_getitem__ and subclass inheriting it
+class CustomCG:
+    def __class_getitem__(cls, item):
+        return cls
+
+
+class CustomCGChild(CustomCG):
+    pass
+
+
+# Direct and inherited recovery of custom generics
+CUSTOM_CG_DIRECT: CustomCG[int]
+CUSTOM_CG_CHILD_DIRECT: CustomCGChild[int]
+
 # SQLAlchemy Result generic without string annotation
 SA_RESULT_DIRECT: SAResult[int]
 
@@ -1275,3 +1302,14 @@ def count[T](query: "SASelect[tuple[T]]") -> int:
 
 def scalar[T](query: "SATypedReturnsRows[tuple[T]]") -> T:
     raise NotImplementedError
+
+
+# Tuple of various SQLAlchemy generics without string annotations
+SA_GENERIC_TUPLE_DIRECT: tuple[
+    SAResult[int],
+    SAReturnsRows[int],
+    SAAliasedReturnsRows[int],
+    SAExecutableReturnsRows[int],
+    SASelect[int],
+    SATypedReturnsRows[int],
+]
