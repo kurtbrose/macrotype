@@ -28,25 +28,30 @@ def _needs_recover(obj: object) -> bool:
 
 def _build_maps(tree: ast.Module, code: str):
     var_map: dict[str, str] = {}
-    param_map: dict[tuple[str, str], str] = {}
-    ret_map: dict[str, str] = {}
+    param_map: dict[tuple[str, int, str], str] = {}
+    ret_map: dict[tuple[str, int], str] = {}
+    counts: dict[str, int] = {}
     for node in tree.body:
         if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
             var_map[node.target.id] = ast.get_source_segment(code, node.annotation) or ""
         elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             fname = node.name
+            idx = counts.get(fname, 0)
+            counts[fname] = idx + 1
             if node.returns is not None:
-                ret_map[fname] = ast.get_source_segment(code, node.returns) or ""
+                ret_map[(fname, idx)] = ast.get_source_segment(code, node.returns) or ""
             args = list(node.args.posonlyargs) + list(node.args.args) + list(node.args.kwonlyargs)
             for arg in args:
                 if arg.annotation is not None:
-                    param_map[(fname, arg.arg)] = ast.get_source_segment(code, arg.annotation) or ""
+                    param_map[(fname, idx, arg.arg)] = (
+                        ast.get_source_segment(code, arg.annotation) or ""
+                    )
             if node.args.vararg and node.args.vararg.annotation is not None:
-                param_map[(fname, node.args.vararg.arg)] = (
+                param_map[(fname, idx, node.args.vararg.arg)] = (
                     ast.get_source_segment(code, node.args.vararg.annotation) or ""
                 )
             if node.args.kwarg and node.args.kwarg.annotation is not None:
-                param_map[(fname, node.args.kwarg.arg)] = (
+                param_map[(fname, idx, node.args.kwarg.arg)] = (
                     ast.get_source_segment(code, node.args.kwarg.annotation) or ""
                 )
     return var_map, param_map, ret_map
@@ -82,22 +87,25 @@ def recover_custom_generics(mi: ModuleDecl) -> None:
     tree = ast.parse(code)
     var_map, param_map, ret_map = _build_maps(tree, code)
     glb = vars(mi.obj)
-    for decl in mi.members:
+    fn_counts: dict[str, int] = {}
+    for decl in mi.iter_all_decls():
         if isinstance(decl, VarDecl):
             site = decl.site
             if _needs_recover(site.annotation):
                 expr = var_map.get(decl.name)
                 _apply_recover(site, expr, decl.name, glb)
         elif isinstance(decl, FuncDecl):
+            idx = fn_counts.get(decl.name, 0)
+            fn_counts[decl.name] = idx + 1
             lcl = {tp.__name__: tp for tp in getattr(decl.obj, "__type_params__", ())}
             for site in decl.get_annotation_sites():
                 if not _needs_recover(site.annotation):
                     continue
                 if site.role == "return":
-                    expr = ret_map.get(decl.name)
+                    expr = ret_map.get((decl.name, idx))
                     _apply_recover(site, expr, f"{decl.name} return", glb, lcl)
                 elif site.role == "param" and site.name is not None:
-                    expr = param_map.get((decl.name, site.name))
+                    expr = param_map.get((decl.name, idx, site.name))
                     _apply_recover(site, expr, f"{decl.name}.{site.name}", glb, lcl)
 
 
