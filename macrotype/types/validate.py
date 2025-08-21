@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import typing as t
 from types import EllipsisType
 from typing import Literal
@@ -157,7 +158,9 @@ def _validate_literal_value(v: object) -> None:
     if isinstance(v, (int, bool, str, bytes)) or v is None:
         return
     # Enums are ok
-    if getattr(v, "__class__", None) and any(cls.__name__ == "Enum" for cls in type(v).__mro__):
+    if inspect.getattr_static(v, "__class__", None) and any(
+        cls.__name__ == "Enum" for cls in type(v).__mro__
+    ):
         return
     if isinstance(v, tuple):
         for x in v:

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import inspect
 import typing as t
 
 from macrotype.modules.ir import ClassDecl, ModuleDecl, Site, VarDecl
@@ -16,7 +17,7 @@ def _transform_class(sym: ClassDecl, cls: type) -> None:
         new_bases: list[Site] = [Site(role="base", annotation=t.NamedTuple)]
         for b in sym.bases:
             ann = b.annotation
-            if getattr(ann, "__name__", None) == "NamedTuple":
+            if inspect.getattr_static(ann, "__name__", None) == "NamedTuple":
                 continue
             new_bases.append(b)
         sym.bases = tuple(new_bases)

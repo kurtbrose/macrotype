@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import typing as t
 
 from macrotype.modules.ir import ClassDecl, Decl, FuncDecl, ModuleDecl, Site, TypeDefDecl, VarDecl
@@ -41,7 +42,7 @@ def canonicalize_foreign_symbols(mi: ModuleDecl) -> None:
             ):
                 new_syms.append(sym)
                 continue
-            alias_name = getattr(obj, "__name__", None)
+            alias_name = inspect.getattr_static(obj, "__name__", None)
             if alias_name and alias_name != sym.name:
                 new_syms.append(
                     TypeDefDecl(
