@@ -235,6 +235,24 @@ def test_dataclass_transform_carrier() -> None:
     assert "__init__" not in {m.name for m in sub.members}
 
 
+def test_dataclass_transform_import() -> None:
+    code = """
+    class Base:
+        __dataclass_transform__ = {}
+
+    class Sub(Base):
+        pass
+    """
+    mod = mod_from_code(code, "dc_transform_import")
+    mi = scan_module(mod)
+    transform_dataclasses(mi)
+    apply_dataclass_transform(mi)
+    by_name = {s.name: s for s in mi.members}
+    base = t.cast(ClassDecl, by_name["Base"])
+    assert "dataclass_transform()" in base.decorators
+    assert "dataclass_transform" in mi.imports.typing
+
+
 def test_descriptor_transform() -> None:
     code = """
     import functools

@@ -53,6 +53,7 @@ def apply_dataclass_transform(mi: ModuleDecl) -> None:
             deco = _dt_decorator(cls)
             if deco:
                 sym.decorators = sym.decorators + (deco,)
+                mi.imports.typing.add("dataclass_transform")
             continue
         if has_transform(cls):
             sym.members = tuple(

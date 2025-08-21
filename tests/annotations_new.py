@@ -39,7 +39,6 @@ from typing import (
     TypeVarTuple,
     Union,
     Unpack,
-    dataclass_transform,
     final,
     override,
     runtime_checkable,
@@ -1230,9 +1229,12 @@ BotBase.__orig_bases__ = (TopBase,)  # type: ignore[attr-defined]
 
 # dataclass_transform: carrier and subclass
 
+# dataclass_transform: attribute triggers decorator and import
 
-@dataclass_transform()
+
 class DCTransformBase:
+    __dataclass_transform__ = {}
+
     def __init_subclass__(cls) -> None:
         dataclass(cls)
 
