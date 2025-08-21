@@ -43,6 +43,11 @@ def _stub_main(argv: list[str]) -> int:
         action="store_true",
         help="Process modules guarded by TYPE_CHECKING",
     )
+    parser.add_argument(
+        "--debug-failure",
+        action="store_true",
+        help="Print stack trace and enter pdb on stub generation failure",
+    )
     args = parser.parse_args(argv)
     command = "macrotype " + " ".join(argv)
     allow_tc = args.allow_type_checking
@@ -102,6 +107,7 @@ def _stub_main(argv: list[str]) -> int:
                 command=command,
                 strict=args.strict,
                 allow_type_checking=allow_tc,
+                debug_failure=args.debug_failure,
             )
     return 0
 

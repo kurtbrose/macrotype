@@ -167,6 +167,7 @@ def process_directory(
     strict: bool = False,
     allow_type_checking: bool = False,
     skip: Sequence[str] = (),
+    debug_failure: bool = False,
 ) -> list[Path]:
     outputs: list[Path] = []
     for src in iter_python_files(directory, skip=skip):
@@ -192,7 +193,14 @@ def process_directory(
         except MypyPluginError as exc:
             print(f"Skipping {src}: {exc}", file=sys.stderr)
         except (Exception, SystemExit) as exc:  # pragma: no cover - defensive
-            print(f"Skipping {src}: {exc}", file=sys.stderr)
+            if debug_failure:
+                import pdb
+                import traceback
+
+                traceback.print_exception(type(exc), exc, exc.__traceback__)
+                pdb.post_mortem(exc.__traceback__)
+            else:
+                print(f"Skipping {src}: {exc}", file=sys.stderr)
     return outputs
 
 
