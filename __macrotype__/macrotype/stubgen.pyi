@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import ModuleType
 from typing import Sequence
 
 from macrotype.modules.ir import SourceInfo
@@ -34,4 +35,5 @@ def process_directory(
     strict: bool,
     allow_type_checking: bool,
     skip: Sequence[str],
+    debug_failure: bool,
 ) -> list[Path]: ...
