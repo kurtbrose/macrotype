@@ -86,6 +86,21 @@ ContravariantT = TypeVar("ContravariantT", contravariant=True)
 TDV = TypeVar("TDV")
 UserId = NewType("UserId", int)
 
+
+# Object that raises from __getattr__ for specific attributes to ensure safe
+# attribute access
+class RaisingProxy:
+    def __getattr__(self, name: str) -> typing.Any:
+        if name in {"__module__", "__supertype__"}:
+            raise RuntimeError("boom")
+        raise AttributeError(name)
+
+    def __call__(self) -> None:
+        pass
+
+
+RAISING_PROXY = RaisingProxy()
+
 # TypeScript-inspired metaclass utilities
 
 

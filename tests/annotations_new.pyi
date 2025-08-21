@@ -38,9 +38,22 @@ from typing import (
     runtime_checkable,
 )
 
-from sqlalchemy.engine.result import Result
+from sqlalchemy.engine import Result
+from sqlalchemy.engine import Result as SAResult
 from sqlalchemy.sql.selectable import (
-    TypedReturnsRows,
+    AliasedReturnsRows as SAAliasedReturnsRows,
+)
+from sqlalchemy.sql.selectable import (
+    ExecutableReturnsRows as SAExecutableReturnsRows,
+)
+from sqlalchemy.sql.selectable import (
+    ReturnsRows as SAReturnsRows,
+)
+from sqlalchemy.sql.selectable import (
+    Select as SASelect,
+)
+from sqlalchemy.sql.selectable import (
+    TypedReturnsRows as SATypedReturnsRows,
 )
 
 from macrotype.meta_types import (
@@ -65,6 +78,12 @@ ContravariantT = TypeVar("ContravariantT", contravariant=True)
 TDV = TypeVar("TDV")
 
 UserId = NewType("UserId", int)
+
+class RaisingProxy:
+    def __getattr__(self, name: str) -> Any: ...
+    def __call__(self) -> None: ...
+
+RAISING_PROXY: RaisingProxy
 
 def strip_null(ann: Any, null: Any) -> Any: ...
 

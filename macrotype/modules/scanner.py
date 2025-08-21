@@ -103,37 +103,37 @@ def scan_module(mod: ModuleType) -> ModuleDecl:
             site = Site(role="var", name=name, annotation=ann)
             decls.append(VarDecl(name=name, site=site, obj=obj))
             continue
-        if (
-            isinstance(obj, t.TypeVar)
-            or obj.__class__ is t.ParamSpec
-            or obj.__class__ is t.TypeVarTuple
-        ):
+        if isinstance(obj, t.TypeVar) or type(obj) is t.ParamSpec or type(obj) is t.TypeVarTuple:
             site = Site(role="alias_value", annotation=obj)
             decls.append(TypeDefDecl(name=name, value=site, obj=obj, obj_type=obj))
             continue
-        if hasattr(obj, "__supertype__"):
-            site = Site(role="alias_value", annotation=getattr(obj, "__supertype__"))
+        supertype = inspect.getattr_static(obj, "__supertype__", None)
+        if supertype is not None:
+            site = Site(role="alias_value", annotation=supertype)
             decls.append(TypeDefDecl(name=name, value=site, obj=obj, obj_type=t.NewType))
             continue
         if isinstance(obj, types.GenericAlias):
             site = Site(role="alias_value", annotation=obj)
             decls.append(TypeDefDecl(name=name, value=site, obj=obj, obj_type=types.GenericAlias))
             continue
-        if hasattr(obj, "__module__") and obj.__module__ != modname:
-            obj_name = getattr(obj, "__name__", None)
+        obj_module = inspect.getattr_static(obj, "__module__", None)
+        if obj_module is None:
+            obj_module = getattr(obj, "__module__", None)
+        if obj_module is not None and obj_module != modname:
+            obj_name = inspect.getattr_static(obj, "__name__", None)
             if obj_name == name:
                 continue
-            orig_mod = sys.modules.get(obj.__module__)
-            if orig_mod is not None and getattr(orig_mod, name, None) is obj:
+            orig_mod = sys.modules.get(obj_module)
+            if orig_mod is not None and inspect.getattr_static(orig_mod, name, None) is obj:
                 continue
-            if callable(obj) and obj_name is None:
+            if inspect.getattr_static(obj, "__call__", None) is not None and obj_name is None:
                 site = Site(role="var", name=name, annotation=ann)
                 decls.append(VarDecl(name=name, site=site, obj=obj))
             else:
                 site = Site(role="alias_value", annotation=obj)
                 decls.append(TypeDefDecl(name=name, value=site, obj=obj))
             continue
-        if callable(obj):
+        if inspect.getattr_static(obj, "__call__", None) is not None:
             site = Site(role="var", name=name, annotation=ann)
             decls.append(VarDecl(name=name, site=site, obj=obj))
             continue
