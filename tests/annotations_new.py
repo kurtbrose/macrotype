@@ -75,6 +75,9 @@ from tests.external_nested import ExternalOuter
 # Imported assignment should remain a simple import in stubs
 from tests.modules.namespace_assign import namespace  # noqa: F401
 
+# Imported proxy raising on __name__ access to ensure safe getattr
+from tests.modules.proxy_module import PROXY as IMPORTED_PROXY  # noqa: F401
+
 P = ParamSpec("P")
 
 T = TypeVar("T")

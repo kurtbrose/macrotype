@@ -6,60 +6,20 @@ from collections.abc import AsyncIterator, Iterator, Sequence
 from dataclasses import InitVar, dataclass
 from enum import Enum, IntEnum, IntFlag
 from functools import cached_property
+from macrotype.meta_types import emit_as, get_caller_module, make_literal_map, overload, overload_for, set_module
 from math import sin
 from operator import attrgetter
 from pathlib import Path
 from re import Pattern
-from typing import (
-    Annotated,
-    Any,
-    Callable,
-    ClassVar,
-    Concatenate,
-    Final,
-    Literal,
-    LiteralString,
-    NamedTuple,
-    Never,
-    NewType,
-    NotRequired,
-    ParamSpec,
-    Protocol,
-    Required,
-    Self,
-    TypedDict,
-    TypeGuard,
-    TypeVar,
-    TypeVarTuple,
-    Unpack,
-    dataclass_transform,
-    final,
-    override,
-    runtime_checkable,
-)
-
-from sqlalchemy.engine import Result
-from sqlalchemy.engine import Result as SAResult
-from sqlalchemy.sql.selectable import (
-    AliasedReturnsRows as SAAliasedReturnsRows,
-)
-from sqlalchemy.sql.selectable import (
-    ExecutableReturnsRows as SAExecutableReturnsRows,
-)
-from sqlalchemy.sql.selectable import (
-    ReturnsRows as SAReturnsRows,
-)
-from sqlalchemy.sql.selectable import (
-    Select as SASelect,
-)
-from sqlalchemy.sql.selectable import (
-    TypedReturnsRows as SATypedReturnsRows,
-)
-
-from macrotype.meta_types import (
-    overload,
-)
+from sqlalchemy.engine.result import Result
+from sqlalchemy.sql.selectable import AliasedReturnsRows, ExecutableReturnsRows, ReturnsRows, Select, TypedReturnsRows
 from tests.external_nested import ExternalOuter
+from tests.modules.namespace_assign import namespace
+from tests.modules.proxy_module import NameRaisingProxy
+
+from typing import Annotated, Any, Callable, ClassVar, Concatenate, Deque, Final, Literal, LiteralString, NamedTuple, Never, NewType, NotRequired, ParamSpec, ParamSpecArgs, ParamSpecKwargs, Protocol, Required, Self, TypeGuard, TypeVar, TypeVarTuple, TypedDict, Unpack, dataclass_transform, final, override, runtime_checkable
+
+IMPORTED_PROXY: NameRaisingProxy
 
 P = ParamSpec("P")
 
@@ -138,7 +98,8 @@ class InheritedFinal:
     base: Final[int]
     sub: Final[str]
 
-class Undefined: ...
+class Undefined:
+    ...
 
 class UndefinedCls:
     a: int
@@ -153,13 +114,21 @@ class RequiredUndefinedCls:
     b: str
 
 def pos_only_func(a: int, b: str) -> None: ...
+
 def kw_only_func(x: int, y: str) -> None: ...
+
 def pos_and_kw(a: int, b: int, c: int) -> None: ...
+
 def iter_sequence(seq: Sequence[int]) -> Iterator[int]: ...
+
 def simple_wrap(fn: Callable[[int], int]) -> Callable[[int], int]: ...
+
 def double_wrapped(x: int) -> int: ...
+
 def cached_add(a: int, b: int) -> int: ...
-def annotated_fn(x: Annotated[int, "inp"]) -> Annotated[str, "out"]: ...
+
+def annotated_fn(x: Annotated[int, 'inp']) -> Annotated[str, 'out']: ...
+
 def wrap_descriptor(desc): ...
 
 class WrappedDescriptors:
@@ -173,7 +142,9 @@ class WrappedDescriptors:
     def wrapped_cached(self) -> int: ...
 
 def make_emitter(name: str): ...
+
 def emitted_a(x: int) -> int: ...
+
 def make_emitter_cls(name: str): ...
 
 class EmittedCls:
@@ -181,58 +152,79 @@ class EmittedCls:
 
 def make_dynamic_cls(): ...
 
-class FixedModuleCls: ...
+class FixedModuleCls:
+    ...
 
 class EmittedMap:
     @overload
-    def __getitem__(self, key: Literal["a"]) -> Literal[1]: ...
+    def __getitem__(self, key: Literal['a']) -> Literal[1]: ...
     @overload
-    def __getitem__(self, key: Literal["b"]) -> Literal[2]: ...
+    def __getitem__(self, key: Literal['b']) -> Literal[2]: ...
     def __getitem__(self, key): ...
 
 def path_passthrough(p: Path) -> Path: ...
+
 @overload
 def loop_over(x: bytearray) -> str: ...
+
 @overload
 def loop_over(x: bytes) -> str: ...
+
 def loop_over(x: bytearray | bytes) -> str: ...
+
 def identity[T](x: T) -> T: ...
+
 def as_tuple[*Ts](*args: Unpack[Ts]) -> tuple[Unpack[Ts]]: ...
 
 class Variadic[*Ts]:
     def __init__(self, *args: Unpack[Ts]) -> None: ...
     def to_tuple(self) -> tuple[Unpack[Ts]]: ...
 
-class Wrapped[T]: ...
+class Wrapped[T]:
+    ...
 
 @overload
 def pep695_overload[T](x: Wrapped[tuple[T]]) -> T: ...
+
 @overload
-def pep695_overload[T, T2, *Ts](
-    x: Wrapped[tuple[T, T2, Unpack[Ts]]],
-) -> tuple[T, T2, Unpack[Ts]]: ...
+def pep695_overload[T, T2, *Ts](x: Wrapped[tuple[T, T2, Unpack[Ts]]]) -> tuple[T, T2, Unpack[Ts]]: ...
+
 def pep695_overload(x): ...
+
 @overload
 def times_two(val: Literal[3], factor: Literal[2]) -> Literal[6]: ...
+
 def times_two(val: int, factor: int) -> int: ...
+
 @overload
 def bool_gate(flag: Literal[True]) -> Literal[1]: ...
+
 @overload
 def bool_gate(flag: Literal[False]) -> Literal[0]: ...
+
 def bool_gate(flag: bool) -> int: ...
+
 @overload
 def nan_case(x: float) -> float: ...
+
 def nan_case(x: float | str) -> float: ...
+
 @overload
 def float_case(x: float) -> float: ...
+
 def float_case(x: float | str) -> float: ...
+
 @overload
-def bytes_case(x: Literal[b"x"]) -> Literal[b"x"]: ...
+def bytes_case(x: Literal[b'x']) -> Literal[b'x']: ...
+
 def bytes_case(x: bytes) -> bytes: ...
+
 @overload
 def mixed_overload(x: str) -> str: ...
+
 @overload
 def mixed_overload(x: Literal[0]) -> Literal[0]: ...
+
 def mixed_overload(x: int | str) -> int | str: ...
 
 class AbstractBase(ABC):
@@ -242,7 +234,8 @@ class AbstractBase(ABC):
 class BadParams:
     value: int
 
-class Mapped[T]: ...
+class Mapped[T]:
+    ...
 
 class SQLBase:
     @classmethod
@@ -261,15 +254,20 @@ class EmployeeModel(SQLBase):
     id: Mapped[EmployeeModelId]
     id_type = NewType("id_type", int)
 
-class ForwardRefModel: ...
+class ForwardRefModel:
+    ...
 
 class UsesForwardRef:
-    items: list["ForwardRefModel"]
+    items: list['ForwardRefModel']
 
 def sum_of(*args: tuple[int]) -> int: ...
+
 def dict_echo[*Ts](**kwargs: dict[str, Any]) -> dict[str, Any]: ...
+
 def use_params[**P](func: Callable[P, int], *args: P.args, **kwargs: P.kwargs) -> int: ...
+
 def is_str_list(val: list[object]) -> TypeGuard[list[str]]: ...
+
 def is_int(val: object) -> TypeGuard[int]: ...
 
 PLAIN_FINAL_VAR: Final[int]
@@ -297,18 +295,25 @@ def echo_literal(value: LiteralString) -> LiteralString: ...
 NONE_VAR: None
 
 async def async_add_one(x: int) -> int: ...
+
 async def gen_range[*Ts](n: int) -> AsyncIterator[int]: ...
+
 @final
-class FinalClass: ...
+class FinalClass:
+    ...
 
 class HasFinalMethod:
     @final
     def do_final(self) -> None: ...
 
 def final_func(x: int) -> int: ...
+
 def pragma_func(x: int) -> int: ...  # pyright: ignore
+
 def do_nothing() -> None: ...
+
 def always_raises() -> Never: ...
+
 def never_returns() -> Never: ...
 
 class SelfExample:
@@ -327,7 +332,8 @@ class Runnable(Protocol):
 class LaterRunnable(Protocol):
     def run(self) -> int: ...
 
-class NoProtoMethods(Protocol): ...
+class NoProtoMethods(Protocol):
+    ...
 
 class Info(TypedDict):
     name: str
@@ -382,9 +388,12 @@ class HasPartialMethod:
 
 @overload
 def over(x: int) -> int: ...
+
 @overload
 def over(x: str) -> str: ...
+
 def over(x: int | str) -> int | str: ...
+
 @dataclass
 class Point:
     x: int
@@ -460,8 +469,8 @@ class Permission(IntFlag):
     EXECUTE = 4
 
 class StrEnum(str, Enum):
-    A = "a"
-    B = "b"
+    A = 'a'
+    B = 'b'
 
 class PointEnum(Enum):
     INLINE = Point
@@ -469,34 +478,39 @@ class PointEnum(Enum):
 
 def use_tuple(tp: tuple[int, ...]) -> tuple[int, ...]: ...
 
-class UserBox[T]: ...
+class UserBox[T]:
+    ...
 
-NESTED_ANNOTATED: Annotated[int, "a", "b"]
+NESTED_ANNOTATED: Annotated[int, 'a', 'b']
 
-TRIPLE_ANNOTATED: Annotated[int, "x", "y", "z"]
+TRIPLE_ANNOTATED: Annotated[int, 'x', 'y', 'z']
 
-ANNOTATED_OPTIONAL_META: Annotated[None | int, "meta"]
+ANNOTATED_OPTIONAL_META: Annotated[None | int, 'meta']
 
-ANNOTATED_FINAL_META: Annotated[Final[int], "meta"]
+ANNOTATED_FINAL_META: Annotated[Final[int], 'meta']
 
-ANNOTATED_WRAP_GENERIC: Annotated[list[Annotated[int, "inner"]], "outer"]
+ANNOTATED_WRAP_GENERIC: Annotated[list[Annotated[int, 'inner']], 'outer']
 
 class MetaRepr:
     def __repr__(self) -> str: ...  # pragma: no cover - simple repr
 
 ANNOTATED_OBJ_META: Annotated[int, MetaRepr()]
 
-def with_paramspec_args_kwargs[**P](
-    fn: Callable[P, int], *args: P.args, **kwargs: P.kwargs
-) -> int: ...
+def with_paramspec_args_kwargs[**P](fn: Callable[P, int], *args: P.args, **kwargs: P.kwargs) -> int: ...
+
 def prepend_one[**P](fn: Callable[Concatenate[int, P], int]) -> Callable[P, int]: ...
+
 @overload
 def special_neg(val: Literal[0]) -> Literal[0]: ...
+
 @overload
 def special_neg(val: Literal[1]) -> Literal[-1]: ...
+
 def special_neg(val: int) -> int: ...
+
 @overload
 def parse_int_or_none(val: None) -> None: ...
+
 def parse_int_or_none(val: None | str) -> None | int: ...
 
 type AliasListT[T] = list[T]
@@ -513,7 +527,7 @@ Other = dict[str, int]
 
 ListIntGA = list[int]
 
-ForwardAlias = "FutureClass"  # noqa: F821
+ForwardAlias = 'FutureClass'  # noqa: F821
 
 CallableP = Callable[P, int]
 
@@ -543,13 +557,14 @@ ANNOTATED_FINAL: Final[int]
 
 ANNOTATED_CLASSVAR: int
 
-LITERAL_STR_QUOTED: Literal["hi"]
+LITERAL_STR_QUOTED: Literal['hi']
 
 BOX_SIZE: Final[int]
 
 BORDER_SIZE: Final[int]
 
-class FutureClass: ...
+class FutureClass:
+    ...
 
 UNANNOTATED_CONST: int
 
@@ -565,7 +580,8 @@ NONE_ALIAS: Any
 
 def takes_none_alias(x: None) -> None: ...
 
-class CustomInt(int): ...
+class CustomInt(int):
+    ...
 
 UNANNOTATED_CUSTOM_INT: CustomInt
 
@@ -578,8 +594,11 @@ SITE_PROV_VAR: int
 COMMENTED_VAR: int  # pragma: var
 
 def mult(a, b: int): ...
+
 def takes_optional(x): ...
+
 def takes_none_param(x: None) -> None: ...
+
 def _alias_target() -> None: ...
 
 PRIMARY_ALIAS = _alias_target
@@ -587,12 +606,16 @@ PRIMARY_ALIAS = _alias_target
 SECONDARY_ALIAS = _alias_target
 
 def _wrap(fn): ...
+
 def wrapped_with_default(x: int, y: int) -> int: ...
+
 def commented_func(x: int) -> None: ...  # pragma: func
+
 def UNTYPED_LAMBDA(x, y): ...  # noqa: F821
+
 def TYPED_LAMBDA(a, b): ...
 
-ANNOTATED_EXTRA: Annotated[str, "extra"]
+ANNOTATED_EXTRA: Annotated[str, 'extra']
 
 class Basic:
     simple: list[str]
@@ -601,13 +624,13 @@ class Basic:
     union: int | str  # typing.Union should remain unaltered
     pipe_union: int | str
     func: Callable[[int, str], bool]
-    annotated: Annotated[int, "meta"]
+    annotated: Annotated[int, 'meta']
     pattern: Pattern[str]
     uid: UserId
-    lit_attr: Literal["a", "b"]
+    lit_attr: Literal['a', 'b']
     def copy[T](self, param: T) -> T: ...
     def curry[**P](self, f: Callable[P, int]) -> Callable[P, int]: ...
-    def literal_method(self, flag: Literal["on", "off"]) -> Literal[1, 0]: ...
+    def literal_method(self, flag: Literal['on', 'off']) -> Literal[1, 0]: ...
     @classmethod
     def cls_method(cls, value: int) -> Basic: ...
     @classmethod
@@ -629,11 +652,11 @@ class Basic:
     class Nested:
         x: float
         y: str
-
     @cached_property
     def cached(self) -> int: ...
 
-class Child(Basic): ...
+class Child(Basic):
+    ...
 
 class OverrideChild(Basic):
     @override
@@ -658,19 +681,28 @@ class OverrideEarly(Basic):
 def wrapped_callable(x: int, y: str) -> str: ...
 
 class NestedOuter:
-    class Inner: ...
+    class Inner:
+        ...
 
 def nested_class_annotation(x: NestedOuter.Inner) -> NestedOuter.Inner: ...
+
 def external_nested_class_annotation(x: ExternalOuter.Inner) -> ExternalOuter.Inner: ...
 
 class PointNT(NamedTuple):
     x: int
     y: int
 
-class Unrelated: ...
-class BaseModel: ...
-class StdModel(BaseModel): ...
-class Repeater(StdModel): ...
+class Unrelated:
+    ...
+
+class BaseModel:
+    ...
+
+class StdModel(BaseModel):
+    ...
+
+class Repeater(StdModel):
+    ...
 
 class OverloadedClassMethod:
     @classmethod
@@ -682,9 +714,14 @@ class OverloadedClassMethod:
     @classmethod
     def get_by_id(cls, model_id: None | int) -> None | Self: ...
 
-class TopBase: ...
-class MidBase(TopBase): ...
-class BotBase(MidBase): ...
+class TopBase:
+    ...
+
+class MidBase(TopBase):
+    ...
+
+class BotBase(MidBase):
+    ...
 
 @dataclass_transform()
 class DCTransformBase:
@@ -699,38 +736,44 @@ T1 = TypeVar("T1")
 
 T2 = TypeVar("T2")
 
-class TypedReturnsRows[T]: ...
+class TypedReturnsRows[T]:
+    ...
 
 @overload
 def first[T](query: TypedReturnsRows[tuple[T]]) -> T | None: ...
+
 @overload
-def first[T1, T2, *Ts](
-    query: TypedReturnsRows[tuple[T1, T2, Unpack[Ts]]],
-) -> None | tuple[T1, T2, Unpack[Ts]]: ...
+def first[T1, T2, *Ts](query: TypedReturnsRows[tuple[T1, T2, Unpack[Ts]]]) -> None | tuple[T1, T2, Unpack[Ts]]: ...
+
 def first(query): ...
+
 @overload
 def one[T](query: TypedReturnsRows[tuple[T]]) -> T: ...
+
 @overload
-def one[T1, T2, *Ts](
-    query: TypedReturnsRows[tuple[T1, T2, Unpack[Ts]]],
-) -> tuple[T1, T2, Unpack[Ts]]: ...
+def one[T1, T2, *Ts](query: TypedReturnsRows[tuple[T1, T2, Unpack[Ts]]]) -> tuple[T1, T2, Unpack[Ts]]: ...
+
 def one(query): ...
 
 class CustomCG:
     @classmethod
     def __class_getitem__(cls, item): ...
 
-class CustomCGChild(CustomCG): ...
+class CustomCGChild(CustomCG):
+    ...
 
 def custom_cg_with_type_param[Model](model: type[Model]) -> CustomCG[tuple[Model]]: ...
+
 def count[T](query: SASelect[tuple[T]]) -> int: ...
+
 def scalar[T](query: SATypedReturnsRows[tuple[T]]) -> T: ...
+
 @overload
 def SATRR_first[T](query: SATypedReturnsRows[tuple[T]]) -> T | None: ...
+
 @overload
-def SATRR_first[T1, T2, *Ts](
-    query: SATypedReturnsRows[tuple[T1, T2, Unpack[Ts]]],
-) -> None | tuple[T1, T2, Unpack[Ts]]: ...
+def SATRR_first[T1, T2, *Ts](query: SATypedReturnsRows[tuple[T1, T2, Unpack[Ts]]]) -> None | tuple[T1, T2, Unpack[Ts]]: ...
+
 def SATRR_first(query): ...
 
 LITERAL_STR_VAR: LiteralString
