@@ -2,11 +2,11 @@
 # Do not edit by hand
 from __future__ import annotations
 
+import enum
 from dataclasses import dataclass
 from enum import Enum
-from typing import Literal, NewType, TyAnnoTree
-
-annotations = annotations
+from types import EllipsisType
+from typing import ClassVar, Literal, NewType
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class TyAnnoTree:
@@ -25,6 +25,13 @@ class TyRoot:
 @dataclass(frozen=True, kw_only=True, slots=True)
 class Ty:
     annotations: None | TyAnnoTree
+    is_generic: ClassVar[bool]
+    @property
+    def base_type(self) -> None | type: ...
+    @property
+    def generic_args(self) -> tuple["Ty", ...]: ...
+    @property
+    def union_types(self) -> tuple["Ty", ...]: ...
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class TyAny(Ty): ...
@@ -35,15 +42,24 @@ class TyNever(Ty): ...
 @dataclass(frozen=True, kw_only=True, slots=True)
 class TyType(Ty):
     type_: type
+    @property
+    def base_type(self) -> type: ...
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class TyApp(Ty):
     base: Ty
     args: tuple[Ty, ...]
+    is_generic: ClassVar[bool]
+    @property
+    def base_type(self) -> None | type: ...
+    @property
+    def generic_args(self) -> tuple[Ty, ...]: ...
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class TyUnion(Ty):
     options: tuple[Ty, ...]
+    @property
+    def union_types(self) -> tuple[Ty, ...]: ...
 
 LitPrim = int | bool | str | bytes | None | enum.Enum
 
@@ -82,6 +98,9 @@ class TyTypeVarTuple(Ty):
 @dataclass(frozen=True, kw_only=True, slots=True)
 class TyUnpack(Ty):
     inner: Ty
+
+def has_type_member(ty: Ty, members: set[type]) -> bool: ...
+def strip_type_members(ty: Ty, members: set[type]) -> Ty: ...
 
 ParsedTy = NewType("ParsedTy", TyRoot)  # output of parse.parse
 
