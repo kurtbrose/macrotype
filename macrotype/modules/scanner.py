@@ -10,9 +10,11 @@ from types import ModuleType
 from .ir import AnnExpr, ClassDecl, Decl, FuncDecl, ModuleDecl, Site, TypeDefDecl, VarDecl
 
 
-def _eval_annotation(
+def eval_annotation(
     ann: t.Any, glb: dict[str, t.Any], lcl: dict[str, t.Any] | None = None
 ) -> t.Any:
+    """Evaluate *ann* against *glb* and *lcl*."""
+
     if isinstance(ann, str):
         expr = ann
         if (expr.startswith("'") and expr.endswith("'")) or (
@@ -72,7 +74,7 @@ def scan_module(mod: ModuleType) -> ModuleDecl:
 
         if inspect.isfunction(obj):
             if obj.__name__ == "<lambda>":
-                ann = _eval_annotation(mod_ann.get(name, type(obj)), glb)
+                ann = eval_annotation(mod_ann.get(name, type(obj)), glb)
                 site = Site(role="var", name=name, annotation=ann)
                 decls.append(VarDecl(name=name, site=site, obj=obj))
             else:
@@ -85,7 +87,7 @@ def scan_module(mod: ModuleType) -> ModuleDecl:
             continue
 
         if name in mod_ann:
-            ann = _eval_annotation(mod_ann[name], glb)
+            ann = eval_annotation(mod_ann[name], glb)
             if ann is t.TypeAlias:
                 site = Site(role="alias_value", annotation=obj)
                 decls.append(TypeDefDecl(name=name, value=site, obj=obj))
@@ -140,7 +142,7 @@ def scan_module(mod: ModuleType) -> ModuleDecl:
     for name, rann in mod_ann.items():
         if name in seen or name == "TYPE_CHECKING":
             continue
-        ann = _eval_annotation(rann, glb)
+        ann = eval_annotation(rann, glb)
         site = Site(role="var", name=name, annotation=ann)
         decls.append(VarDecl(name=name, site=site))
 
@@ -159,14 +161,14 @@ def _scan_function(fn: t.Callable) -> FuncDecl:
         for p in sig.parameters.values():
             ann = raw_ann.get(p.name, inspect._empty)
             if ann is not inspect._empty:
-                ann = _eval_annotation(ann, glb, lcl)
+                ann = eval_annotation(ann, glb, lcl)
             params.append(Site(role="param", name=p.name, annotation=ann))
     except (TypeError, ValueError):
         params.append(Site(role="param", name="...", annotation=t.Any))
 
     ret = None
     if "return" in raw_ann:
-        ann = _eval_annotation(raw_ann["return"], glb, lcl)
+        ann = eval_annotation(raw_ann["return"], glb, lcl)
         ret = Site(role="return", annotation=ann)
     elif params and params[0].name == "...":
         ann: t.Any = fn if isinstance(fn, type) else t.Any
@@ -253,7 +255,7 @@ def _scan_class(cls: type) -> ClassDecl:
         mod = sys.modules.get(cls.__module__)
         glb = mod.__dict__ if mod else {}
         for fname, rann in raw_ann.items():
-            ann = _eval_annotation(rann, glb, dict(cls.__dict__))
+            ann = eval_annotation(rann, glb, dict(cls.__dict__))
             td_fields.append(Site(role="td_field", name=fname, annotation=ann))
 
     members: list[Decl] = []
@@ -264,7 +266,7 @@ def _scan_class(cls: type) -> ClassDecl:
     for fname, rann in class_ann.items():
         if is_td:
             continue
-        ann = _eval_annotation(rann, glb, dict(cls.__dict__))
+        ann = eval_annotation(rann, glb, dict(cls.__dict__))
         site = Site(role="var", name=fname, annotation=ann)
         init_val = cls.__dict__.get(fname, Ellipsis)
         members.append(VarDecl(name=fname, site=site, obj=init_val))

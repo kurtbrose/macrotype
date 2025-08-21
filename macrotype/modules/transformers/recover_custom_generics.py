@@ -4,7 +4,7 @@ import ast
 import typing as t
 
 from macrotype.modules.ir import AnnExpr, FuncDecl, ModuleDecl, VarDecl
-from macrotype.modules.scanner import _eval_annotation
+from macrotype.modules.scanner import eval_annotation
 
 
 def _has_custom_class_getitem(obj: object) -> bool:
@@ -65,7 +65,7 @@ def _apply_recover(
 ) -> None:
     if not expr or "[" not in expr:
         return
-    new_ann = _eval_annotation(expr, glb, lcl)
+    new_ann = eval_annotation(expr, glb, lcl)
     if isinstance(new_ann, str):
         raise RuntimeError(
             f"Annotation for {name} uses non-standard __class_getitem__; switch to a string annotation"

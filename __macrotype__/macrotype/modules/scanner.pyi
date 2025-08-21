@@ -2,6 +2,7 @@
 # Do not edit by hand
 from __future__ import annotations
 
+from types import ModuleType
 from typing import Any, Callable
 
 from macrotype.modules.ir import (
@@ -10,7 +11,7 @@ from macrotype.modules.ir import (
     ModuleDecl,
 )
 
-def _eval_annotation(ann: Any, glb: dict[str, Any], lcl: None | dict[str, Any]) -> Any: ...
+def eval_annotation(ann: Any, glb: dict[str, Any], lcl: None | dict[str, Any]) -> Any: ...
 def _is_dunder(name: str) -> bool: ...
 def scan_module(mod: ModuleType) -> ModuleDecl: ...
 def _scan_function(fn: Callable) -> FuncDecl: ...
