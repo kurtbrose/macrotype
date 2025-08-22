@@ -1,0 +1,3 @@
+from decimal import Decimal as Dec
+
+def takes(x: Dec) -> None: ...

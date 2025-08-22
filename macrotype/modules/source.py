@@ -38,14 +38,12 @@ def _tc_imports_from_tree(tree: ast.AST, *, allow_complex: bool) -> Dict[str, Se
         if node.orelse and not allow_complex:
             raise RuntimeError("Skipped module due to TYPE_CHECKING guard")
         for stmt in node.body:
-            if (
-                isinstance(stmt, ast.ImportFrom)
-                and stmt.module
-                and stmt.level == 0
-                and not any(alias.asname for alias in stmt.names)
-            ):
+            if isinstance(stmt, ast.ImportFrom) and stmt.module and stmt.level == 0:
                 for alias in stmt.names:
-                    imports[stmt.module].add(alias.name)
+                    name = alias.name
+                    if alias.asname:
+                        name += f" as {alias.asname}"
+                    imports[stmt.module].add(name)
             elif isinstance(stmt, ast.ImportFrom | ast.Import) and allow_complex:
                 continue
             else:
