@@ -1353,3 +1353,11 @@ def SATRR_first[T1, T2, *Ts](
 
 def SATRR_first(query):
     return None
+
+
+if typing.TYPE_CHECKING:
+    from fractions import Fraction as TCFraction  # used via forward ref below
+
+
+class UsesTypeCheckingImport:
+    val: "TCFraction"

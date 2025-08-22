@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import ast
+import re
 from dataclasses import dataclass, field
 from types import EllipsisType, ModuleType
-from typing import Any, Iterator, Literal, Optional
+from typing import Any, Iterable, Iterator, Literal, Optional
 
 
 @dataclass(kw_only=True)
@@ -131,6 +132,28 @@ class ImportBlock:
                 lines.append("")
             lines.append(f"from typing import {', '.join(sorted(self.typing))}")
         return lines
+
+    def cull(self, lines: Iterable[str], defined: Iterable[str]) -> None:
+        text = "\n".join(lines)
+        defined_set = set(defined)
+        new_froms: dict[str, set[str]] = {}
+        for mod, names in self.froms.items():
+            kept = {
+                name
+                for name in names
+                if (
+                    name.split(" as ")[-1] in defined_set
+                    or re.search(r"\b" + re.escape(name.split(" as ")[-1]) + r"\b", text)
+                )
+            }
+            if kept:
+                new_froms[mod] = kept
+        self.froms = new_froms
+        self.typing = {
+            name
+            for name in self.typing
+            if name in defined_set or re.search(r"\b" + re.escape(name) + r"\b", text)
+        }
 
 
 @dataclass(kw_only=True)

@@ -56,6 +56,9 @@ def emit_module(mi: ModuleDecl) -> list[str]:
     if lines and lines[-1] == "":
         lines.pop()
 
+    if mi.imports:
+        mi.imports.cull(lines, context)
+
     pre: list[str] = []
     if mi.source and mi.source.headers:
         pre.extend(mi.source.headers)
