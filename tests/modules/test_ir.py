@@ -171,14 +171,28 @@ def test_dataclass_transform() -> None:
     assert "__eq__" in {m.name for m in nae.members}
 
 
+def test_dataclass_transform_carrier() -> None:
+    ann = importlib.import_module("tests.annotations_new")
+    mi = from_module(ann)
+    base = next(s for s in mi.members if s.name == "DCTransformBase")
+    assert isinstance(base, ClassDecl)
+    assert "dataclass_transform" in base.decorators[0]
+
+    sub = next(s for s in mi.members if s.name == "DCTransformed")
+    assert isinstance(sub, ClassDecl)
+    assert all(not d.startswith("dataclass") for d in sub.decorators)
+    assert "__init__" not in {m.name for m in sub.members}
+
+
 def test_expand_overloads_transform() -> None:
     ann = importlib.import_module("tests.annotations_new")
     mi = scan_module(ann)
     expand_overloads(mi)
 
     overs = [s for s in mi.members if s.name == "over"]
-    assert len(overs) == 2
-    assert all("overload" in s.decorators for s in overs)
+    assert len(overs) == 3
+    assert all("overload" in s.decorators for s in overs[:-1])
+    assert "overload" not in overs[-1].decorators
 
     specials = [s for s in mi.members if s.name == "special_neg"]
     assert len(specials) == 3
@@ -229,6 +243,16 @@ def test_flag_transform() -> None:
     m = next(m for m in ab.members if isinstance(m, FuncDecl) and m.name == "do_something")
     assert m.flags.get("abstract") is True
     assert "abstractmethod" in m.decorators
+
+
+def test_orig_bases_prefer_real_bases(idx: dict[str, object]) -> None:
+    ann = importlib.import_module("tests.annotations_new")
+
+    rep = typing.cast(ClassDecl, get(idx, "Repeater"))
+    assert [b.annotation for b in rep.bases] == [ann.StdModel]
+
+    std = typing.cast(ClassDecl, get(idx, "StdModel"))
+    assert [b.annotation for b in std.bases] == [ann.BaseModel]
 
 
 def test_strict_mode_normalizes_union() -> None:

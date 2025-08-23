@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import ast
+import re
 from dataclasses import dataclass, field
 from types import EllipsisType, ModuleType
-from typing import Iterator, Literal, Optional
+from typing import Any, Iterable, Iterator, Literal, Optional
 
 
 @dataclass(kw_only=True)
@@ -33,6 +35,12 @@ class Site:
     index: Optional[int] = None
     annotation: object = None
     comment: str | None = None
+
+
+@dataclass(kw_only=True, frozen=True)
+class AnnExpr:
+    expr: str
+    evaluated: Any
 
 
 @dataclass(kw_only=True)
@@ -97,6 +105,17 @@ class SourceInfo:
     headers: list[str]
     comments: dict[int, str]
     line_map: dict[str, int]
+    tc_imports: dict[str, set[str]] = field(default_factory=dict)
+    code: str | None = None
+    _tree: ast.AST | None = field(default=None, init=False, repr=False)
+
+    @property
+    def tree(self) -> ast.AST:
+        if self._tree is None:
+            if self.code is None:
+                raise ValueError("No source code available for AST")
+            self._tree = ast.parse(self.code)
+        return self._tree
 
 
 @dataclass(kw_only=True)
@@ -113,6 +132,28 @@ class ImportBlock:
                 lines.append("")
             lines.append(f"from typing import {', '.join(sorted(self.typing))}")
         return lines
+
+    def cull(self, lines: Iterable[str], defined: Iterable[str]) -> None:
+        text = "\n".join(lines)
+        defined_set = set(defined)
+        new_froms: dict[str, set[str]] = {}
+        for mod, names in self.froms.items():
+            kept = {
+                name
+                for name in names
+                if (
+                    name.split(" as ")[-1] in defined_set
+                    or re.search(r"\b" + re.escape(name.split(" as ")[-1]) + r"\b", text)
+                )
+            }
+            if kept:
+                new_froms[mod] = kept
+        self.froms = new_froms
+        self.typing = {
+            name
+            for name in self.typing
+            if name in defined_set or re.search(r"\b" + re.escape(name) + r"\b", text)
+        }
 
 
 @dataclass(kw_only=True)

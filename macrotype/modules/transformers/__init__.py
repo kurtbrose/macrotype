@@ -1,7 +1,7 @@
 from .add_comment import add_comments
 from .alias import synthesize_aliases
 from .constant import infer_constant_types
-from .dataclass import transform_dataclasses
+from .dataclass import apply_dataclass_transform, transform_dataclasses
 from .decorator import unwrap_decorated_functions
 from .descriptor import normalize_descriptors
 from .duplicate import canonicalize_local_aliases
@@ -14,6 +14,7 @@ from .newtype import transform_newtypes
 from .overload import expand_overloads
 from .param_default import infer_param_defaults
 from .protocol import prune_protocol_methods
+from .recover_custom_generics import recover_custom_generics
 from .resolve_imports import resolve_imports
 from .source_info import add_source_info
 from .typeddict import prune_inherited_typeddict_fields
@@ -24,10 +25,12 @@ __all__ = [
     "synthesize_aliases",
     "infer_constant_types",
     "transform_dataclasses",
+    "apply_dataclass_transform",
     "normalize_descriptors",
     "transform_enums",
     "normalize_flags",
     "canonicalize_foreign_symbols",
+    "recover_custom_generics",
     "canonicalize_local_aliases",
     "expand_overloads",
     "transform_newtypes",

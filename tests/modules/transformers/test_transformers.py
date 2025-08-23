@@ -14,6 +14,7 @@ from macrotype.modules.ir import ClassDecl, FuncDecl, ModuleDecl, Site, TypeDefD
 from macrotype.modules.scanner import scan_module
 from macrotype.modules.transformers import (
     add_comments,
+    apply_dataclass_transform,
     canonicalize_foreign_symbols,
     canonicalize_local_aliases,
     expand_overloads,
@@ -190,6 +191,7 @@ def test_dataclass_transform() -> None:
     mod = mod_from_code(code, "dataclasses")
     mi = scan_module(mod)
     transform_dataclasses(mi)
+    apply_dataclass_transform(mi)
     by_name = {s.name: s for s in mi.members}
 
     dc = t.cast(ClassDecl, by_name["DC"])
@@ -202,6 +204,53 @@ def test_dataclass_transform() -> None:
     assert "dataclass" in outer.decorators
     inner = next(m for m in outer.members if isinstance(m, ClassDecl) and m.name == "Inner")
     assert "dataclass" in inner.decorators
+
+
+def test_dataclass_transform_carrier() -> None:
+    code = """
+    from typing import dataclass_transform
+
+    @dataclass_transform()
+    class Base:
+        def __init_subclass__(cls) -> None:
+            cls.__dataclass_fields__ = {"x": object(), "y": object()}
+            def __init__(self, x: int, y: int) -> None: ...
+            cls.__init__ = __init__
+
+    class Sub(Base):
+        x: int
+        y: int
+    """
+    mod = mod_from_code(code, "dc_transform")
+    mi = scan_module(mod)
+    transform_dataclasses(mi)
+    apply_dataclass_transform(mi)
+    by_name = {s.name: s for s in mi.members}
+
+    base = t.cast(ClassDecl, by_name["Base"])
+    assert any(d.startswith("dataclass_transform") for d in base.decorators)
+
+    sub = t.cast(ClassDecl, by_name["Sub"])
+    assert all(not d.startswith("dataclass") for d in sub.decorators)
+    assert "__init__" not in {m.name for m in sub.members}
+
+
+def test_dataclass_transform_import() -> None:
+    code = """
+    class Base:
+        __dataclass_transform__ = {}
+
+    class Sub(Base):
+        pass
+    """
+    mod = mod_from_code(code, "dc_transform_import")
+    mi = scan_module(mod)
+    transform_dataclasses(mi)
+    apply_dataclass_transform(mi)
+    by_name = {s.name: s for s in mi.members}
+    base = t.cast(ClassDecl, by_name["Base"])
+    assert "dataclass_transform()" in base.decorators
+    assert "dataclass_transform" in mi.imports.typing
 
 
 def test_descriptor_transform() -> None:
@@ -386,15 +435,18 @@ def test_overload_transform() -> None:
     mi = scan_module(mod)
     expand_overloads(mi)
     by_name = [s for s in mi.members if isinstance(s, FuncDecl) and s.name == "foo"]
-    assert len(by_name) == 2
-    assert all("overload" in s.decorators for s in by_name)
+    assert len(by_name) == 3
+    assert all("overload" in s.decorators for s in by_name[:-1])
+    assert "overload" not in by_name[-1].decorators
     cls = next(s for s in mi.members if isinstance(s, ClassDecl) and s.name == "C")
     bars = [m for m in cls.members if isinstance(m, FuncDecl) and m.name == "bar"]
-    assert len(bars) == 2
-    assert all("overload" in m.decorators for m in bars)
+    assert len(bars) == 3
+    assert all("overload" in m.decorators for m in bars[:-1])
+    assert "overload" not in bars[-1].decorators
     lits = [s for s in mi.members if isinstance(s, FuncDecl) and s.name == "lit"]
     assert len(lits) == 4
-    assert all("overload" in s.decorators for s in lits)
+    assert all("overload" in s.decorators for s in lits[:-1])
+    assert "overload" not in lits[-1].decorators
 
 
 def test_protocol_transform() -> None:

@@ -44,6 +44,23 @@ from typing import (
     runtime_checkable,
 )
 
+from sqlalchemy.engine import Result as SAResult
+from sqlalchemy.sql.selectable import (
+    AliasedReturnsRows as SAAliasedReturnsRows,
+)
+from sqlalchemy.sql.selectable import (
+    ExecutableReturnsRows as SAExecutableReturnsRows,
+)
+from sqlalchemy.sql.selectable import (
+    ReturnsRows as SAReturnsRows,
+)
+from sqlalchemy.sql.selectable import (
+    Select as SASelect,
+)
+from sqlalchemy.sql.selectable import (
+    TypedReturnsRows as SATypedReturnsRows,
+)
+
 import macrotype.meta_types as mt
 from macrotype.meta_types import (
     emit_as,
@@ -53,6 +70,13 @@ from macrotype.meta_types import (
     overload_for,
     set_module,
 )
+from tests.external_nested import ExternalOuter
+
+# Imported assignment should remain a simple import in stubs
+from tests.modules.namespace_assign import namespace  # noqa: F401
+
+# Imported proxy raising on __name__ access to ensure safe getattr
+from tests.modules.proxy_module import PROXY as IMPORTED_PROXY  # noqa: F401
 
 P = ParamSpec("P")
 
@@ -64,6 +88,21 @@ CovariantT = TypeVar("CovariantT", covariant=True)
 ContravariantT = TypeVar("ContravariantT", contravariant=True)
 TDV = TypeVar("TDV")
 UserId = NewType("UserId", int)
+
+
+# Object that raises from __getattr__ for specific attributes to ensure safe
+# attribute access
+class RaisingProxy:
+    def __getattr__(self, name: str) -> typing.Any:
+        if name in {"__module__", "__supertype__"}:
+            raise RuntimeError("boom")
+        raise AttributeError(name)
+
+    def __call__(self) -> None:
+        pass
+
+
+RAISING_PROXY = RaisingProxy()
 
 # TypeScript-inspired metaclass utilities
 
@@ -324,6 +363,23 @@ class Variadic(Generic[*Ts]):
         return self.args
 
 
+# Overloaded function with PEP 695 type parameters
+class Wrapped(Generic[T]):
+    pass
+
+
+@overload
+def pep695_overload[T](x: Wrapped[tuple[T]]) -> T: ...
+
+
+@overload
+def pep695_overload[T, T2, *Ts](x: Wrapped[tuple[T, T2, *Ts]]) -> tuple[T, T2, *Ts]: ...
+
+
+def pep695_overload(x):
+    return x
+
+
 # Default argument example to ensure defaults are applied in overloads
 @overload_for(3)
 def times_two(val: int, factor: int = 2) -> int:
@@ -406,6 +462,14 @@ class EmployeeModel(SQLBase):
     manager_id: Mapped[ManagerModel.id_type]
 
 
+# Forward reference to a local class should not generate typing imports
+class ForwardRefModel: ...
+
+
+class UsesForwardRef:
+    items: list["ForwardRefModel"]
+
+
 # Basic callable examples
 def sum_of(*args: tuple[int]) -> int:
     return sum(args)
@@ -452,6 +516,9 @@ DICT_FROMKEYS_CM = dict.fromkeys
 
 # operator.attrgetter returns a callable without __name__
 ATTRGETTER_VAR = attrgetter("b")
+
+# operator.attrgetter instance used as Annotated metadata
+ANNOTATED_ATTRGETTER_META: Annotated[int, attrgetter("c")] = 0
 
 # Variable with pragma comment should retain comment in stub
 PRAGMA_VAR = 1  # type: ignore
@@ -1112,7 +1179,185 @@ def nested_class_annotation(x: NestedOuter.Inner) -> NestedOuter.Inner:
     return x
 
 
+# Nested class from external module should import base name only
+def external_nested_class_annotation(
+    x: ExternalOuter.Inner,
+) -> ExternalOuter.Inner:
+    return x
+
+
 # NamedTuple should list its fields
 class PointNT(NamedTuple):
     x: int
     y: int
+
+
+# __orig_bases__ mismatch should not override declared bases
+class Unrelated:
+    pass
+
+
+class BaseModel:
+    pass
+
+
+class StdModel(BaseModel):
+    pass
+
+
+class Repeater(StdModel):
+    pass
+
+
+# Simulate frameworks that replace __orig_bases__ with an unrelated generic
+StdModel.__orig_bases__ = (Unrelated,)  # type: ignore[attr-defined]
+Repeater.__orig_bases__ = (Unrelated,)  # type: ignore[attr-defined]
+
+
+# Overloaded classmethod should retain parameters
+class OverloadedClassMethod:
+    @overload
+    @classmethod
+    def get_by_id(cls, model_id: None) -> None: ...
+
+    @overload
+    @classmethod
+    def get_by_id(cls, model_id: int) -> Self: ...
+
+    @classmethod
+    def get_by_id(cls, model_id: int | None) -> Self | None:
+        return None if model_id is None else cls()
+
+
+# __orig_bases__ supertype should not override declared base
+class TopBase:
+    pass
+
+
+class MidBase(TopBase):
+    pass
+
+
+class BotBase(MidBase):
+    pass
+
+
+BotBase.__orig_bases__ = (TopBase,)  # type: ignore[attr-defined]
+
+
+# dataclass_transform: carrier and subclass
+
+# dataclass_transform: attribute triggers decorator and import
+
+
+class DCTransformBase:
+    __dataclass_transform__ = {}
+
+    def __init_subclass__(cls) -> None:
+        dataclass(cls)
+
+
+class DCTransformed(DCTransformBase):
+    a: int
+    b: int
+
+
+# Generic overloads should preserve parameterized arguments and emit base case
+T1 = TypeVar("T1")
+T2 = TypeVar("T2")
+
+
+class TypedReturnsRows(Generic[T]):
+    pass
+
+
+@overload
+def first[T](query: TypedReturnsRows[tuple[T]]) -> T | None: ...
+
+
+@overload
+def first[T1, T2, *Ts](
+    query: TypedReturnsRows[tuple[T1, T2, *Ts]],
+) -> tuple[T1, T2, *Ts] | None: ...
+
+
+def first(query):
+    return None
+
+
+@overload
+def one[T](query: TypedReturnsRows[tuple[T]]) -> T: ...
+
+
+@overload
+def one[T1, T2, *Ts](query: TypedReturnsRows[tuple[T1, T2, *Ts]]) -> tuple[T1, T2, *Ts]: ...
+
+
+def one(query):
+    return None
+
+
+# Custom class overriding __class_getitem__ and subclass inheriting it
+class CustomCG:
+    def __class_getitem__(cls, item):
+        return cls
+
+
+class CustomCGChild(CustomCG):
+    pass
+
+
+# Direct and inherited recovery of custom generics
+CUSTOM_CG_DIRECT: CustomCG[int]
+CUSTOM_CG_CHILD_DIRECT: CustomCGChild[int]
+
+# SQLAlchemy Result generic without string annotation
+SA_RESULT_DIRECT: SAResult[int]
+
+
+# Function return with type parameter and custom ``__class_getitem__``
+def custom_cg_with_type_param[Model](model: type[Model]) -> CustomCG[tuple[Model]]:
+    raise NotImplementedError
+
+
+# SQLAlchemy generics should preserve type arguments when used as parameters
+def count[T](query: "SASelect[tuple[T]]") -> int:
+    return 0
+
+
+def scalar[T](query: "SATypedReturnsRows[tuple[T]]") -> T:
+    raise NotImplementedError
+
+
+# Tuple of various SQLAlchemy generics without string annotations
+SA_GENERIC_TUPLE_DIRECT: tuple[
+    SAResult[int],
+    SAReturnsRows[int],
+    SAAliasedReturnsRows[int],
+    SAExecutableReturnsRows[int],
+    SASelect[int],
+    SATypedReturnsRows[int],
+]
+
+
+# Overloaded function combining SQLAlchemy TypedReturnsRows and generics
+@overload
+def SATRR_first[T](query: SATypedReturnsRows[tuple[T]]) -> T | None: ...
+
+
+@overload
+def SATRR_first[T1, T2, *Ts](
+    query: SATypedReturnsRows[tuple[T1, T2, Unpack[Ts]]],
+) -> tuple[T1, T2, Unpack[Ts]] | None: ...
+
+
+def SATRR_first(query):
+    return None
+
+
+if typing.TYPE_CHECKING:
+    from fractions import Fraction as TCFraction  # used via forward ref below
+
+
+class UsesTypeCheckingImport:
+    val: "TCFraction"

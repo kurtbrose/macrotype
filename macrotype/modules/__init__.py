@@ -17,6 +17,7 @@ __all__ = [
     "normalize_flags",
     "normalize_descriptors",
     "canonicalize_foreign_symbols",
+    "recover_custom_generics",
     "canonicalize_local_aliases",
     "unwrap_decorated_functions",
     "infer_param_defaults",
@@ -39,6 +40,7 @@ def __getattr__(name: str):
         "add_source_info",
         "add_comments",
         "canonicalize_foreign_symbols",
+        "recover_custom_generics",
         "canonicalize_local_aliases",
         "unwrap_decorated_functions",
         "infer_param_defaults",
@@ -78,6 +80,7 @@ def from_module(
     mi = scan_module(mod)
     _t.add_source_info(mi, source_info)
     _t.canonicalize_foreign_symbols(mi)
+    _t.recover_custom_generics(mi)
     _t.unwrap_decorated_functions(mi)
     _t.canonicalize_local_aliases(mi)
     _t.synthesize_aliases(mi)
@@ -85,6 +88,7 @@ def from_module(
     _t.transform_enums(mi)
     _t.transform_generics(mi)
     _t.transform_dataclasses(mi)
+    _t.apply_dataclass_transform(mi)
     _t.infer_constant_types(mi)
     _t.prune_inherited_typeddict_fields(mi)
     _t.normalize_descriptors(mi)
@@ -93,16 +97,24 @@ def from_module(
     _t.normalize_flags(mi)
     _t.prune_protocol_methods(mi)
     _t.expand_overloads(mi)
+    _t.recover_custom_generics(mi)
     _t.add_comments(mi)
     _t.resolve_imports(mi)
 
     if strict:
         from macrotype.types import normalize_annotation
 
+        from .ir import AnnExpr
+
         for decl in mi.iter_all_decls():
             for site in decl.get_annotation_sites():
                 if site.role != "alias_value":
                     ctx = "call_params" if site.role == "param" else "top"
-                    site.annotation = normalize_annotation(site.annotation, ctx=ctx)
+                    ann = site.annotation
+                    if isinstance(ann, AnnExpr):
+                        norm = normalize_annotation(ann.evaluated, ctx=ctx)
+                        site.annotation = AnnExpr(expr=ann.expr, evaluated=norm)
+                    else:
+                        site.annotation = normalize_annotation(ann, ctx=ctx)
 
     return mi

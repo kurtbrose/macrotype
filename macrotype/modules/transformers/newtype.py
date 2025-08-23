@@ -1,5 +1,6 @@
 """Convert typing.NewType functions into alias symbols."""
 
+import inspect
 import typing as t
 
 from macrotype.modules.ir import (
@@ -18,10 +19,14 @@ def _transform_decls(decls: list[Decl]) -> list[Decl]:
     for decl in decls:
         match decl:
             case FuncDecl(name=name, obj=obj, comment=comment, emit=emit):
-                if callable(obj) and hasattr(obj, "__supertype__"):
+                if (
+                    inspect.getattr_static(obj, "__call__", None) is not None
+                    and (supertype := inspect.getattr_static(obj, "__supertype__", None))
+                    is not None
+                ):
                     alias = TypeDefDecl(
                         name=name,
-                        value=Site(role="alias_value", annotation=obj.__supertype__),
+                        value=Site(role="alias_value", annotation=supertype),
                         obj_type=t.NewType,
                         comment=comment,
                         emit=emit,
@@ -31,10 +36,14 @@ def _transform_decls(decls: list[Decl]) -> list[Decl]:
                 else:
                     new_decls.append(decl)
             case VarDecl(name=name, obj=obj, comment=comment, emit=emit):
-                if callable(obj) and hasattr(obj, "__supertype__"):
+                if (
+                    inspect.getattr_static(obj, "__call__", None) is not None
+                    and (supertype := inspect.getattr_static(obj, "__supertype__", None))
+                    is not None
+                ):
                     alias = TypeDefDecl(
                         name=name,
-                        value=Site(role="alias_value", annotation=obj.__supertype__),
+                        value=Site(role="alias_value", annotation=supertype),
                         obj_type=t.NewType,
                         comment=comment,
                         emit=emit,

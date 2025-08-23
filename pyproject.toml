@@ -27,7 +27,7 @@ macrotype = "macrotype.cli:main"
 macrotype-check = "macrotype.cli:check_main"
 
 [project.optional-dependencies]
-test = ["mypy", "pyright", "ruff", "pytest"]
+test = ["mypy", "pyright", "ruff", "pytest", "sqlalchemy"]
 build = ["build", "twine"]
 
 [tool.ruff]
@@ -39,6 +39,7 @@ exclude = [
     "tests/annotations.pyi",
     "tests/annotations_new.pyi",
     "tests/typechecking.pyi",
+    "tests/typechecking_import_only.pyi",
     ".git",
     "macrotype/*.pyi",
     "__macrotype__",

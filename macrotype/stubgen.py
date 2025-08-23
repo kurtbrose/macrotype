@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import ast
 import fnmatch
 import importlib
 import importlib.util
@@ -11,7 +10,24 @@ from typing import Sequence
 
 from .meta_types import patch_typing
 from .modules.ir import SourceInfo
-from .modules.source import extract_source_info
+from .modules.source import extract_source_info, extract_type_checking_imports
+
+
+class MypyPluginError(RuntimeError):
+    """Raised when a module appears to be a mypy plugin."""
+
+
+_MYPY_PLUGIN_PATTERNS = (
+    ".mypy.",
+    ".mypy",
+    "ext.mypy",
+    "typing_plugin",
+    "mypy_plugin",
+)
+
+
+def _looks_like_mypy_plugin(name: str) -> bool:
+    return any(pat in name or name.endswith(pat) for pat in _MYPY_PLUGIN_PATTERNS)
 
 
 def _header_lines(command: str | None) -> list[str]:
@@ -19,27 +35,6 @@ def _header_lines(command: str | None) -> list[str]:
     if command:
         return [f"# Generated via: {command}", "# Do not edit by hand"]
     return []
-
-
-def _has_type_checking_guard(code: str) -> bool:
-    tree = ast.parse(code)
-
-    def mentions_TYPE_CHECKING(expr: ast.AST) -> bool:
-        if isinstance(expr, ast.Name) and expr.id == "TYPE_CHECKING":
-            return True
-        if (
-            isinstance(expr, ast.Attribute)
-            and isinstance(expr.value, ast.Name)
-            and expr.value.id == "typing"
-            and expr.attr == "TYPE_CHECKING"
-        ):
-            return True
-        return any(mentions_TYPE_CHECKING(c) for c in ast.iter_child_nodes(expr))
-
-    for node in ast.walk(tree):
-        if isinstance(node, ast.If) and mentions_TYPE_CHECKING(node.test):
-            return True
-    return False
 
 
 def _module_name_from_path(path: Path) -> str:
@@ -57,10 +52,18 @@ def load_module(name: str, *, allow_type_checking: bool = False) -> ModuleType:
         raise ImportError(f"Cannot import {name}")
     if not allow_type_checking:
         code = Path(spec.origin).read_text()
-        if _has_type_checking_guard(code):
-            raise RuntimeError(f"Skipped {name} due to TYPE_CHECKING guard")
-    with patch_typing():
-        module = importlib.import_module(name)
+        try:
+            extract_type_checking_imports(code)
+        except RuntimeError as exc:
+            raise RuntimeError(f"Skipped {name} due to TYPE_CHECKING guard") from exc
+    try:
+        with patch_typing():
+            module = importlib.import_module(name)
+    except (ImportError, ModuleNotFoundError) as exc:  # pragma: no cover - defensive
+        msg = str(exc)
+        if "mypy" in msg or "ExpandTypeVisitor" in msg:
+            raise MypyPluginError(msg) from exc
+        raise
     return module
 
 
@@ -70,8 +73,11 @@ def load_module_from_code(
     *,
     allow_type_checking: bool = False,
 ) -> ModuleType:
-    if not allow_type_checking and _has_type_checking_guard(code):
-        raise RuntimeError("Skipped module due to TYPE_CHECKING guard")
+    if not allow_type_checking:
+        try:
+            extract_type_checking_imports(code)
+        except RuntimeError as exc:
+            raise RuntimeError("Skipped module due to TYPE_CHECKING guard") from exc
     module = ModuleType(name)
     sys.modules[name] = module
     with patch_typing():
@@ -135,12 +141,14 @@ def process_file(
     allow_type_checking: bool = False,
 ) -> Path:
     code = src.read_text()
-    if not allow_type_checking and _has_type_checking_guard(code):
+    try:
+        info = extract_source_info(code, allow_type_checking=allow_type_checking)
+    except RuntimeError:
         raise RuntimeError(f"Skipped {src} due to TYPE_CHECKING guard")
     module_name = _module_name_from_path(src)
+    if _looks_like_mypy_plugin(module_name):
+        raise MypyPluginError(f"{module_name} appears to be a mypy plugin")
     module = load_module(module_name, allow_type_checking=True)
-    header, comments, line_map = extract_source_info(code)
-    info = SourceInfo(headers=header, comments=comments, line_map=line_map)
     dest = dest or src.with_suffix(".pyi")
     return process_module(
         module,
@@ -159,9 +167,14 @@ def process_directory(
     strict: bool = False,
     allow_type_checking: bool = False,
     skip: Sequence[str] = (),
+    debug_failure: bool = False,
 ) -> list[Path]:
     outputs: list[Path] = []
     for src in iter_python_files(directory, skip=skip):
+        module_name = _module_name_from_path(src)
+        if _looks_like_mypy_plugin(module_name):
+            print(f"Skipping {src}: appears to be a mypy plugin", file=sys.stderr)
+            continue
         if out_dir:
             rel = src.relative_to(directory).with_suffix(".pyi")
             dest = out_dir / rel
@@ -177,8 +190,17 @@ def process_directory(
                     allow_type_checking=allow_type_checking,
                 )
             )
-        except (Exception, SystemExit) as exc:  # pragma: no cover - defensive
+        except MypyPluginError as exc:
             print(f"Skipping {src}: {exc}", file=sys.stderr)
+        except (Exception, SystemExit) as exc:  # pragma: no cover - defensive
+            if debug_failure:
+                import pdb
+                import traceback
+
+                traceback.print_exception(type(exc), exc, exc.__traceback__)
+                pdb.post_mortem(exc.__traceback__)
+            else:
+                print(f"Skipping {src}: {exc}", file=sys.stderr)
     return outputs
 
 
