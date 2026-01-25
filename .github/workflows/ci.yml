@@ -55,6 +55,7 @@ jobs:
           python -VV
           python - <<'PY'
           import typing as t
+          import macrotype.types.parse as mt_parse
           from typing import get_origin, get_args
           x = t.Final[int]
           print("Final[int]:", repr(x))
@@ -66,6 +67,13 @@ jobs:
           o = get_origin(x)
           print("origin module:", getattr(o, "__module__", None))
           print("origin qualname:", getattr(o, "__qualname__", None))
+          y = list[t.Final[int]]
+          print("list[Final[int]]:", repr(y))
+          print("list origin:", get_origin(y))
+          print("list args:", get_args(y))
+          print("Final in _QUALIFIERS:", t.Final in mt_parse._QUALIFIERS)
+          print("origin in _QUALIFIERS:", get_origin(x) in mt_parse._QUALIFIERS)
+          print("_QUALIFIERS:", mt_parse._QUALIFIERS)
           PY
       - name: Run tests
         run: |
