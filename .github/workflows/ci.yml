@@ -55,8 +55,9 @@ jobs:
           python -VV
           python - <<'PY'
           import typing as t
-          import macrotype.types.parse as mt_parse
+          import importlib
           from typing import get_origin, get_args
+          mt_parse = importlib.import_module("macrotype.types.parse")
           x = t.Final[int]
           print("Final[int]:", repr(x))
           print("type:", type(x))
