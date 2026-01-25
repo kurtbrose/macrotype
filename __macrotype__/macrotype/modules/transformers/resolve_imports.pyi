@@ -1,10 +1,11 @@
-# Generated via: macrotype macrotype/modules/transformers/resolve_imports.py --strict -o __macrotype__/macrotype/modules/transformers/resolve_imports.pyi
+# Generated via: macrotype macrotype
 # Do not edit by hand
 from __future__ import annotations
 from collections import defaultdict
-from collections.abc import Iterable
 from macrotype.modules.emit import build_name_map, collect_all_annotations, flatten_annotation_atoms
 from macrotype.modules.ir import ClassDecl, Decl, ImportBlock, ModuleDecl, TypeDefDecl
+
+from typing import Iterable
 
 _MODULE_ALIASES: dict[str, str]
 

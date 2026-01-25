@@ -1,13 +1,10 @@
 # Generated via: macrotype macrotype
 # Do not edit by hand
 from __future__ import annotations
+from dataclasses import dataclass, replace
+from macrotype.types.ir import NormalizedTy, ResolvedTy, Ty, TyAny, TyApp, TyCallable, TyLiteral, TyNever, TyRoot, TyType, TyUnion, TyUnpack
 
-from dataclasses import dataclass
 from typing import NewType
-
-from macrotype.types.ir import NormalizedTy, ResolvedTy, Ty, TyRoot
-
-annotations = annotations
 
 NormalizedTy = NewType("NormalizedTy", TyRoot)
 
@@ -21,5 +18,7 @@ class NormOpts:
     dedup_unions: bool
 
 def norm(t: ResolvedTy | Ty, opts: None | NormOpts) -> NormalizedTy: ...
+
 def _norm(n: None | Ty, o: NormOpts) -> None | Ty: ...
+
 def _key(n: Ty) -> str: ...

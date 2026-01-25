@@ -1,13 +1,11 @@
 # Generated via: macrotype macrotype
 # Do not edit by hand
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import Enum
-from macrotype.types.ir import ParsedTy, Ty, TyAnnoTree, TyRoot, TyTypeVar
+from macrotype.types.ir import ParsedTy, Ty, TyAnnoTree, TyAny, TyApp, TyCallable, TyForward, TyLiteral, TyNever, TyParamSpec, TyRoot, TyType, TyTypeVar, TyTypeVarTuple, TyUnion, TyUnpack
 
 from typing import NewType
-
-annotations = annotations
 
 LitVal = int | bool | str | bytes | None | enum.Enum | tuple['LitVal', ...]
 
@@ -30,7 +28,7 @@ def _litval_of(val: object) -> Enum | None | bool | bytes | int | str | tuple['L
 
 def _origin_args(tp: object) -> tuple[None | object, tuple[object, ...]]: ...
 
-def _cached[T](f: 'T') -> 'T': ...
+def _cached[T](f: T) -> T: ...
 
 _to_ir = _cached.<locals>.wrapped
 

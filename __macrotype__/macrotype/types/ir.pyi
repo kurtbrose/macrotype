@@ -1,11 +1,9 @@
 # Generated via: macrotype macrotype
 # Do not edit by hand
 from __future__ import annotations
-
-import enum
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
-from types import EllipsisType
+
 from typing import ClassVar, Literal, NewType
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -29,15 +27,17 @@ class Ty:
     @property
     def base_type(self) -> None | type: ...
     @property
-    def generic_args(self) -> tuple["Ty", ...]: ...
+    def generic_args(self) -> tuple['Ty', ...]: ...
     @property
-    def union_types(self) -> tuple["Ty", ...]: ...
+    def union_types(self) -> tuple['Ty', ...]: ...
 
 @dataclass(frozen=True, kw_only=True, slots=True)
-class TyAny(Ty): ...
+class TyAny(Ty):
+    ...
 
 @dataclass(frozen=True, kw_only=True, slots=True)
-class TyNever(Ty): ...
+class TyNever(Ty):
+    ...
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class TyType(Ty):
@@ -63,11 +63,11 @@ class TyUnion(Ty):
 
 LitPrim = int | bool | str | bytes | None | enum.Enum
 
-LitVal = int | bool | str | bytes | None | enum.Enum | tuple["LitVal", ...]
+LitVal = int | bool | str | bytes | None | enum.Enum | tuple['LitVal', ...]
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class TyLiteral(Ty):
-    values: tuple[Enum | None | bool | bytes | int | str | tuple["LitVal", ...], ...]
+    values: tuple[Enum | None | bool | bytes | int | str | tuple['LitVal', ...], ...]
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class TyCallable(Ty):
@@ -89,7 +89,7 @@ class TyTypeVar(Ty):
 @dataclass(frozen=True, kw_only=True, slots=True)
 class TyParamSpec(Ty):
     name: str
-    flavor: Literal["args", "kwargs"] | None
+    flavor: Literal['args', 'kwargs'] | None
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class TyTypeVarTuple(Ty):
@@ -100,6 +100,7 @@ class TyUnpack(Ty):
     inner: Ty
 
 def has_type_member(ty: Ty, members: set[type]) -> bool: ...
+
 def strip_type_members(ty: Ty, members: set[type]) -> Ty: ...
 
 ParsedTy = NewType("ParsedTy", TyRoot)  # output of parse.parse

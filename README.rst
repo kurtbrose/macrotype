@@ -69,6 +69,11 @@ different directory.  When run with ``mypy``, ``macrotype-check`` prepends the
 stub directory to ``MYPYPATH`` so the overlay stubs are picked up
 automatically.  Other tools receive the stub directory on ``PYTHONPATH``.
 
+Use ``--annotated`` to generate annotated copies of your source files instead
+of stub files, which is useful when type checking a codebase that consumes its
+own runtime annotations.  The annotated copies are written under the output
+directory with the original ``.py`` extension.
+
 If you run ``mypy`` without ``macrotype-check``, set ``MYPYPATH`` or pass
 ``--custom-typeshed-dir`` to point at the stub directory so it behaves the same
 way.

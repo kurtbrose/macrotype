@@ -1,4 +1,4 @@
-# Generated via: macrotype macrotype/modules/ir.py -o __macrotype__/macrotype/modules/ir.pyi
+# Generated via: macrotype macrotype
 # Do not edit by hand
 from __future__ import annotations
 from ast import AST
