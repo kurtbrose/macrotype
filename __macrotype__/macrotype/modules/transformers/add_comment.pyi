@@ -1,14 +1,16 @@
 # Generated via: macrotype macrotype
 # Do not edit by hand
 from __future__ import annotations
-
-from macrotype.modules.ir import Decl, ModuleDecl
-
-annotations = annotations
+from macrotype.modules.ir import ClassDecl, Decl, FuncDecl, ModuleDecl, TypeDefDecl, VarDecl
 
 def _line_comment(line: str) -> None | str: ...
+
 def _extract_name(line: str) -> None | str: ...
+
 def _build_comment_map_from_lines(lines: list[str]) -> dict[str, str]: ...
+
 def _build_comment_map(obj: ModuleType | type) -> dict[str, str]: ...
+
 def _attach(sym: Decl, obj: None | object, cmap: dict[str, str]) -> None: ...
+
 def add_comments(mi: ModuleDecl) -> None: ...

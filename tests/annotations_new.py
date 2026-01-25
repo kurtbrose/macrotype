@@ -120,6 +120,11 @@ def strip_null(ann: Any, null: Any) -> Any:
     return ann
 
 
+# Runtime annotation resolution for string annotations should emit real types.
+def quoted_annotation(value: "int") -> "str":
+    return str(value)
+
+
 class Cls:
     a: int
     b: float | None

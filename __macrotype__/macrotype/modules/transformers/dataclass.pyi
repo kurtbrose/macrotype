@@ -1,12 +1,10 @@
-# Generated via: macrotype macrotype/modules/transformers/dataclass.py --strict -o __macrotype__/macrotype/modules/transformers/dataclass.pyi
+# Generated via: macrotype macrotype
 # Do not edit by hand
-from __future__ import _Feature
+from __future__ import annotations
 from dataclasses import _DataclassParams
 from macrotype.modules.ir import ClassDecl, ModuleDecl
 
 from typing import Any
-
-annotations = _Feature
 
 def has_transform(cls: type) -> bool: ...
 

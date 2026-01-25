@@ -1,4 +1,4 @@
-# Generated via: macrotype macrotype/modules/emit.py -o __macrotype__/macrotype/modules/emit.pyi
+# Generated via: macrotype macrotype
 # Do not edit by hand
 from __future__ import annotations
 from macrotype.modules.ir import AnnExpr, ClassDecl, Decl, FuncDecl, ModuleDecl, TypeDefDecl, VarDecl

@@ -1,18 +1,19 @@
 # Generated via: macrotype macrotype
 # Do not edit by hand
 from __future__ import annotations
+from dataclasses import replace
+from macrotype.modules.ir import AnnExpr, ClassDecl, Decl, FuncDecl, ModuleDecl, Site, TypeDefDecl, VarDecl
 
 from typing import Any, Callable
 
-from macrotype.modules.ir import (
-    ClassDecl,
-    FuncDecl,
-    ModuleDecl,
-)
-
 def eval_annotation(ann: Any, glb: dict[str, Any], lcl: None | dict[str, Any]) -> Any: ...
+
 def _is_dunder(name: str) -> bool: ...
+
 def scan_module(mod: ModuleType) -> ModuleDecl: ...
+
 def _scan_function(fn: Callable) -> FuncDecl: ...
+
 def _declared_bases_for_stub(cls: type) -> tuple[Any, ...]: ...
+
 def _scan_class(cls: type) -> ClassDecl: ...

@@ -6,12 +6,18 @@ import subprocess
 import sys
 from pathlib import Path
 
-from .. import stubgen
+from .. import annotate, stubgen
 from . import DEFAULT_OUT_DIR, _default_output_path
 from .watch import watch_and_run
 
 
-def _generate_stubs(paths: list[str], out_dir: Path, command: str) -> list[Path]:
+def _generate_outputs(
+    paths: list[str],
+    out_dir: Path,
+    command: str,
+    *,
+    annotated: bool,
+) -> list[Path]:
     cwd = Path.cwd()
     outputs: list[Path] = []
     for target in paths:
@@ -20,9 +26,22 @@ def _generate_stubs(paths: list[str], out_dir: Path, command: str) -> list[Path]
         rel = default.relative_to(DEFAULT_OUT_DIR)
         dest = out_dir / rel
         if path.is_file():
-            outputs.append(stubgen.process_file(path, dest, command=command, strict=True))
+            if annotated:
+                outputs.append(
+                    annotate.process_file(
+                        path,
+                        dest.with_suffix(".py"),
+                        strict=True,
+                        allow_type_checking=True,
+                    )
+                )
+            else:
+                outputs.append(stubgen.process_file(path, dest, command=command, strict=True))
         else:
-            stubgen.process_directory(path, dest, command=command, strict=True)
+            if annotated:
+                annotate.process_directory(path, dest, strict=True, allow_type_checking=True)
+            else:
+                stubgen.process_directory(path, dest, command=command, strict=True)
             outputs.append(dest)
     return outputs
 
@@ -40,6 +59,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("tool")
     parser.add_argument("paths", nargs="+")
     parser.add_argument("-o", "--output", default=str(DEFAULT_OUT_DIR))
+    parser.add_argument(
+        "--annotated",
+        action="store_true",
+        help="Generate annotated copies of source files instead of stubs",
+    )
     parser.add_argument(
         "-w",
         "--watch",
@@ -62,7 +86,7 @@ def main(argv: list[str] | None = None) -> int:
         return watch_and_run(args.paths, cmd)
 
     out_dir = Path(args.output)
-    stub_paths = _generate_stubs(args.paths, out_dir, command)
+    stub_paths = _generate_outputs(args.paths, out_dir, command, annotated=args.annotated)
 
     env = os.environ.copy()
     stub_path = str(out_dir)

@@ -1,2 +1,22 @@
-# Generated via: macrotype macrotype/modules/transformers/__init__.py --strict -o __macrotype__/macrotype/modules/transformers/__init__.pyi
+# Generated via: macrotype macrotype
 # Do not edit by hand
+from macrotype.modules.transformers.add_comment import add_comments
+from macrotype.modules.transformers.alias import synthesize_aliases
+from macrotype.modules.transformers.constant import infer_constant_types
+from macrotype.modules.transformers.dataclass import apply_dataclass_transform, transform_dataclasses
+from macrotype.modules.transformers.decorator import unwrap_decorated_functions
+from macrotype.modules.transformers.descriptor import normalize_descriptors
+from macrotype.modules.transformers.duplicate import canonicalize_local_aliases
+from macrotype.modules.transformers.enum import transform_enums
+from macrotype.modules.transformers.flag import normalize_flags
+from macrotype.modules.transformers.foreign_symbol import canonicalize_foreign_symbols
+from macrotype.modules.transformers.generic import transform_generics
+from macrotype.modules.transformers.namedtuple import transform_namedtuples
+from macrotype.modules.transformers.newtype import transform_newtypes
+from macrotype.modules.transformers.overload import expand_overloads
+from macrotype.modules.transformers.param_default import infer_param_defaults
+from macrotype.modules.transformers.protocol import prune_protocol_methods
+from macrotype.modules.transformers.recover_custom_generics import recover_custom_generics
+from macrotype.modules.transformers.resolve_imports import resolve_imports
+from macrotype.modules.transformers.source_info import add_source_info
+from macrotype.modules.transformers.typeddict import prune_inherited_typeddict_fields
