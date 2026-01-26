@@ -50,32 +50,6 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e '.[test]' pytest
-      - name: Probe typing.Final
-        run: |
-          python -VV
-          python - <<'PY'
-          import typing as t
-          import importlib
-          from typing import get_origin, get_args
-          mt_parse = importlib.import_module("macrotype.types.parse")
-          x = t.Final[int]
-          print("Final[int]:", repr(x))
-          print("type:", type(x))
-          print("origin:", get_origin(x))
-          print("args:", get_args(x))
-          print("module:", getattr(x, "__module__", None))
-          print("qualname:", getattr(x, "__qualname__", None))
-          o = get_origin(x)
-          print("origin module:", getattr(o, "__module__", None))
-          print("origin qualname:", getattr(o, "__qualname__", None))
-          y = list[t.Final[int]]
-          print("list[Final[int]]:", repr(y))
-          print("list origin:", get_origin(y))
-          print("list args:", get_args(y))
-          print("Final in _QUALIFIERS:", t.Final in mt_parse._QUALIFIERS)
-          print("origin in _QUALIFIERS:", get_origin(x) in mt_parse._QUALIFIERS)
-          print("_QUALIFIERS:", mt_parse._QUALIFIERS)
-          PY
       - name: Run tests
         run: |
           pytest -q
