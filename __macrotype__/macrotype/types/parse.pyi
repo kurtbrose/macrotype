@@ -13,6 +13,8 @@ ParsedTy = NewType("ParsedTy", TyRoot)
 
 _TYPING_ATTR_TYPES: tuple[type, ...]
 
+def _collect(name: str) -> frozenset[object]: ...
+
 @dataclass(frozen=True)
 class ParseEnv:
     module: None | str

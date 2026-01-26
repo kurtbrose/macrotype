@@ -8,6 +8,11 @@ from dataclasses import dataclass, replace
 from types import EllipsisType
 from typing import Optional, get_args, get_origin
 
+try:
+    import typing_extensions as _t_extensions
+except ImportError:  # pragma: no cover - optional dependency
+    _t_extensions = None
+
 from .ir import (
     LitVal,
     ParsedTy,
@@ -34,6 +39,20 @@ if hasattr(_types, "UnionType"):
 TypeAliasType = getattr(t, "TypeAliasType", None)
 if TypeAliasType is not None:
     _TYPING_ATTR_TYPES += (TypeAliasType,)
+
+
+def _collect(name: str) -> frozenset[object]:
+    return frozenset(getattr(s, name) for s in (t, _t_extensions) if hasattr(s, name))
+
+
+_FINAL_QUALIFIERS = _collect("Final")
+_CLASSVAR_QUALIFIERS = _collect("ClassVar")
+_REQUIRED_QUALIFIERS = _collect("Required")
+_NOT_REQUIRED_QUALIFIERS = _collect("NotRequired")
+
+_QUALIFIERS = (
+    _FINAL_QUALIFIERS | _CLASSVAR_QUALIFIERS | _REQUIRED_QUALIFIERS | _NOT_REQUIRED_QUALIFIERS
+)
 
 # ---------- Environment (minimal) ----------
 
@@ -136,7 +155,7 @@ _CACHE = {}
 def _cached[T](f: T) -> T:
     def wrapped(tp: object, env: ParseEnv) -> Ty:
         origin = get_origin(tp)
-        if origin in (t.ClassVar, t.Final, t.Required, t.NotRequired):
+        if origin in _QUALIFIERS:
             return f(tp, env)
         cache_key = id(tp), env
         if cache_key not in _CACHE:
@@ -154,7 +173,7 @@ def _to_ir(tp: object, env: ParseEnv) -> Ty:
 
     origin, args = _origin_args(tp)
     if origin is None:
-        if tp in (t.ClassVar, t.Final, t.Required, t.NotRequired):
+        if tp in _QUALIFIERS:
             raise ValueError("Qualifiers like ClassVar/Final are only valid at the root")
         return _tytype_of(tp)
 
@@ -166,7 +185,7 @@ def _to_ir(tp: object, env: ParseEnv) -> Ty:
         name = getattr(origin, "__name__", repr(origin))
         return TyParamSpec(name=name, flavor="kwargs")
 
-    if origin in (t.ClassVar, t.Final, t.Required, t.NotRequired):
+    if origin in _QUALIFIERS:
         raise ValueError("Qualifiers like ClassVar/Final are only valid at the root")
 
     if origin in (t.Union, _types.UnionType):
@@ -253,7 +272,7 @@ def parse_root(tp: object, env: Optional[ParseEnv] = None) -> TyRoot:
     ann_tree: TyAnnoTree | None = None
     obj = tp
     qualifiers: set[object] = set()
-    valid_qualifiers = {t.Final, t.ClassVar, t.Required, t.NotRequired}
+    valid_qualifiers = _QUALIFIERS
     while True:
         ann_tree, obj = _push_ann(ann_tree, obj)
         origin = get_origin(obj)
@@ -271,13 +290,13 @@ def parse_root(tp: object, env: Optional[ParseEnv] = None) -> TyRoot:
     return TyRoot(
         ty=ty,
         annotations=ann_tree,
-        is_final=t.Final in qualifiers,
+        is_final=bool(qualifiers & _FINAL_QUALIFIERS),
         is_required=True
-        if t.Required in qualifiers
+        if qualifiers & _REQUIRED_QUALIFIERS
         else False
-        if t.NotRequired in qualifiers
+        if qualifiers & _NOT_REQUIRED_QUALIFIERS
         else None,
-        is_classvar=t.ClassVar in qualifiers,
+        is_classvar=bool(qualifiers & _CLASSVAR_QUALIFIERS),
     )
 
 
